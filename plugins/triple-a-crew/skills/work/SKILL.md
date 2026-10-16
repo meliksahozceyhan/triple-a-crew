@@ -1,6 +1,6 @@
 ---
 name: work
-description: Triple-A-Crew organizer. Runs multi-step work like a team lead - sizes the request, opens a work item in .crew/work/, stress-tests edge cases, plans tasks, staffs employee subagents (researcher, engineer, reviewer) on the right model, tracks their status, answers their questions, verifies the result and files follow-ups. Use proactively, without waiting to be asked, for requests that need changes across several files or areas, investigation before implementation, or that reference a ticket. Also use when the user wants to continue, check or advance open work ("pick up the CSV export", "where are we on X", "what's next"). Not for questions, explanations or one-spot edits.
+description: Triple-A-Crew organizer. Runs multi-step work like a team lead - sizes the request, opens a work item in .crew/work/, stress-tests edge cases, plans tasks, staffs employee subagents (researcher, engineer, reviewer) on the right model, tracks their status, answers their questions, verifies the result and files follow-ups. Use proactively, without waiting to be asked, for requests that need changes across several files or areas, investigation before implementation, or that reference a ticket. Also use when the user wants to continue, check or advance open work ("pick up the CSV export", "where are we on X", "what's next"). Not for questions, explanations, one-spot edits, or requests a single crew skill handles on its own (investigating a bug, reviewing a plan, cleaning up, hardening tests, writing a handoff).
 argument-hint: "[start <request> | next | status]"
 ---
 
@@ -72,8 +72,9 @@ dependencies.
 - Every change gets a review by someone who did not write it.
 - Record each real decision in `decisions.md`, with the reason and the alternatives you rejected.
 
-**Size L:** show the plan (tasks, who does what on which model, the risky edge cases) and ask for the
-go-ahead before any engineer starts. Researchers may run before the go-ahead.
+**Size L:** run the `plan-review` skill on your plan if it is available, then show the plan (tasks, who does
+what on which model, the risky edge cases) and ask for the go-ahead before any engineer starts. Researchers
+may run before the go-ahead.
 
 ## 6. Staff and brief
 
@@ -101,6 +102,7 @@ When an employee finishes:
 
 ## 8. Verify and review
 
+- Run the `cleanup` skill on the changed files if it is available.
 - Run the profile's `verify` commands (or the checks the plan names) on the combined result. A failure goes
   back to the task that caused it.
 - Staff a reviewer on the final diff (per task for size L). The reviewer never reviews work it wrote. Resolve

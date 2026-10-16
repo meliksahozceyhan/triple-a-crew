@@ -11,6 +11,13 @@
 Architect, test engineer, verifier and scribe roles come later. Until then, do that work yourself: design
 options in `decisions.md`, verify commands in step 8, issues through `file-issue`.
 
+Point employees at the crew skills' methods in their briefs:
+
+- A researcher investigating a bug returns the report sections of the `investigate` skill (issue snapshot,
+  relevant code, flow walkthrough, likely causes, next steps).
+- An engineer whose task is tests follows the `test-harden` rules: the project's framework, behavior-first,
+  the edge-case catalog.
+
 ## Tiers
 
 Model choice is a rule, not a mood. Judge each task on ambiguity (is the outcome fully specified?), blast
