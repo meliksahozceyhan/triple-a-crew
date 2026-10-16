@@ -375,10 +375,11 @@ Free-form notes: architecture boundaries, things that keep going wrong, people t
 claude-skill-folder/
   .claude-plugin/marketplace.json     marketplace "triple-a-crew", lists both plugins with relative sources
   plugins/
-    triple-a-crew/                    onboard now; organizer, employees, hooks from v1
+    triple-a-crew/                    organizer, employees, onboard, workflow skills (hooks in v2)
       .claude-plugin/plugin.json
-      skills/onboard/                 SKILL.md, profile-format.md
-      evals/                          3 cases on a scaffolded fixture repo
+      agents/                         researcher, engineer, reviewer
+      skills/                         work, onboard, plan-review, cleanup, test-harden, investigate, handoff
+      evals/                          12 cases, each on a scaffolded fixture repo
     file-issue/                       standalone, so others can install just this
       .claude-plugin/plugin.json
       skills/file-issue/
@@ -422,14 +423,20 @@ calls a connector; whether Cursor reads `SKILL.md` from `.claude/skills` or a pl
 
 ## Migration from actioner-new
 
-| Today (actioner-new) | Becomes | What moves to the actioner-new profile |
+| Today (actioner-new) | Became (done 2026-10-16) | What moves to the actioner-new profile |
 |---|---|---|
-| `skills/session-handoff` (+ `handoff.mjs`) | `handoff` skill, writing into the work folder | nothing |
-| `agents/plan-reinforcer` | `plan-review` skill + architect/reviewer roles | the Actioner stack rules (Zod-first, Prisma, pnpm, queue, MinIO) |
-| `agents/post-plan-cleanup` | `cleanup` skill | nothing; already generic |
-| `agents/investigate-linear-issue` | `intake` + `investigate` + researcher role | the `apps/*` / `packages/*` layout notes |
-| `agents/test-robustness-reviewer` / `-filler` | test-engineer role + `test-harden` skill | Vitest paths, `.cursor/rules` test manifests |
-| `.claude/handoffs/` | `.crew/work/<id>/handoff.md` | nothing |
+| `skills/session-handoff` (+ `handoff.mjs`) | `handoff` skill; the script writes to `.crew/handoffs/` and skips a home-directory git root | nothing |
+| `agents/plan-reinforcer` | `plan-review` skill, run by the organizer on size-L plans | the Actioner stack rules (Zod-first, Prisma, pnpm, queue, MinIO, sync lifecycle, React style) as a rules file listed in `conventions` |
+| `agents/post-plan-cleanup` | `cleanup` skill, run by the organizer before review | nothing; it was already generic |
+| `agents/investigate-linear-issue` | `investigate` skill (any tracker or pasted text); researchers return its report format | the `apps/*` / `packages/*` layout notes |
+| `agents/test-robustness-reviewer` / `-filler` + `skills/test-robustness-review` | `test-harden` skill with review and fill modes | the Vitest paths and the `.cursor/rules` test manifests in `conventions` |
+| `.claude/handoffs/` | `.crew/handoffs/` | nothing; old handoffs resume with `HANDOFF_DIR=.claude/handoffs` |
+
+There is no separate `intake` skill: turning a vague ask into a brief is the organizer's step 3.
+
+**Still to do in actioner-new:** add `.crew/profile.md` (run `onboard`), put the Actioner rules from
+`plan-reinforcer` into a rules file listed in `conventions`, and retire the five old agents and two skills once
+the plugin versions have been used for real.
 
 ## Build order
 
@@ -446,8 +453,13 @@ calls a connector; whether Cursor reads `SKILL.md` from `.claude/skills` or a pl
    protocol in subagent mode, and three roles: researcher, engineer, reviewer. Evals for the trigger: it
    fires on multi-step requests, resumes a matching open item, and stays out of small ones. One real work
    item end to end.
-3. **v2**: remaining roles, `plan-review`, `cleanup`, `test-harden`, `handoff`, `retro`; the three hooks;
-   team mode; Cursor check; evals for every skill.
+   *Done 2026-10-16:* `work` skill (formats, staffing, protocol), the three agents, and 4 organizer eval
+   cases. Pulled forward from v2: `plan-review`, `cleanup`, `test-harden`, `investigate` and `handoff`,
+   migrated from actioner-new, each with an eval case. Learned: a two-file fix reads as size S, so the
+   end-to-end case starts the organizer explicitly; a slash command loads a skill without a `Skill` tool
+   call; the organizer must not claim requests one crew skill handles alone.
+3. **v2**: remaining roles (architect, test engineer, verifier, scribe), `retro`, the three hooks, team mode,
+   Cursor check, actioner-new moved onto the plugin.
 4. **Publish**: README, license, examples, `version` set, git tags; strip anything personal. Test the
    `file-issue` plugin zip in Claude chat.
 
