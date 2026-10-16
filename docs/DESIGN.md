@@ -415,7 +415,7 @@ Checked against the Claude Code docs on 2026-10-16.
 | Evals | `claude plugin eval .` runs `evals/<case>/prompt.md` with graders (`tool_used` to check a skill fired, `llm` rubrics), with and without the plugin, and reports the difference | [plugin evals](https://code.claude.com/docs/en/plugin-evals) |
 | Claude chat | Plugin zip upload loads skills and remote MCP connectors; agents, hooks and local MCP are ignored | [platform support](https://claude.com/docs/plugins/platform-support) |
 | Protected paths | Writes under `.claude/` (and `.git`, `.vscode`, a few others) are never auto-approved outside bypass mode, and allow rules do not change that | [permission modes](https://code.claude.com/docs/en/permission-modes) |
-| Eval mocks | Any `mocks/<server>/` directory becomes a standalone mock server named `<server>`, with tools named `mcp__<server>__<tool>`. Suite-wide mocks apply to every case. Runs use don't-ask mode, so a protected-path write fails there | found by running the suite, 2026-10-16 |
+| Eval mocks | Any `mocks/<server>/` directory becomes a standalone mock server named `<server>`, with tools named `mcp__<server>__<tool>`. Suite-wide mocks apply to every case. Runs use don't-ask mode, so a protected-path write fails there. The sandbox's home directory is a git repository with the working directory inside it, so "the git root" is the home directory | found by running the suite, 2026-10-16 |
 
 Not confirmed by the docs: whether a subagent waits after messaging its parent; how a skill in Claude chat
 calls a connector; whether Cursor reads `SKILL.md` from `.claude/skills` or a plugin.
@@ -437,10 +437,11 @@ calls a connector; whether Cursor reads `SKILL.md` from `.claude/skills` or a pl
    evals (does it fire on out-of-scope findings, does it pick the connected tracker, does it confirm before
    creating); profile format and `onboard`. Develop with `--plugin-dir`, then install into actioner-new
    through the local marketplace and use it for real.
-   *Done 2026-10-16:* skeleton, `file-issue` with tracker files and 7 eval cases, `onboard` with the profile
-   format and 3 eval cases, a full eval run (9 of 10 cases at 1.00; the implicit trigger at 0.67, results in
-   the README), pushed to the private repository `meliksahozceyhan/triple-a-crew`. *Left:* tighten the
-   implicit trigger, real use in actioner-new.
+   *Done 2026-10-16:* skeleton, `file-issue` with tracker files and 9 eval cases, `onboard` with the profile
+   format and 3 eval cases, pushed to the private repository `meliksahozceyhan/triple-a-crew`. The implicit
+   trigger went from 0.67 to 1.00 after fixing the description ("only offering to file is not enough"), the
+   draft location (a home-directory git root is not the project root) and its grader (judge the whole
+   transcript). All 12 cases score 1.00; results in the README. *Left:* real use in actioner-new.
 2. **v1**: organizer with proactive start and sizing, the work folder and its `.gitignore`, the status
    protocol in subagent mode, and three roles: researcher, engineer, reviewer. Evals for the trigger: it
    fires on multi-step requests, resumes a matching open item, and stays out of small ones. One real work

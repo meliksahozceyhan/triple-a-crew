@@ -42,9 +42,11 @@ The suite lives in [evals/](evals/) and runs with `claude plugin eval`. Every ru
 | Case | Checks | Flags it needs |
 |---|---|---|
 | `implicit-out-of-scope-finding` | Fires on an out-of-scope bug mentioned in passing; saves a local draft; still answers the question | `--allow-tools Write` |
+| `implicit-finding-in-side-note` | Same as above with different wording and stack (Django), so the trigger is not tuned to one prompt | `--allow-tools Write` |
 | `explicit-request-no-tracker` | Fires on "log a follow-up"; the draft follows the template | `--allow-tools Write` |
 | `no-fire-in-scope-fix` | Stays out when the problem is the task itself | |
 | `no-fire-tracker-question` | Stays out of a question about trackers | |
+| `no-fire-already-tracked` | Stays out when the user says the problem is already tracked (ACT-88); writes no draft | `--allow-tools Write` |
 | `linear-confirms-before-creating` | With a mocked Linear: searches for duplicates, drafts, asks before creating | |
 | `linear-duplicate-offers-comment` | With a mocked Linear duplicate: offers a comment, creates nothing | |
 | `profile-confirm-never-creates` | Profile with `confirm: never`: creates in the profile's team with its label | `--scaffold` |
