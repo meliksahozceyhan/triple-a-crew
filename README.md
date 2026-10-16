@@ -372,11 +372,15 @@ ones that test the no-tracker path.
   - **Medium fix, end to end:** fixes the quoting in both writers, runs the verify command, and staffs a
     reviewer on opus that writes its status file.
 - Migrated skills, one fixture each:
-  - `plan-review` catches four rule breaks from `CLAUDE.md` and writes no code.
-  - `cleanup` removes debug logs, dead code and a log-and-rethrow, keeps JSDoc, a why-comment and a real
-    retry, and runs the tests.
+  - `plan-review` catches five rule breaks, four of them in `CONTRIBUTING.md` and two ADRs that the profile
+    lists as conventions; cites each rule's file; returns its fixed plan structure; writes no code.
+  - `cleanup` removes debug logs, dead code and a log-and-rethrow from the changed file, keeps JSDoc, a
+    why-comment and a real retry, leaves an untouched file with debug logs alone, and runs both verify
+    commands from the profile (one of them is not in `package.json`).
   - `test-harden` adds risky cursor cases in `node:test`, not another framework.
-  - `investigate` finds a double-applied coupon without editing.
+  - `investigate` reads ACT-512 and its comments from a mocked Linear (the baseline gets the same mock),
+    weighs two code paths that both give 19% off with a confidence and a way to confirm each, and edits
+    nothing. Only the comments say which path was reported.
   - `handoff` writes and finalizes to `.crew/handoffs/`.
 
 **Latest results:** 2026-10-16, Claude Code 2.1.295, default model.
@@ -401,20 +405,38 @@ ones that test the no-tracker path.
 | `triple-a-crew` | `no-fire-setup-question` | 1.00 | 1.00 | 0.00 | 2 |
 | `triple-a-crew` | `writes-handoff-to-crew` | 0.97 | 0.25 | +0.72 | 6 |
 | `triple-a-crew` | `test-harden-adds-edge-cases` | 1.00 | 0.83 | +0.17 | 3 |
-| `triple-a-crew` | `plan-review-flags-convention-breaks` | 1.00 | 1.00 | 0.00 | 2 |
-| `triple-a-crew` | `cleanup-removes-noise-keeps-signal` | 1.00 | 1.00 | 0.00 | 2 |
-| `triple-a-crew` | `investigate-finds-double-discount` | 1.00 | 1.00 | 0.00 | 2 |
+| `triple-a-crew` | `plan-review-cites-project-rules` | 0.75 | 0.75 | 0.00 | 2 |
+| `triple-a-crew` | `cleanup-stays-in-scope-and-verifies` | 1.00 | 1.00 | 0.00 | 2 |
+| `triple-a-crew` | `investigate-reads-tracker-ranks-causes` | 1.00 | 0.83 | +0.17 | 2 |
 
 How to read it:
 
 - **No-trigger cases** score 1.00 in both arms by design: they check that the skill stays out of the way.
 - **Refresh** has Δ 0: without the plugin, Claude also updates an existing profile correctly. The case
   guards against regressions rather than showing what the plugin adds.
-- **`plan-review`, `cleanup` and `investigate` have Δ 0.** With the project's rules in `CLAUDE.md`, which
-  Claude Code loads anyway, plain Claude did just as well on these fixtures. Whatever these skills add has
-  to come from things plain Claude doesn't do by default: a fixed report structure, staying inside the
-  changed files, running the verify commands, feeding the organizer. The current cases don't measure those.
-  Either sharpen the cases or trim the skills; see "Earn the place" below.
+- **`plan-review`, `cleanup` and `investigate` add little or nothing over plain Claude.** Their first
+  cases gave plain Claude everything it needed (rules in `CLAUDE.md`, a scoped request, a pasted report)
+  and scored Δ 0. The sharpened cases target only what each skill claims to add, and plain Claude still
+  matched them on substance:
+  - `plan-review` (Δ 0.00): the baseline read `CONTRIBUTING.md` and both ADRs without being told to,
+    caught all five breaks and cited each file. The 0.75 in both arms is the structure grader: the skill's
+    own format (constraints with sources, steps with dependencies) appeared in full in 1 of 4 runs with the
+    plugin and never without. An earlier, stricter version of that grader gave the same scores.
+  - `cleanup` (Δ 0.00): the baseline stayed in the changed file (Claude Code puts the git status in its
+    system prompt), found `.crew/profile.md`, and ran both verify commands. One baseline run used Claude
+    Code's built-in `simplify` skill.
+  - `investigate` (Δ +0.17): the baseline read the issue and its comments from the same mocked Linear,
+    used the comments to put the gift-card path first, and also caught the member-pricing bug. The whole
+    gain is the report shape: an explicit confidence and a way to confirm for each cause.
+- **Recommendation: cut all three as standalone skills** (see "Earn the place" below). Not done in this
+  change; until then, the cases guard against regressions.
+  - `plan-review`: fold into the organizer's size-L step. Check each task against the profile's
+    `conventions` files and record every rule that changes the plan, with its file, in `decisions.md`. The
+    skill's output format does not match `plan.md` anyway.
+  - `cleanup`: one line in the organizer's verify step (remove debug logs, commented-out code and
+    log-and-rethrow try-catch from the changed files), or Claude Code's built-in `simplify`.
+  - `investigate`: move the report format (ranked causes, each with a confidence and a way to confirm)
+    into the `researcher` agent, which already returns it, and delete the skill.
 - **`test-harden` and `handoff`** first lost to the baseline or skipped steps: they didn't run the new
   tests, and skipped `finalize`. Both steps are now stated as required. The numbers shown are the runs
   after that fix, against the earlier baseline.
@@ -474,7 +496,11 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
 ## Conventions for new skills
 
 - **Earn the place.** A skill must encode something Claude would not do by default. "Write code" is not a
-  skill; "not done until verify passes and the acceptance criteria are checked" is.
+  skill; "not done until verify passes and the acceptance criteria are checked" is. Measure it against a
+  baseline that is stronger than it looks. Plain Claude Code also loads `CLAUDE.md`, sees the git status in
+  its system prompt, reads every file of a small fixture, uses the same mocked MCP servers, and has built-in
+  skills such as `simplify`. A case shows what a skill adds only if the fixture holds back what plain Claude
+  gets anyway. `plan-review`, `cleanup` and `investigate` failed this test; see the eval notes.
 - **Portable frontmatter.** Tier-1 skills use only `name` and `description`; other fields are Claude Code
   extensions that other hosts may ignore. Put the key use case first and keep the description under 1,024
   characters. If the skill should run without being asked, say so ("use proactively, without waiting to be
@@ -509,6 +535,8 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
 | Eval: "skill fired" fails although the skill clearly ran | The prompt used a slash command, which loads the skill without a `Skill` tool call. Grade the outcome instead |
 | Eval: `results directory ... already existed` | Two runs started in the same second. Give each one its own `--output-dir` |
 | `--tag` or `--allow-tools` swallow the target | They take lists. Put the target first: `claude plugin eval . --tag a b` |
+| Eval: `git` fails with `xcrun_db ... Operation not permitted` and `xcode-select: Failed` | On macOS the eval sandbox blocks the cache file Apple's git shim writes, so every `git` command fails. Claude still gets the git status snapshot in its system prompt. Don't make a case depend on `git diff` output |
+| Eval: a `tool_used: Bash` grader passes but the command never ran | `tool_used` counts attempts, including calls denied in don't-ask mode. A compound command such as `node --test; echo $?` does not match `Bash(node *)` and is denied. Check the trace (`--keep-temp`) when it matters |
 
 ## License
 

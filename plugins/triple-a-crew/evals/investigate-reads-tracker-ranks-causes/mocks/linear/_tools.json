@@ -1,0 +1,32 @@
+{
+  "tools": [
+    {
+      "name": "get_issue",
+      "description": "Retrieve detailed information about an issue by ID, including attachments, git branch name, and active Triage Intelligence suggestions when the issue is in triage.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Issue ID or identifier (e.g., LIN-123)" },
+          "includeRelations": { "type": "boolean", "description": "Include blocking/related/duplicate relations", "default": false }
+        },
+        "required": ["id"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_comments",
+      "description": "List comments on a Linear issue, project, initiative, document, project milestone, or project/initiative status update. Provide exactly one of `issueId`, `projectId`, `initiativeId`, `documentId`, `milestoneId`, or `statusUpdateId`. Returned comments include `author` and nullable `onBehalfOf`.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "issueId": { "type": "string", "description": "Issue ID or identifier (e.g., LIN-123) (provide exactly one parent)" },
+          "projectId": { "type": "string", "description": "Project name, ID, identifier, or slug (provide exactly one parent)" },
+          "documentId": { "type": "string", "description": "Document ID or slug (provide exactly one parent)" },
+          "limit": { "type": "number", "description": "Maximum number of results to return per page", "default": 50, "maximum": 250 },
+          "cursor": { "type": "string", "description": "Omit for the first page. To continue, pass the previous response's cursor when hasNextPage is true" }
+        },
+        "additionalProperties": false
+      }
+    }
+  ]
+}

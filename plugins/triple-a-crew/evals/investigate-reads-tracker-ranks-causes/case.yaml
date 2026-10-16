@@ -1,4 +1,4 @@
 schema_version: "1.1"
-name: plan-review-flags-convention-breaks
+name: investigate-reads-tracker-ranks-causes
 context:
   scaffold_script: fixture.sh
