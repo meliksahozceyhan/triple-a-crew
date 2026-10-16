@@ -1,6 +1,6 @@
 ---
 name: file-issue
-description: Capture problems that are outside the current task as follow-up issues in the user's tracker (Linear, GitHub Issues, Jira, GitLab, Asana, ClickUp, Notion, or any tracker reachable through connected tools or a CLI). Use it proactively, without waiting to be asked, as soon as you or the user notice a bug, risk, tech debt or missing piece that will not be fixed in the current change, for example "not touching it in this PR", "out of scope", "later", "separate issue", or a problem in code you are not changing. Also use when the user asks to file, log, open or ticket an issue, bug or follow-up, or hands you findings to turn into issues. Finds the tracker, checks for duplicates, drafts a self-contained issue, and asks before creating it in a tracker. Not for problems you are about to fix in the current change.
+description: Captures problems outside the current task as follow-up issues so they are not lost. Use proactively, without waiting to be asked, whenever a bug, risk, tech debt or missing piece comes up that will not be fixed in the current change, including one the user mentions in passing while asking about something else ("not touching it in this PR", "out of scope", "later", "someone should look at that") or one you find in code you are not changing. Answer what was asked and also use this skill; only offering to file it is not enough. Also use when the user asks to file, log, open or ticket an issue, bug or follow-up, or hands you findings to turn into issues. Works with Linear, GitHub Issues, Jira, GitLab, Asana, ClickUp, Notion or any tracker reachable through connected tools or a CLI, and falls back to a local draft. Checks for duplicates and asks before creating anything in a tracker. Not for problems being fixed in the current change or already tracked.
 ---
 
 # File issue
@@ -10,6 +10,10 @@ in the user's tracker, without duplicates, and only with the user's OK.
 
 Do not let filing derail the current task. When you notice a problem mid-task, note it and file at a natural
 pause or when the task is done. Raise it immediately only if it is severe: security, data loss, an outage.
+When your reply ends the turn, for example when you answer a question, the end of that reply is the natural
+pause: answer first, then capture the problem in the same reply. Never stop at "want me to file this?".
+
+If the user says the problem is already tracked (an issue key or link), do not file it again.
 
 ## 1. Decide whether it deserves an issue
 
@@ -45,10 +49,13 @@ Take the first option that applies.
    `git remote get-url origin` and `gh auth status` / `glab auth status` first. See
    [trackers/github.md](trackers/github.md) and [trackers/gitlab.md](trackers/gitlab.md).
 4. **Local draft.** No tracker found: do not ask the user where to file it. Write the issue to
-   `.crew/issues/<YYYY-MM-DD>-<slug>.md` under the project root: the git repository root
-   (`git rev-parse --show-toplevel`) if there is one, otherwise the current working directory, never your
-   home directory. Tell the user the path and that it can be filed once a tracker is connected. Without
-   file access (for example in a chat app), put the draft in your reply, ready to paste.
+   `<root>/.crew/issues/<YYYY-MM-DD>-<slug>.md`. `<root>` is the git repository root when the working
+   directory is inside a repository (`git rev-parse --show-toplevel`), **unless that root is your home
+   directory** (some people keep their dotfiles in git): then, and when there is no repository, `<root>` is
+   the working directory itself, exactly as your environment reports it. Never write to your home directory
+   or to any other parent of the working directory. Tell the user the path and that it can be filed once a
+   tracker is connected. If you have no file access (for example in a chat app) or the write is refused, put
+   the draft in your reply, ready to paste, and say it was not saved.
 
 If several trackers qualify and no profile picks one, ask the user once which to use, then offer to save the
 answer to the profile.

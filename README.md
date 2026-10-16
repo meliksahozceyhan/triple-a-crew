@@ -265,7 +265,7 @@ Every run is a real model call on your account. A full run of both suites costs 
 
 | Plugin | Command (from the plugin directory) | Cases |
 |---|---|---|
-| `file-issue` | `claude plugin eval . --tag trigger no-trigger --allow-tools Write` | 2 trigger, 2 no-trigger, with baseline |
+| `file-issue` | `claude plugin eval . --tag trigger no-trigger --allow-tools Write` | 3 trigger, 3 no-trigger, with baseline |
 | `file-issue` | `claude plugin eval . --tag mock-tracker --ablation none --scaffold` | 3 mocked-Linear cases, one arm |
 | `triple-a-crew` | `claude plugin eval . --scaffold --allow-tools Write Edit` | 2 onboard cases on a fixture repo, 1 no-trigger |
 
@@ -280,37 +280,44 @@ ones that test the no-tracker path.
 
 **What the suites check:**
 
-- `file-issue`: fires on an out-of-scope bug mentioned in passing and saves a local draft when no tracker
-  exists; stays out of in-scope fixes and questions about trackers; with a mocked Linear, searches for
-  duplicates and asks before creating; offers a comment instead of a duplicate; with `confirm: never`,
+- `file-issue`: fires on an out-of-scope bug mentioned in passing, in two differently worded cases, and
+  saves a local draft in the working directory when no tracker exists; stays out of in-scope fixes,
+  questions about trackers, and problems the user says are already tracked; with a mocked Linear, searches
+  for duplicates and asks before creating; offers a comment instead of a duplicate; with `confirm: never`,
   creates in the profile's team with its label.
 - `onboard`: on a pnpm + Vitest repo with GitHub CI, takes verify commands from CI (no build or deploy),
   finds the test glob and `CLAUDE.md`, reads the GitHub remote from `.git/config` without a shell; on
   refresh, updates stale values but keeps the tracker, organizer mode, unknown keys and notes.
 
-**Latest results:** 2026-10-16, Claude Code 2.1.295, default model, 3 runs per case per arm, about $5.50 at
-list price for all three suites.
+**Latest results:** 2026-10-16, Claude Code 2.1.295, default model.
 
-| Plugin | Case | With plugin | Without | Δ |
-|---|---|---|---|---|
-| `file-issue` | `explicit-request-no-tracker` | 1.00 | 0.22 | +0.78 |
-| `file-issue` | `implicit-out-of-scope-finding` | 0.67 | 0.00 | +0.67 |
-| `file-issue` | `no-fire-in-scope-fix` | 1.00 | 1.00 | 0.00 |
-| `file-issue` | `no-fire-tracker-question` | 1.00 | 1.00 | 0.00 |
-| `file-issue` | `linear-confirms-before-creating` | 1.00 | one arm | |
-| `file-issue` | `linear-duplicate-offers-comment` | 1.00 | one arm | |
-| `file-issue` | `profile-confirm-never-creates` | 1.00 | one arm | |
-| `triple-a-crew` | `creates-profile-from-repo` | 1.00 | 0.00 | +1.00 |
-| `triple-a-crew` | `refreshes-profile-keeps-user-values` | 1.00 | 1.00 | 0.00 |
-| `triple-a-crew` | `no-fire-setup-question` | 1.00 | 1.00 | 0.00 |
+| Plugin | Case | With plugin | Without | Δ | Runs (with) |
+|---|---|---|---|---|---|
+| `file-issue` | `implicit-out-of-scope-finding` | 1.00 | 0.00 | +1.00 | 4 |
+| `file-issue` | `implicit-finding-in-side-note` | 1.00 | 0.00 | +1.00 | 4 |
+| `file-issue` | `explicit-request-no-tracker` | 1.00 | 0.17 | +0.83 | 4 |
+| `file-issue` | `no-fire-in-scope-fix` | 1.00 | 1.00 | 0.00 | 3 |
+| `file-issue` | `no-fire-tracker-question` | 1.00 | 1.00 | 0.00 | 3 |
+| `file-issue` | `no-fire-already-tracked` | 1.00 | 1.00 | 0.00 | 3 |
+| `file-issue` | `linear-confirms-before-creating` | 1.00 | one arm | | 3 + 2 |
+| `file-issue` | `linear-duplicate-offers-comment` | 1.00 | one arm | | 3 + 2 |
+| `file-issue` | `profile-confirm-never-creates` | 1.00 | one arm | | 3 + 2 |
+| `triple-a-crew` | `creates-profile-from-repo` | 1.00 | 0.00 | +1.00 | 3 |
+| `triple-a-crew` | `refreshes-profile-keeps-user-values` | 1.00 | 1.00 | 0.00 | 3 |
+| `triple-a-crew` | `no-fire-setup-question` | 1.00 | 1.00 | 0.00 | 3 |
 
 How to read it:
 
 - **No-trigger cases** score 1.00 in both arms by design: they check that the skill stays out of the way.
 - **Refresh** has Δ 0: without the plugin, Claude also updates an existing profile correctly. The case
   guards against regressions rather than showing what the plugin adds.
-- **Known weakness:** when a bug is only mentioned in passing (`implicit-out-of-scope-finding`), the skill
-  captured it in 2 of 3 runs; in the third run nothing was captured. That is the first thing to tighten.
+- **The implicit trigger** scored 0.67 in the first full run. The traces showed three separate causes:
+  the skill sometimes only offered to file; the draft went to the sandbox's home directory, a git
+  repository, instead of the working directory; and the judge saw only the final message, where the answer
+  was referenced but not repeated. The skill text and the graders now handle all three.
+- The no-trigger cases ran with the current description. Changes made after them touch only the skill
+  body, which loads once the skill has fired, so they cannot change whether it fires. The tracker cases
+  were rerun twice after those changes.
 
 ## Repository layout
 
@@ -326,7 +333,7 @@ How to read it:
 │   │   │   ├── SKILL.md                trigger, flow, rules
 │   │   │   ├── template.md             issue body and local-draft format
 │   │   │   └── trackers/               linear, github, jira, gitlab, asana, clickup, notion, generic
-│   │   └── evals/                      7 cases; tracker cases carry mocks/linear/
+│   │   └── evals/                      9 cases; tracker cases carry mocks/linear/
 │   └── triple-a-crew/
 │       ├── .claude-plugin/plugin.json
 │       ├── README.md
@@ -363,8 +370,13 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
 - **Never invent values.** IDs, labels, team names and commands come from tools or files, or from the user.
 - **Ask before publishing.** Anything that writes to a shared system (issues, comments, messages) confirms
   first unless the profile says otherwise. Local files need no confirmation.
-- **Ship evals with the skill:** at least one case that should trigger it, one that should not, and one per
-  key rule. Keep mocks per case.
+- **Spell out the exceptions to location rules.** "Use the git root" sent drafts to the home directory
+  when the home directory itself was a git repository, which is true in the eval sandbox and for anyone who
+  keeps dotfiles in git.
+- **Ship evals with the skill:** at least one case that should trigger it, one that should not, a near miss
+  for each trigger phrase you add, and one case per key rule. Keep mocks per case. When the answer to the
+  user's question may come before the skill runs, judge the whole transcript (`focus: trace`), not only the
+  last message.
 
 ## Troubleshooting
 
@@ -377,6 +389,8 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
 | Eval: tracker tools show up in a no-tracker case | Suite-wide `evals/mocks/` applies to every case. Move the mocks into the cases that need them |
 | Eval: `Permission to use Write has been denied ... don't ask mode` | Eval runs use don't-ask mode. Grant the tool with `--allow-tools`, and never write under `.claude/` |
 | Eval refused: `not a trusted plugin directory` | Run once in a terminal and answer the prompt, or pass `--trust-plugin` for your own plugin |
+| Eval: a file lands one level above the working directory and the write is denied | The sandbox's home directory is a git repository with the working directory inside it, so "the git root" is the home directory. Skills must not treat a home-directory git root as the project root |
+| Eval: an `llm` grader fails although the answer was given | The default focus is the final message only. Use `focus: trace` when the answer can come earlier in the run |
 | Eval: `results directory ... already existed` | Two runs started in the same second. Give each one its own `--output-dir` |
 | `--tag` or `--allow-tools` swallow the target | They take lists. Put the target first: `claude plugin eval . --tag a b` |
 
