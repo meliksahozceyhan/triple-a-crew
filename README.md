@@ -288,7 +288,29 @@ ones that test the no-tracker path.
   finds the test glob and `CLAUDE.md`, reads the GitHub remote from `.git/config` without a shell; on
   refresh, updates stale values but keeps the tracker, organizer mode, unknown keys and notes.
 
-<!-- EVAL-RESULTS -->
+**Latest results:** 2026-10-16, Claude Code 2.1.295, default model, 3 runs per case per arm, about $5.50 at
+list price for all three suites.
+
+| Plugin | Case | With plugin | Without | Δ |
+|---|---|---|---|---|
+| `file-issue` | `explicit-request-no-tracker` | 1.00 | 0.22 | +0.78 |
+| `file-issue` | `implicit-out-of-scope-finding` | 0.67 | 0.00 | +0.67 |
+| `file-issue` | `no-fire-in-scope-fix` | 1.00 | 1.00 | 0.00 |
+| `file-issue` | `no-fire-tracker-question` | 1.00 | 1.00 | 0.00 |
+| `file-issue` | `linear-confirms-before-creating` | 1.00 | one arm | |
+| `file-issue` | `linear-duplicate-offers-comment` | 1.00 | one arm | |
+| `file-issue` | `profile-confirm-never-creates` | 1.00 | one arm | |
+| `triple-a-crew` | `creates-profile-from-repo` | 1.00 | 0.00 | +1.00 |
+| `triple-a-crew` | `refreshes-profile-keeps-user-values` | 1.00 | 1.00 | 0.00 |
+| `triple-a-crew` | `no-fire-setup-question` | 1.00 | 1.00 | 0.00 |
+
+How to read it:
+
+- **No-trigger cases** score 1.00 in both arms by design: they check that the skill stays out of the way.
+- **Refresh** has Δ 0: without the plugin, Claude also updates an existing profile correctly. The case
+  guards against regressions rather than showing what the plugin adds.
+- **Known weakness:** when a bug is only mentioned in passing (`implicit-out-of-scope-finding`), the skill
+  captured it in 2 of 3 runs; in the third run nothing was captured. That is the first thing to tighten.
 
 ## Repository layout
 

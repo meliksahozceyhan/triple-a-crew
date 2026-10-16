@@ -438,7 +438,9 @@ calls a connector; whether Cursor reads `SKILL.md` from `.claude/skills` or a pl
    creating); profile format and `onboard`. Develop with `--plugin-dir`, then install into actioner-new
    through the local marketplace and use it for real.
    *Done 2026-10-16:* skeleton, `file-issue` with tracker files and 7 eval cases, `onboard` with the profile
-   format and 3 eval cases. *Left:* a full eval run (3 runs per case, with baseline), real use in actioner-new.
+   format and 3 eval cases, a full eval run (9 of 10 cases at 1.00; the implicit trigger at 0.67, results in
+   the README), pushed to the private repository `meliksahozceyhan/triple-a-crew`. *Left:* tighten the
+   implicit trigger, real use in actioner-new.
 2. **v1**: organizer with proactive start and sizing, the work folder and its `.gitignore`, the status
    protocol in subagent mode, and three roles: researcher, engineer, reviewer. Evals for the trigger: it
    fires on multi-step requests, resumes a matching open item, and stays out of small ones. One real work
