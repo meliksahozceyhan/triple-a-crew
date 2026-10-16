@@ -1,14 +1,61 @@
 #!/usr/bin/env bash
-# A committed repo plus an uncommitted implementation with debug logs, commented-out code and a log-and-rethrow try-catch, next to JSDoc, a why-comment and a real retry.
+# A committed repo plus an uncommitted implementation with debug logs, commented-out code and a log-and-rethrow
+# try-catch, next to JSDoc, a why-comment and a real retry. A committed file the change did not touch has debug
+# logs too and must stay as it is. The profile's verify list has a lint script that package.json does not mention.
 set -euo pipefail
 git init -q -b main
-mkdir -p src test
+mkdir -p src test scripts .crew .github/workflows
 cat > package.json <<'EOF'
 { "name": "sync", "private": true, "type": "module", "scripts": { "test": "node --test" } }
 EOF
 cat > src/sync.js <<'EOF'
 export async function syncAll(fetchPage) {
   return [];
+}
+EOF
+cat > .crew/profile.md <<'EOF'
+---
+stack: [javascript, node]
+verify:
+  - node --test
+  - node scripts/lint.mjs
+tests: ["test/**/*.test.js"]
+---
+EOF
+cat > .github/workflows/ci.yml <<'EOF'
+name: ci
+on: [pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: node --test
+      - run: node scripts/lint.mjs
+EOF
+cat > scripts/lint.mjs <<'EOF'
+// Fails on debugger statements and trailing whitespace in src/.
+import { readdirSync, readFileSync } from "node:fs";
+let problems = 0;
+for (const name of readdirSync("src")) {
+  readFileSync(`src/${name}`, "utf8").split("\n").forEach((line, i) => {
+    if (/\bdebugger\b/.test(line) || /[ \t]+$/.test(line)) {
+      console.error(`src/${name}:${i + 1}: ${line.trim() || "(trailing whitespace)"}`);
+      problems += 1;
+    }
+  });
+}
+if (problems) process.exit(1);
+console.log("lint ok");
+EOF
+cat > src/sync-cli.js <<'EOF'
+import { syncAll } from "./sync.js";
+
+export async function main(fetchPage) {
+  console.log("DEBUG cli start");
+  const items = await syncAll(fetchPage);
+  console.log("DEBUG cli items", items.length);
+  return items;
 }
 EOF
 cat > test/sync.test.js <<'EOF'
