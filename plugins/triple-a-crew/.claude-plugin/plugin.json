@@ -1,0 +1,15 @@
+{
+  "name": "triple-a-crew",
+  "displayName": "Triple-A-Crew",
+  "description": "Workflow organizer for Claude Code. v0 ships onboard, which writes a project's .crew/profile.md (stack, verify commands, tests, conventions, issue tracker) for the other crew skills to read. The organizer arrives in v1.",
+  "author": {
+    "name": "meliksahozceyhan"
+  },
+  "repository": "https://github.com/meliksahozceyhan/triple-a-crew",
+  "keywords": [
+    "workflow",
+    "organizer",
+    "onboarding",
+    "project-profile"
+  ]
+}

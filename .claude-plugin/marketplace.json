@@ -1,0 +1,21 @@
+{
+  "name": "triple-a-crew",
+  "owner": {
+    "name": "meliksahozceyhan"
+  },
+  "description": "Workflow plugins that organize work from problem to shipped change, starting with file-issue: follow-up issues in whatever tracker you use.",
+  "plugins": [
+    {
+      "name": "triple-a-crew",
+      "source": "./plugins/triple-a-crew",
+      "category": "productivity",
+      "tags": ["workflow", "organizer", "onboarding"]
+    },
+    {
+      "name": "file-issue",
+      "source": "./plugins/file-issue",
+      "category": "productivity",
+      "tags": ["issues", "follow-up", "linear", "github", "jira", "gitlab"]
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "tools": [
+    {
+      "name": "list_teams",
+      "description": "List teams in the user's Linear workspace, including their parent IDs and hierarchy names",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": { "type": "string", "description": "Search query" },
+          "limit": { "type": "number", "description": "Maximum number of results to return per page", "default": 50 }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_issue_labels",
+      "description": "List available issue labels in a Linear workspace or team",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "team": { "type": "string", "description": "Team name or ID" },
+          "name": { "type": "string", "description": "Filter by label name" },
+          "limit": { "type": "number", "description": "Maximum number of results to return per page", "default": 50 }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_issues",
+      "description": "List issues in the user's Linear workspace. For issues assigned to me, use \"me\" as the assignee.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": { "type": "string", "description": "Search issue title or description" },
+          "team": { "type": "string", "description": "Team name or ID" },
+          "state": { "type": "string", "description": "State type, name, or ID" },
+          "label": { "type": "string", "description": "Label name or ID" },
+          "assignee": { "type": ["string", "null"], "description": "User ID, name, email, or \"me\"" },
+          "includeArchived": { "type": "boolean", "description": "Include archived items", "default": false },
+          "limit": { "type": "number", "description": "Maximum number of results to return per page", "default": 50 }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "save_issue",
+      "description": "Create or update a Linear issue. If `id` is provided, updates the existing issue; otherwise creates a new one. When creating, `team` is required, and `title` is required unless `template` is set.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Only for updating an existing issue. Do NOT pass this parameter when creating a new issue." },
+          "title": { "type": "string", "description": "Issue title (required when creating, unless template is set)" },
+          "description": { "type": "string", "description": "Content as Markdown. Do not escape the string; use literal newlines." },
+          "team": { "type": "string", "description": "Team name or ID (required when creating)" },
+          "priority": { "type": "number", "description": "0=None, 1=Urgent, 2=High, 3=Medium, 4=Low" },
+          "labels": { "type": "array", "items": { "type": "string" }, "description": "Label names or IDs. Replaces the full label set." },
+          "assignee": { "type": ["string", "null"], "description": "User ID, name, email, or \"me\". Null to remove" },
+          "project": { "type": ["string", "null"], "description": "Project name, ID, identifier, or slug" },
+          "state": { "type": "string", "description": "State type, name, or ID" },
+          "parentId": { "type": ["string", "null"], "description": "Parent issue ID or identifier (e.g., LIN-123)" },
+          "relatedTo": { "type": "array", "items": { "type": "string" }, "description": "Related issue IDs/identifiers" },
+          "links": {
+            "type": "array",
+            "description": "Link attachments to add [{url, title}]",
+            "items": {
+              "type": "object",
+              "properties": { "url": { "type": "string" }, "title": { "type": "string" } },
+              "required": ["url", "title"]
+            }
+          },
+          "template": { "type": "string", "description": "Template name or ID. Applied on create only." }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "save_comment",
+      "description": "Create or update a comment on a Linear issue. To start a new thread, pass `body` and `issueId`.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "body": { "type": "string", "description": "Content as Markdown" },
+          "issueId": { "type": "string", "description": "Issue ID or identifier (e.g., LIN-123)" },
+          "id": { "type": "string", "description": "Comment ID. If provided, updates the existing comment" }
+        },
+        "required": ["body"],
+        "additionalProperties": false
+      }
+    }
+  ]
+}
