@@ -9,7 +9,7 @@ Everything is under `<root>/.crew/`. Every file has exactly one writer: the orga
   work/
     index.md
     <id>/
-      brief.md  plan.md  decisions.md  findings.md     committed: the durable record
+      brief.md  plan.md  decisions.md  findings.md  retro.md  committed: the durable record
       board.md  handoff.md  team/<task>-<role>.md      ignored: working state
 ```
 
@@ -101,6 +101,38 @@ work/*/handoff.md
 
 - 2026-10-16 · `listOrders` ignores `limit` (src/routes/orders.js:12) · found by T1 researcher · filed as ACT-1071
 ```
+
+## retro.md
+
+Written when a size M or L item closes as done (SKILL.md step 10). A paused item gets `handoff.md` instead,
+and an abandoned one ("just do it") gets neither. Every point names its source file.
+
+```markdown
+# Retro: <id>
+
+**Closed:** 2026-10-19
+
+## What happened
+- T1 missed its acceptance check twice and moved up to opus (board.md)
+- The reviewer's must-fix: `since` compared local midnight with UTC (team/T3-reviewer.md)
+
+## Lessons
+| # | Lesson | Evidence | Repeat of | Goes to | Status |
+|---|---|---|---|---|---|
+| L1 | Date filters state their time zone | team/T3-reviewer.md | orders-filter L2 | `.crew/profile.md` notes | proposed |
+| L2 | The verifier brief chained commands that allow rules deny | team/T5-verifier.md | | <repository from plugin.json> | proposed |
+
+## Proposed text
+- **L1** (`.crew/profile.md`, notes): "Date filters take and return UTC; the route's doc comment says so."
+- **L2** (issue draft): "Verifier brief chains commands that allow rules deny". The organizer wrote
+  `a && b` into the verifier's brief; `Bash(node *)` did not match, so the command was denied. Suggested
+  fix: one plain command per line in verifier briefs.
+```
+
+Status is `proposed` until the user answers, then `accepted` (applied or filed), `not filed` (accepted, but
+the repository was missing or unreachable) or `declined`; a lesson that stays here says `kept`. A crew
+feedback draft describes crew behavior only, never project code, paths or names. A lesson still `proposed` or
+`not filed` in another item's retro is still open: name it in the report instead of proposing it again.
 
 ## handoff.md
 

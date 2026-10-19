@@ -88,7 +88,10 @@ Responsibilities, in order:
 7. **Unblock.** Answer employee questions, or escalate to the user when the answer is the user's call.
 8. **Integrate and verify.** Check results against acceptance criteria; send work back when it falls short.
 9. **File follow-ups.** Collect out-of-scope findings from all employees, dedupe them, file them via `file-issue`.
-10. **Close.** Write the handoff/retro, update the profile with anything learned about the project.
+   Crew feedback (about the organizer, an employee or a hook) waits for the close step.
+10. **Close.** For size M and L, write `retro.md`: what happened, repeats from earlier retros, and where each
+    lesson goes (a profile or convention edit, or crew feedback for the plugin's repository), applied only once
+    the user accepts. Write `handoff.md` if the work stops early.
 
 ### How work starts
 
@@ -273,6 +276,7 @@ from `board.md` and runs the next one.
       plan.md                  tasks, file sets, staffing                       committed
       decisions.md             decision, why, rejected alternatives             committed
       findings.md              out-of-scope problems and issues filed           committed
+      retro.md                 lessons, repeats and where each lesson went      committed
       board.md                 phase, task table with state/owner/model         ignored
       team/<task>.md           one status file per task                         ignored
       handoff.md               written on close or before a context reset       ignored
@@ -480,7 +484,8 @@ rules are in the rules file, the rest once the plugin versions have been used fo
    0.00 and +0.17 against plain Claude. What they added moved into the organizer (size-L convention check,
    noise rule in the verify step) and the `researcher` (ranked likely causes).
 3. **v2**: remaining roles (test engineer and verifier built in `employees-v2`; architect folded into the
-   researcher; scribe dropped), `retro`, the three hooks (built in
+   researcher; scribe dropped), `retro` (a standalone skill was built in `retro-skill` and cut, no gain over
+   plain Claude; the close step writes `retro.md`), the three hooks (built in
    `crew-hooks`), team mode,
    Cursor check, actioner-new moved onto the plugin.
 4. **Publish**: README, license, examples, `version` set, git tags; strip anything personal. Test the

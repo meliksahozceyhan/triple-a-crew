@@ -128,13 +128,25 @@ When an employee finishes:
 ## 9. Follow-ups
 
 Problems outside the work item collect in `findings.md`. If the `file-issue` skill is available, use it for
-the whole list with one confirmation. Otherwise list them for the user in your final report.
+the whole list with one confirmation, except crew feedback (about the organizer, an employee or a hook), which
+waits for step 10. Otherwise list them for the user in your final report.
 
 ## 10. Close
 
+- For size M and L, write this item's `retro.md` first (formats.md): compare the plan with what happened,
+  from `board.md`, `findings.md` and every `team/` status file, and mark lessons that another item's
+  `retro.md` already has; a repeat needs a durable fix, not another retro-only lesson. Update an existing
+  `retro.md` rather than replace it.
+- Each lesson goes to one place, with its exact text and destination in `retro.md`: a profile note or
+  convention-file edit for this project; crew feedback about the organizer, an employee or a hook, as an
+  issue draft for the `repository` in `../../.claude-plugin/plugin.json` from this skill's folder (never the
+  project's tracker unless the user says so), describing crew behavior only, with no project code, paths or
+  names; or `retro.md` only. If that repository is missing or unreachable, keep the draft and say so.
+- Put the proposals in your final report and apply none of them until the user answers; then apply what they
+  accept (file a crew draft in that repository as written, not through `file-issue`) and set each Status.
 - Set the board's phase to `done`, move the item to Closed in `index.md`, and complete `decisions.md`.
-- If the work stops before it is done (the user pauses, the context is running out), write `handoff.md`:
-  what is done, what is next, open questions.
+- If the work stops before it is done (the user pauses, the context is running out), write `handoff.md`
+  instead of a retro: what is done, what is next, open questions.
 - Report to the user: what changed (files), how it was verified (commands and results), who did what (role
   and model), follow-ups, and anything left.
 

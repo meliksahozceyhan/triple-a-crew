@@ -40,8 +40,8 @@ and are silent in projects without `.crew/`. Test them with `sh scripts/test-hoo
 ## State
 
 Everything is written to `.crew/` at the project root, never `.claude/`, which Claude Code protects:
-`profile.md`, `work/<id>/` (brief, plan, decisions, findings committed; board, team status files, handoff
-ignored through `.crew/.gitignore`), and `handoffs/`.
+`profile.md`, `work/<id>/` (brief, plan, decisions, findings and retro committed; board, team status files,
+handoff ignored through `.crew/.gitignore`), and `handoffs/`.
 
 ## Evals
 
