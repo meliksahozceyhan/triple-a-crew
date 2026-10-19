@@ -26,5 +26,8 @@ models: {}
 - `sh plugins/triple-a-crew/scripts/test-hooks.sh` repeats every case under `dash` only when `dash` is
   installed, and says nothing otherwise; without it a dash-only bug (crew-hooks review R1) passes. Install it
   with `brew install dash`.
+- A running session keeps the agent and skill definitions it loaded at start. After changing a file in
+  `plugins/*/agents/` or `plugins/*/skills/`, run `/reload-plugins` before staffing employees, or they follow
+  the old text (fix-open-issues: reviewers hit the old 40-turn limit, employees wrote invented timestamps).
 - Git has no HTTPS credential helper; push with
   `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push`.

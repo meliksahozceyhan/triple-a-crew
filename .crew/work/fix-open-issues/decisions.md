@@ -87,3 +87,6 @@
   note; L3, L4, L5 README conventions) and 4 follow-up issue drafts (the medium-fix fixture's syntax error,
   bash fixtures vs POSIX docs, whether a grader's file path globs, the verifier's folder handling) wait for the
   user's answer; the other lessons are fixed in this item (#12, #19) or tracked (#14).
+- **2026-10-19 The user accepted every retro proposal and every follow-up.** P1 profile note and P2-P4 README
+  conventions applied; follow-ups filed as #25 (fixture syntax error), #26 (bash fixtures vs POSIX docs),
+  #27 (grader path glob), #28 (verifier subfolder commands).

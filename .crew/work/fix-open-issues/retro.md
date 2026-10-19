@@ -26,11 +26,11 @@
 ## Lessons
 | # | Lesson | Evidence | Repeat of | Goes to | Status |
 |---|---|---|---|---|---|
-| L1 | A session keeps the agent and skill definitions it loaded, so employees miss fixes made during the item until `/reload-plugins` | findings.md; team/T8-reviewer.md, team/T9-reviewer.md | | `.crew/profile.md` notes | proposed |
+| L1 | A session keeps the agent and skill definitions it loaded, so employees miss fixes made during the item until `/reload-plugins` | findings.md; team/T8-reviewer.md, team/T9-reviewer.md | | `.crew/profile.md` notes | accepted |
 | L2 | The reviewer's turn limit ran out on large reviews again | team/T8-reviewer.md, team/T9-reviewer.md | crew-hooks L2, retro-skill L2 | https://github.com/meliksahozceyhan/triple-a-crew/issues/14 | accepted |
-| L3 | A fixture's planted change contradicted its own work item (out of plan, unused, a false claim), so the organizer rightly changed it and a grader failed for the wrong reason | decisions.md "T11 diagnosis", "Second verify-staffs-verifier rerun" | | `README.md` "Conventions for new skills" | proposed |
-| L4 | A wrong command example in skill text got copied literally into a brief | decisions.md "Second verify-staffs-verifier rerun" | | `README.md` "Conventions for new skills" | proposed |
-| L5 | Regex graders tested only on hand-made rows missed the real trace row shape | team/T9-reviewer.md F1 | retro-skill L1 | `README.md` "Conventions for new skills" | proposed |
+| L3 | A fixture's planted change contradicted its own work item (out of plan, unused, a false claim), so the organizer rightly changed it and a grader failed for the wrong reason | decisions.md "T11 diagnosis", "Second verify-staffs-verifier rerun" | | `README.md` "Conventions for new skills" | accepted |
+| L4 | A wrong command example in skill text got copied literally into a brief | decisions.md "Second verify-staffs-verifier rerun" | | `README.md` "Conventions for new skills" | accepted |
+| L5 | Regex graders tested only on hand-made rows missed the real trace row shape | team/T9-reviewer.md F1 | retro-skill L1 | `README.md` "Conventions for new skills" | accepted |
 | L6 | The recheck after the fixes found new problems again | team/T10-reviewer.md | crew-hooks L4, employees-v2 L8, retro-skill L5, agent-teams-mode L2 | https://github.com/meliksahozceyhan/triple-a-crew/issues/19 (fixed in this item) | accepted |
 | L7 | The organizer's own `cd` moved the session folder | session transcript | agent-teams-mode L3, L7 | https://github.com/meliksahozceyhan/triple-a-crew/issues/12 (fixed in this item) | accepted |
 | L8 | Read-only roles (verifier, reviewers) ran in parallel with no conflicts | board.md | | `retro.md` only | kept |
