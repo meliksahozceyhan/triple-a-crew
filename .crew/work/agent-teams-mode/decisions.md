@@ -105,3 +105,12 @@
   gate's messages now say to create or finish the status file and carry on with the task, with `failed`
   only for a task that cannot be done at all (phase A's haiku teammate had taken the old "finish as
   failed" way out). Details in `team/T8-organizer.md`.
+- **2026-10-19 T8 done: phase B ran to the end after the user resumed it.** The organizer staffed 13 named
+  teammates over three rounds and followed every `teams.md` rule: parallel writers on independent modules,
+  no verify commands in writer briefs, co-workers named and updated by message, reviewers and the verifier
+  after the writers, shutdown after each accepted task, re-staffing by the same name for later rounds, no
+  task list, no commit. 45/45 tests, both reviewers approve. Every crew teammate got the reminder; the gate
+  never had to block. Gaps it found (its own retro): a test-engineer mutated source in place in the shared
+  tree, the organizer's `cd` became later teammates' starting folder, a `\u` escape in a message arrived raw,
+  placeholder timestamps in status files, and test-engineer briefs with no regressions to catch. Details in
+  `team/T8-organizer.md`.
