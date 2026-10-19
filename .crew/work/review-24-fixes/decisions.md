@@ -39,3 +39,9 @@
   command shapes (a space-separated reporter flag, a flag before `--test`, a single-quoted path). The brief
   gives the exact command, so the common case is covered. Rejected: an `llm` trace judge per regression (it
   sees only the first and last 12 messages).
+- **2026-10-19 T3 evals: 3/3 at 1.00, $2.83.** `starts-work-item-on-large-request` 1.00 ($0.39; the go-ahead
+  shows the coverage, judge 3/3); `medium-fix-end-to-end` 1.00 ($1.25; the organizer ran `node --test` itself,
+  no verifier staffed); `test-engineer-keeps-failing-test` 1.00 ($1.19). In its kept trace (e-mgD1AR) the
+  test-engineer made `<tmp>/csv-edge-T2-copy`, ran the control, fixed the code defect in the copy only, reran,
+  then rewrote `src/csv.js` from the unbroken copy before each broken version: 6 runs on the copy, nothing
+  under the workspace's `src/` changed.
