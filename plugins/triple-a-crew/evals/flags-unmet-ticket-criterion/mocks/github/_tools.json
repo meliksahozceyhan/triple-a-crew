@@ -1,0 +1,22 @@
+{
+  "tools": [
+    {
+      "name": "list_issues",
+      "description": "List issues in a GitHub repository. For pagination, use the 'endCursor' from the previous response's 'pageInfo' in the 'after' parameter.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "owner": { "type": "string", "description": "Repository owner" },
+          "repo": { "type": "string", "description": "Repository name" },
+          "state": { "type": "string", "enum": ["OPEN", "CLOSED"], "description": "Filter by state, by default both open and closed issues are returned when not provided" },
+          "labels": { "type": "array", "items": { "type": "string" }, "description": "Filter by labels" },
+          "since": { "type": "string", "description": "Filter by date (ISO 8601 timestamp)" },
+          "perPage": { "type": "number", "description": "Results per page for pagination (min 1, max 100)", "minimum": 1, "maximum": 100 },
+          "after": { "type": "string", "description": "Cursor for pagination. Use the endCursor from the previous page's PageInfo for GraphQL APIs." }
+        },
+        "required": ["owner", "repo"],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

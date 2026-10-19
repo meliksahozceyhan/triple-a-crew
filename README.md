@@ -161,7 +161,8 @@ Starts on its own for multi-step requests, or with `/triple-a-crew:work [start <
      staffs a reviewer.
    - **L** (several areas, unknowns, or risk, including a file format another system consumes): it opens a
      work item and staffs it fully.
-2. **Opens a work item** in `.crew/work/<id>/`, with brief, plan, decisions, findings and board.
+2. **Opens a work item** in `.crew/work/<id>/`, with brief, plan, decisions, findings and board. The brief
+   lists each ticket's acceptance criteria as written, one per line.
 3. **Stress-tests before planning.** It lists edge cases (empty and huge inputs, concurrency, partial
    failure, time zones, migrations, backward compatibility) and marks each one in or out of scope.
 4. **Plans tasks.** Each task has a file set, an acceptance check, a role and a model tier. For size L it
@@ -179,6 +180,8 @@ Starts on its own for multi-step requests, or with `/triple-a-crew:work [start <
    lines it changed, runs your profile's verify commands (through the haiku verifier for bigger items), staffs
    a reviewer, and files the findings through `file-issue` in one batch. Crew feedback waits for the retro.
    When a review requests changes, a fresh reviewer rechecks the fix diff once before the item closes.
+   The last review (for size L, one more on the whole diff after the per-task ones) checks every done-when
+   line with evidence. A ticket with a criterion still open goes into the PR as `Refs #N`, not `Closes #N`.
 8. **Closes with a short retro** (sizes M and L): writes `retro.md`, marks problems an earlier item's retro
    already had, and proposes where each lesson should live (a profile note, a convention file, or crew
    feedback for this plugin's repository). It changes nothing until you accept.
@@ -434,15 +437,17 @@ Every run is a real model call on your account. A full run of both suites costs 
 | `file-issue` | `claude plugin eval . --tag trigger no-trigger --allow-tools Write` | 3 trigger, 3 no-trigger, with baseline |
 | `file-issue` | `claude plugin eval . --tag mock-tracker --ablation none --scaffold` | 3 mocked-Linear cases, one arm |
 | `triple-a-crew` | `claude plugin eval . --tag migrated onboard no-trigger --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` | 2 migrated-skill cases, 2 onboard, 3 no-trigger, with baseline |
-| `triple-a-crew` | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)" "Bash(date *)"` | 8 organizer cases, one arm |
+| `triple-a-crew` | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)" "Bash(date *)"` | 9 organizer cases, one arm |
 | `triple-a-crew` | `claude plugin eval . --tag hooks --scaffold` | 1 hooks case, with baseline |
 
 Add `--runs 1 --ablation none --case <name>` to iterate on one case cheaply. Add `--keep-temp` to keep each
 run's sandbox, including `out/trace.jsonl` with every tool call.
 
 **How the tracker cases work.** A case's `mocks/<server>/<tool>.md` files become a mocked MCP server named
-`<server>`, whose tools are called `mcp__<server>__<tool>`. `_tools.json` carries Linear's real tool
-schemas, so the skill has to read schemas the way it would against the real server. Mocks live in each
+`<server>`, whose tools are called `mcp__<server>__<tool>`. `_tools.json` carries the real server's tool
+schemas (Linear's, or GitHub's `list_issues` in `flags-unmet-ticket-criterion`), so the skill has to read
+schemas the way it would against the real server. A mock answers every call with the same file, so a case
+that needs two issues mocks a list, not `get_issue`. Mocks live in each
 case, never in a suite-wide `evals/mocks/`: the harness would register those for every case, including the
 ones that test the no-tracker path.
 
@@ -471,6 +476,11 @@ ones that test the no-tracker path.
     defect goes back to the code task instead of becoming a follow-up issue.
   - **Medium fix, end to end:** fixes the quoting in both writers, runs the verify command, and staffs a
     reviewer on opus that writes its status file.
+  - **Ticket criteria before the PR** (`work next` on a size-L item at phase review that closes #41 and #42,
+    with a mocked GitHub): both per-task reviews approved, and the brief says only "every acceptance criterion
+    in both issues holds", as #24's did. The organizer gets each issue's criteria, staffs one more reviewer on
+    the whole diff with all of them, names #42's missing README criterion, and doesn't close #42 unless the
+    README gets fixed; #41 still closes.
 - Hooks: with one open item in `.crew/work/index.md`, Claude names it without using any tool, because the
   `SessionStart` hook put it in its context. The baseline cannot know.
 - Migrated skills, one fixture each:
@@ -500,6 +510,7 @@ ones that test the no-tracker path.
 | `triple-a-crew` | `test-engineer-keeps-failing-test` | 1.00 | one arm | | 3 (1.00, 0.80, 1.00) + 2 (0.83, 1.00) |
 | `triple-a-crew` | `medium-fix-end-to-end` | 1.00 | one arm | | 1 + 2 + 1 |
 | `triple-a-crew` | `plans-against-project-conventions` | 1.00 | one arm | | 1 |
+| `triple-a-crew` | `flags-unmet-ticket-criterion` | 1.00 | one arm | | 1 |
 | `triple-a-crew` | `creates-profile-from-repo` | 1.00 | 0.00 | +1.00 | 2 |
 | `triple-a-crew` | `refreshes-profile-keeps-user-values` | 1.00 | 1.00 | 0.00 | 2 |
 | `triple-a-crew` | `no-fire-setup-question` | 1.00 | 1.00 | 0.00 | 2 |
@@ -571,6 +582,13 @@ How to read it:
 - **`session-start-mentions-open-item`** scores 0.80 without the plugin only because its four "no tool used"
   graders pass in both arms. The grader that matters, naming the open item, passed with the hook and failed
   without it.
+- **`flags-unmet-ticket-criterion`** (2026-10-19, issue #30) guards the criteria check; it doesn't prove a
+  gain. On the organizer text before #30 it also scored 1.00, twice: once with each ticket's criteria in the
+  brief, and once with them only in the mocked issues. Both times the organizer found #42's missing README
+  text on its own and had it reviewed. On the new text it followed the rule as written: it copied both
+  issues' criteria into the brief, gave the last reviewer a `## Criteria` list, and named its derived line in
+  the report. #24's miss happened at a scale (eleven tickets, reviews split by area) that a cheap fixture
+  doesn't reproduce.
 
 ## Repository layout
 
@@ -598,7 +616,7 @@ How to read it:
 │       │   ├── onboard/                SKILL.md, profile-format.md (the profile contract)
 │       │   ├── test-harden/            SKILL.md, examples.md
 │       │   └── handoff/                SKILL.md, handoff.mjs (facts from git and the transcript)
-│       └── evals/                      14 cases; each fixture.sh scaffolds a sample repo
+│       └── evals/                      15 cases; each fixture.sh scaffolds a sample repo
 └── README.md
 ```
 

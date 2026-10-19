@@ -54,11 +54,10 @@ says "just do it", mark the item abandoned in the index and continue as a normal
 
 - **Id:** an optional ticket key plus a 2-5 word slug, lowercase and hyphenated: `act-1062-entitlements`.
 - Create `<root>/.crew/work/<id>/` with `brief.md` and `board.md`, and add the item to `index.md`.
-- Create `<root>/.crew/.gitignore` with the lines from formats.md if it is missing; if it exists, append the
-  lines it lacks.
-- **Brief:** what, why, done-when (acceptance criteria), constraints from the profile, edge cases (step 4).
-  Ask the user only what you cannot find in the code, the tracker or the profile: one message, at most three
-  questions, each with your proposed answer.
+- Create `<root>/.crew/.gitignore` with the lines from formats.md, or append the ones an existing file lacks.
+- **Brief:** what, why, done-when (acceptance criteria; each ticket's as written, one per line, derived ones
+  marked), constraints from the profile, edge cases (step 4). Ask the user only what you cannot find in the
+  code, the tracker or the profile: one message, at most three questions, each with your proposed answer.
 
 ## 4. Stress-test before planning
 
@@ -119,17 +118,18 @@ When an employee finishes:
 - Strip the noise this work added, in the lines it changed: debug logs, commented-out code, comments that
   restate the code, and try-catch blocks that only log and rethrow. Keep API docs, why-comments, operational
   logs and error handling that does real work (retries, fallbacks, error translation, cleanup in `finally`).
-  The project's convention files win over these defaults. If a check below fails on a line you stripped,
-  restore it.
+  The project's conventions win over these defaults. If a check below fails on a line you stripped, restore it.
 - Run the profile's `verify` commands (or the checks the plan names) on the combined result. For size L, and
   for M when the profile lists more than one, staff the verifier (mechanical tier); its brief lists the
   commands, each ready to run from the root (protocol.md), a timeout and whether one rerun is allowed.
   Otherwise, or if the verifier is unavailable, run them yourself. A failure goes back to the task that caused
   it, and so does a failing test that a test-engineer reports under Open questions.
-- Staff a reviewer on the final diff (per task for size L), never one that wrote the work; resolve every
-  must-fix before closing. After fixes to a review that asked for changes, a fresh reviewer rechecks the fix
-  diff as a new task with its own status file, briefed with the earlier findings. If it asks again and the
-  fix is size S (step 2), make it and rerun verify; if bigger, ask the user whether to staff a third reviewer.
+- Staff a reviewer on the final diff (size L: one per task, then one on the whole diff), never one that wrote
+  the work. The last review checks every done-when line with evidence (protocol.md); a line without evidence
+  is a must-fix or a deferral the user accepts. Resolve every must-fix before closing. After fixes to a review
+  that asked for changes, a fresh reviewer rechecks the fix diff as a new task with its own status file,
+  briefed with the earlier findings. If it asks again and the fix is size S (step 2), make it and rerun
+  verify; if bigger, ask the user whether to staff a third reviewer.
 
 ## 9. Follow-ups
 
@@ -154,7 +154,7 @@ waits for step 10. Otherwise list them for the user in your final report.
 - If the work stops before it is done (the user pauses, the context is running out), write `handoff.md`
   instead of a retro: what is done, what is next, open questions.
 - Report to the user: what changed (files), how it was verified (commands and results), who did what (role
-  and model), follow-ups, and anything left.
+  and model), follow-ups, anything left, and each ticket as `Closes #N`, or `Refs #N` with a criterion open.
 
 Board phases: `intake → plan → approval → implement → verify → review → done`. Skipping one is fine; write
 the reason in `decisions.md`.
