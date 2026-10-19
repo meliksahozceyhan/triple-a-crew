@@ -22,11 +22,11 @@
 ## Lessons
 | # | Lesson | Evidence | Repeat of | Goes to | Status |
 |---|---|---|---|---|---|
-| L1 | A sonnet employee still wrote an invented `updated` time after the `date -u` rule shipped and the plugin was reloaded; the text rule alone doesn't hold | findings.md, team/T1-researcher.md:6 | agent-teams-mode L4, fix-open-issues | issue draft for the plugin repository | proposed |
+| L1 | A sonnet employee still wrote an invented `updated` time after the `date -u` rule shipped and the plugin was reloaded; the text rule alone doesn't hold | findings.md, team/T1-researcher.md:6 | agent-teams-mode L4, fix-open-issues | https://github.com/meliksahozceyhan/triple-a-crew/issues/32 | filed |
 | L2 | The reviewer ran out of turns again, this time on a side question, not the diff size; #14's fix (findings written as it goes) held, so nothing was lost | decisions.md "T4 review" | crew-hooks L2, retro-skill L2, fix-open-issues L2 | https://github.com/meliksahozceyhan/triple-a-crew/issues/14 (fixed; held here) | kept |
 | L3 | Checking each closed issue's criteria one by one found a contradiction the organizer had missed | team/T4-reviewer.md | | https://github.com/meliksahozceyhan/triple-a-crew/issues/30 (work item `issue-30-criteria-check`) | kept |
-| L4 | A rule changed in one file stayed stated the old way in another (SKILL.md step 8 vs `verifier.md`) | team/T4-reviewer.md should-fix | | `.crew/profile.md` note | proposed |
-| L5 | "Merged" can be said before the merge lands; check the PR state before closing or deleting a branch | session (#29, #31) | review-24-fixes L5 | `.crew/profile.md` note | proposed |
+| L4 | A rule changed in one file stayed stated the old way in another (SKILL.md step 8 vs `verifier.md`) | team/T4-reviewer.md should-fix | | `.crew/profile.md` note | accepted |
+| L5 | "Merged" can be said before the merge lands; check the PR state before closing or deleting a branch | session (#29, #31) | review-24-fixes L5 | `.crew/profile.md` note | accepted |
 
 ## Proposed text
 - **L1** (issue draft for the plugin repository), title "Employees still write invented `updated` times
