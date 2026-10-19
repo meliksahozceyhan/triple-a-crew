@@ -365,12 +365,16 @@ for ev in SubagentStart SubagentStop; do
     else bad "$ev matcher accepts $name" - "rejected by $rx"; fi
   done
   # Every agent file is a role the teammate half must list; a new agent fails here until it is added.
+  roles=0
   for f in "$here"/../agents/*.md; do
-    role=$(sed -n 's/^name: *//p' "$f" | head -n 1)
+    [ -f "$f" ] || continue
+    role=$(sed -n 's/^name: *["'\'']\{0,1\}\([a-z-]*\).*/\1/p' "$f" | head -n 1)
     [ -n "$role" ] || continue
+    roles=$((roles + 1))
     if printf '%s\n' "T1-$role" | grep -Eq -- "$rx"; then pass "$ev matcher covers agent $role" -
     else bad "$ev matcher covers agent $role" - "add $role to the teammate roles in hooks.json"; fi
   done
+  [ "$roles" -gt 0 ] || bad "$ev matcher covers the agents" - "no agent files found in $here/../agents"
   for name in probe general-purpose Explore "" T2-nosuchrole T-engineer T2-Engineer T2ab-engineer T2-engineer-2 xT2-engineer triple-a-crew: Triple-A-Crew:engineer; do
     if printf '%s\n' "$name" | grep -Eq -- "$rx"; then bad "$ev matcher ignores '$name'" - "accepted by $rx"
     else pass "$ev matcher ignores '$name'" -; fi

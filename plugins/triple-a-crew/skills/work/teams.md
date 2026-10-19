@@ -37,19 +37,24 @@ All teammates see one tree, live. A file can change under a reader, who cannot t
 test run can fail on a co-worker's half-done edit.
 
 - Writers run at the same time only when their file sets are disjoint and don't build or import together
-  (separate packages or modules). Otherwise one at a time.
+  (separate packages or modules). Otherwise one at a time. If the approved plan breaks this, tell the user
+  which tasks now run one at a time before you staff them.
+- While any writer is mid-edit, no teammate runs the full test suite or the verify commands.
 - No writer's brief carries the verify commands, even if it starts alone: another writer may join later.
-  Its acceptance check runs only what builds without the other writers' files.
-- Staff reviewers and the verifier, and run verify, only after every writer on the item has finished.
-  Researchers may run alongside writers but stay off their files.
-- A check that fails only in a co-worker's files is not a miss: the teammate reports it under Findings,
-  never edits those files, and sets `done`. Rerun the check once that co-worker has finished.
+  Every writer brief says: run only the acceptance check, which covers only what builds without the other
+  writers' files, even if a project file such as `CLAUDE.md` asks for a full run; a failure only in a
+  co-worker's files goes under Findings, is never fixed by you, and still ends in `done`.
+- Staff reviewers and the verifier, and run verify, only after every writer on the item has finished. Send
+  a writer back to fix a finding only when no reviewer or verifier is running.
+- Researchers may run alongside writers, but they stay off the writers' files and run no tests.
+- A check that failed only in a co-worker's files is not a miss. Rerun it yourself once that co-worker has
+  finished; a failure then goes to the task whose files fail.
 - Every brief lists the teammates running at the same time, each with its file set. When you start another
   teammate later, message the running ones its name and file set.
 - These rules also hold when a named call falls back to a subagent: it has no worktree either.
 - Teammates never commit. Commits stay with you, as in subagent mode: only when the user asks.
-- Code changes come only from tasks you assign. A reviewer may question an engineer directly but never orders
-  changes: findings come to you.
+- Code changes come only from tasks you assign. Reviewers send their findings and questions to you, not to
+  the engineer, who has usually been shut down by then.
 
 ## Turn budget
 

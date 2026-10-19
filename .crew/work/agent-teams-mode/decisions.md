@@ -82,3 +82,12 @@
   future role among the ignored names; checked with a `designer` agent and a README in `agents/`) and F5
   (a teammate waiting on any answer, also from a co-worker, sets `blocked`; the gate's effect on teammates is
   stated as untested). Rejected: serial writers only (drops the parallelism the user chose).
+- **2026-10-19 T7c recheck of the rule rewrite: ship** (`team/T7c-reviewer.md`, git-ignored). F1-F5 resolved; no
+  must-fix. Its should-fixes and nits applied: every writer brief tells the writer itself to run only its
+  acceptance check, even when `CLAUDE.md` asks for a full run (N1); a writer is sent back to fix a finding
+  only when no reviewer or verifier is running (N2); the organizer reruns a co-worker-blocked check itself
+  and sends a failure to the task whose files fail (N3); reviewers send questions to the organizer (N4);
+  researchers run no tests alongside writers (N5); the coverage test accepts a quoted `name:` and fails when
+  `agents/` holds no agent (N6, both probed); the organizer tells the user when an approved plan's parallel
+  writers must run one at a time (N7). Not done: moving the team-mode check into step 5's planning, which
+  would put team-mode text into SKILL.md for every L item; N7's note covers the gap.
