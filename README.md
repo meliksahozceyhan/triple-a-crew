@@ -175,8 +175,11 @@ Starts on its own for multi-step requests, or with `/triple-a-crew:work [start <
    context. You decide anything that is your call.
 7. **Verifies and reviews.** It strips debug logs, commented-out code and log-and-rethrow try-catch from the
    lines it changed, runs your profile's verify commands (through the haiku verifier for bigger items), staffs
-   a reviewer, and files the findings through `file-issue` in one batch.
-8. **Answers status questions** ("where are we on X?") from the board, without starting more work.
+   a reviewer, and files the findings through `file-issue` in one batch. Crew feedback waits for the retro.
+8. **Closes with a short retro** (sizes M and L): writes `retro.md`, marks problems an earlier item's retro
+   already had, and proposes where each lesson should live (a profile note, a convention file, or crew
+   feedback for this plugin's repository). It changes nothing until you accept.
+9. **Answers status questions** ("where are we on X?") from the board, without starting more work.
 
 A real plan from the eval fixture, for "make the orders CSV export production-ready":
 
@@ -314,7 +317,7 @@ All crew state lives in `.crew/` at the project root:
   issues/<date>-<slug>.md      file-issue drafts when no tracker exists  committed
   handoffs/                    session handoffs (ignore themselves)      ignored
   work/                        organizer work items
-    <id>/brief.md, plan.md, decisions.md, findings.md                    committed
+    <id>/brief.md, plan.md, decisions.md, findings.md, retro.md          committed
     <id>/board.md, team/, handoff.md, index.md                           ignored
 ```
 
@@ -450,6 +453,12 @@ How to read it:
 - **No-trigger cases** score 1.00 in both arms by design: they check that the skill stays out of the way.
 - **Refresh** has Δ 0: without the plugin, Claude also updates an existing profile correctly. The case
   guards against regressions rather than showing what the plugin adds.
+- **A standalone `retro` skill was built and cut** (2026-10-19). On a closed item whose time-zone bug
+  appeared only in the git-ignored status files and in an earlier item's retro, plain Claude scored 1.00 like
+  the skill: it globbed `.crew/**/*`, read the status files, flagged the repeat, and proposed edits before
+  making any. (A first run showed +0.25, but only because two graders matched `profile.md` and `CLAUDE.md` in
+  the text of `retro.md`; match `"file_path"` instead.) What remains is the organizer's close step, which
+  writes the retro without being asked.
 - **`plan-review`, `cleanup` and `investigate` were cut** (2026-10-16 results, cut on 2026-10-19). Their
   first cases gave plain Claude everything it needed (rules in `CLAUDE.md`, a scoped request, a pasted
   report) and scored Δ 0. Sharpened cases that targeted only what each skill claimed to add still showed
@@ -535,7 +544,7 @@ How to read it:
 |---|---|
 | **v0** (done) | Marketplace, `file-issue` with tracker reference files and evals, `onboard` with the profile format and evals |
 | **v1** (done) | The organizer (`work`): sizing, the `.crew/work/` folder, the status protocol, and three employees: researcher, engineer, reviewer. The actioner-new skills migrated as generic skills: `plan-review`, `cleanup`, `test-harden`, `investigate`, `handoff`. `plan-review`, `cleanup` and `investigate` were cut afterwards and folded into the organizer and the researcher (see [Evals](#evals)) |
-| **Next** (planned) | In this order: hooks (`crew-hooks`, built); `verifier` and `test-engineer`, with the architect folded into the researcher and no scribe (`employees-v2`, built); `retro` (`retro-skill`). When their live tests are run: an opt-in agent-teams mode (`agent-teams-mode`) and a Cursor check (`cursor-check`). Each plan is in `.crew/work/<id>/plan.md`. Separately: move actioner-new onto the plugin |
+| **Next** (planned) | In this order: hooks (`crew-hooks`, built); `verifier` and `test-engineer`, with the architect folded into the researcher and no scribe (`employees-v2`, built); `retro` (`retro-skill`: the standalone skill was cut for no gain; the organizer's close step writes a short retro). When their live tests are run: an opt-in agent-teams mode (`agent-teams-mode`) and a Cursor check (`cursor-check`). Each plan is in `.crew/work/<id>/plan.md`. Separately: move actioner-new onto the plugin |
 | **Publish** (planned, `publish-v1`) | License, versions and git tags, an exposure audit, make the repository public, test the `file-issue` zip in Claude chat |
 
 The organizer's model choice is a rule table: `mechanical` work goes to haiku, `standard` to sonnet,
