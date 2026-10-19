@@ -17,3 +17,10 @@
   and `done-when-coverage` graders keep the trace form (Write and Edit calls), and the README says so.
   Rejected: pinning the work-item id in the case prompts (it tests the organizer obeying an id, not its own
   behavior).
+- **2026-10-19 T4 review: approve,** each criterion of #25-#28 checked end to end (#25's eval score left to T5).
+  Applied: SKILL.md step 8 says the verifier's commands come ready to run (it still named a separate folder,
+  which moved #28's contradiction into SKILL.md); protocol.md and the verifier say Bash calls start in the
+  folder the session started in, normally the project root (CLI 2.1.299 resets a subagent's cwd to
+  `originalCwd`); README names `test-hooks.sh` as POSIX too and gives the right reason (`hooks.json` runs
+  `sh <script>`), and a long line is rewrapped. The reviewer hit its 60-turn limit once, mostly on checking the
+  cwd claim in the CLI binary, and was resumed.

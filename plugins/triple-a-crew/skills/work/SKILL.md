@@ -123,9 +123,9 @@ When an employee finishes:
   restore it.
 - Run the profile's `verify` commands (or the checks the plan names) on the combined result. For size L, and
   for M when the profile lists more than one, staff the verifier (mechanical tier); its brief lists the
-  commands, the folder, a timeout and whether one rerun is allowed. Otherwise, or if the verifier is
-  unavailable, run them yourself. A failure goes back to the task that caused it, and so does a failing test
-  that a test-engineer reports under Open questions.
+  commands, each ready to run from the root (protocol.md), a timeout and whether one rerun is allowed.
+  Otherwise, or if the verifier is unavailable, run them yourself. A failure goes back to the task that caused
+  it, and so does a failing test that a test-engineer reports under Open questions.
 - Staff a reviewer on the final diff (per task for size L), never one that wrote the work; resolve every
   must-fix before closing. After fixes to a review that asked for changes, a fresh reviewer rechecks the fix
   diff as a new task with its own status file, briefed with the earlier findings. If it asks again and the

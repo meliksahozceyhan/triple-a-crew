@@ -413,8 +413,9 @@ sh plugins/triple-a-crew/scripts/test-hooks.sh
 
 Every eval `fixture.sh` refuses to run unless its folder is empty, because it writes files and runs git
 there. To try one by hand, run `bash <path to fixture.sh>` inside a fresh `mktemp -d` folder. Fixtures are
-bash scripts (`set -euo pipefail`), and the eval harness runs them with `bash`; only the hook scripts in
-`plugins/triple-a-crew/scripts/` are POSIX `sh`, because Claude Code runs hooks with `sh -c`.
+bash scripts (`set -euo pipefail`), and the eval harness runs them with `bash`. The scripts in
+`plugins/triple-a-crew/scripts/`, the hooks and `test-hooks.sh`, are POSIX `sh`, because `hooks.json` runs each
+hook as `sh <script>`.
 
 Do not add `dependencies` between the plugins. A plugin whose dependency is not installed does not load at
 all, which breaks `--plugin-dir` and the eval sandbox. See [Troubleshooting](#troubleshooting).
@@ -652,13 +653,14 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
   reason (`verify-staffs-verifier` once planted an unused retry the organizer deleted).
 - **Graders match what you mean.** A `tool_used` grader's `input_match` is matched against the whole tool
   input, file content included, so a "never writes `profile.md`" check also fails on a write to another file
-  that mentions `profile.md`. Anchor a path check on the path: `'"file_path"\s*:\s*"[^"]*profile\.md"'`.
-  No grader option limits a check to the main agent; a `regex` grader on the trace can, because main-agent
-  rows carry `"parent_tool_use_id":null` and subagent rows carry a tool-use id there. `file_exists` sees only
-  files created during the run, and it is the only grader whose `path` takes a glob: `{ source: file, path }`
-  reads one literal path, and a missing file fails the grader (CLI 2.1.299). Check a file in a folder the
-  organizer names itself, such as `.crew/work/<id>/decisions.md`, through its Write and Edit calls in the trace. Test a regex grader on rows from a real trace, not only on rows you built:
-  Edit inputs start with `"replace_all"`, not `"file_path"`.
+  that mentions `profile.md`. Anchor a path check on the path: `'"file_path"\s*:\s*"[^"]*profile\.md"'`. No
+  grader option limits a check to the main agent; a `regex` grader on the trace can, because main-agent rows
+  carry `"parent_tool_use_id":null` and subagent rows carry a tool-use id there. `file_exists` sees only files
+  created during the run, and it is the only grader whose `path` takes a glob: `{ source: file, path }` reads
+  one literal path, and a missing file fails the grader (CLI 2.1.299). Check a file in a folder the organizer
+  names itself, such as `.crew/work/<id>/decisions.md`, through its Write and Edit calls in the trace. Test a
+  regex grader on rows from a real trace, not only on rows you built: Edit inputs start with `"replace_all"`,
+  not `"file_path"`.
 
 ## Troubleshooting
 
