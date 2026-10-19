@@ -23,5 +23,8 @@ models: {}
 - Both plugins are installed at user scope from this checkout: switching branches here changes the plugins in
   every project, and edits apply after `/reload-plugins`.
 - Never write under `.claude/`; crew state goes in `.crew/`.
+- `sh plugins/triple-a-crew/scripts/test-hooks.sh` repeats every case under `dash` only when `dash` is
+  installed, and says nothing otherwise; without it a dash-only bug (crew-hooks review R1) passes. Install it
+  with `brew install dash`.
 - Git has no HTTPS credential helper; push with
   `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push`.

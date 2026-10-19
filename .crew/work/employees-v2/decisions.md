@@ -52,3 +52,5 @@
   `failure-reported` and `defect-goes-back` now judge the final reply. Not rerun after that grader change.
   Eval cost for this work item: about $8.22 ($0.67 + $3.81 + $0.68 + $1.27 + $1.78, plus $0.007 for the
   preload test).
+- **2026-10-19 Closed.** Merged in PR #10. `retro.md` written at close; the user accepted every proposal: L1,
+  L5 and L6 accepted and applied, L7 filed as #18. The other lessons are filed (#12, #13, #15) or kept.
