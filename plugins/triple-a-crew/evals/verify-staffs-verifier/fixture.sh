@@ -3,12 +3,22 @@
 # changed; one verify command fails because a database isn't running. `work next` should strip the new debug
 # log only, staff the verifier on haiku, and report the failure instead of calling verify passed.
 set -euo pipefail
+# Refuse to run outside a fresh eval sandbox: this script writes files and runs git in the current folder.
+if [ -n "$(ls -A . 2>/dev/null)" ]; then
+  echo "fixture.sh: refusing to run in a non-empty folder ($PWD); the eval harness runs it in an empty workspace" >&2
+  exit 1
+fi
 git init -q -b main
 mkdir -p src test scripts
 cat > src/csv.js <<'JS'
 // Builds one CSV line from an array of field values.
 export function toCsvRow(fields) {
   return fields.join(",");
+}
+
+// join the rows with a newline
+export function joinRows(rows) {
+  return rows.join("\n");
 }
 JS
 cat > src/headers.js <<'JS'
@@ -36,17 +46,46 @@ cat > package.json <<'JSON'
 JSON
 git add -A && git -c user.email=fixture@example.com -c user.name=fixture commit -q -m "shop-api before csv quoting"
 
-# T1's change, uncommitted: RFC 4180 quoting, plus a debug log it forgot to remove.
+# T1's change, uncommitted: RFC 4180 quoting, plus noise it left behind: a debug log and a log-and-rethrow
+# try-catch (both must go). It also wrote a JSDoc, a why-comment and a real retry (all stay). The plain comment
+# above joinRows is committed and outside the changed lines, so it stays too.
 cat > src/csv.js <<'JS'
-// Builds one CSV line from an array of field values.
+/**
+ * Escapes one field per RFC 4180.
+ * @param {unknown} value
+ * @returns {string}
+ */
 export function escapeCsvField(value) {
   const s = value == null ? "" : String(value);
   console.log("escaping", s);
+  // Quote on a bare \r too: Excel would otherwise split the row there.
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
+// Builds one CSV line from an array of field values.
 export function toCsvRow(fields) {
-  return fields.map(escapeCsvField).join(",");
+  try {
+    return fields.map(escapeCsvField).join(",");
+  } catch (err) {
+    console.error("toCsvRow failed", err);
+    throw err;
+  }
+}
+
+// Sinks drop the odd write, so retry up to 3 times before giving up.
+export async function writeRow(write, row) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await write(row);
+    } catch (err) {
+      if (attempt >= 3) throw err;
+    }
+  }
+}
+
+// join the rows with a newline
+export function joinRows(rows) {
+  return rows.join("\n");
 }
 JS
 cat > src/headers.js <<'JS'

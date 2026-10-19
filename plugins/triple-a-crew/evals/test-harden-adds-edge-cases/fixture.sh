@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # A cursor-pagination helper with guards for repeated cursors, missing cursors and page limits, tested only on the happy path.
 set -euo pipefail
+# Refuse to run outside a fresh eval sandbox: this script writes files and runs git in the current folder.
+if [ -n "$(ls -A . 2>/dev/null)" ]; then
+  echo "fixture.sh: refusing to run in a non-empty folder ($PWD); the eval harness runs it in an empty workspace" >&2
+  exit 1
+fi
 git init -q -b main
 mkdir -p src test
 cat > package.json <<'EOF'

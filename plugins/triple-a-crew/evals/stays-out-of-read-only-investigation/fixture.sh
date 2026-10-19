@@ -2,6 +2,11 @@
 # A shop with two code paths that each turn SAVE10 into 19% off: the gift-card path applies the coupon twice,
 # and card payments stack member pricing on the coupon. Only the issue's comments say which one was reported.
 set -euo pipefail
+# Refuse to run outside a fresh eval sandbox: this script writes files and runs git in the current folder.
+if [ -n "$(ls -A . 2>/dev/null)" ]; then
+  echo "fixture.sh: refusing to run in a non-empty folder ($PWD); the eval harness runs it in an empty workspace" >&2
+  exit 1
+fi
 git init -q -b main
 mkdir -p src/payments
 cat > src/coupons.js <<'EOF'
