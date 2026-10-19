@@ -366,11 +366,12 @@ for ev in SubagentStart SubagentStop; do
   done
   # Every agent file is a role the teammate half must list; a new agent fails here until it is added.
   for f in "$here"/../agents/*.md; do
-    role=$(basename "$f" .md)
+    role=$(sed -n 's/^name: *//p' "$f" | head -n 1)
+    [ -n "$role" ] || continue
     if printf '%s\n' "T1-$role" | grep -Eq -- "$rx"; then pass "$ev matcher covers agent $role" -
     else bad "$ev matcher covers agent $role" - "add $role to the teammate roles in hooks.json"; fi
   done
-  for name in probe general-purpose Explore "" T2-designer T-engineer T2-Engineer T2ab-engineer T2-engineer-2 xT2-engineer triple-a-crew: Triple-A-Crew:engineer; do
+  for name in probe general-purpose Explore "" T2-nosuchrole T-engineer T2-Engineer T2ab-engineer T2-engineer-2 xT2-engineer triple-a-crew: Triple-A-Crew:engineer; do
     if printf '%s\n' "$name" | grep -Eq -- "$rx"; then bad "$ev matcher ignores '$name'" - "accepted by $rx"
     else pass "$ev matcher ignores '$name'" -; fi
   done

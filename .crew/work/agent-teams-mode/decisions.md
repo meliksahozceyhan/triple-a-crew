@@ -71,3 +71,14 @@
   check runs before the session ends. Also from its open question: step 6 runs `printenv` only for size L,
   so M items gain no Bash call or prompt. For T8: whether `printenv` prompts in default mode, and whether it
   sees the variable set only in `settings.local.json`.
+- **2026-10-19 T7b recheck: changes requested** (`team/T7b-reviewer.md`, git-ignored). Eleven of the twelve
+  T7 findings were resolved; M1 only partly: a writer briefed alone kept its verify commands when a second
+  writer joined (F1), a writer's own test still compiles a co-worker's files in the same package (F2), and a
+  per-task reviewer ran tests mid-edit (F3). Instead of patching each case, the organizer rewrote the rule
+  around one principle: nothing runs tests or verify while a writer is mid-edit. Parallel writers only on
+  files that don't build or import together; no writer brief ever carries the verify commands; reviewers
+  and the verifier start after every writer has finished; a check failing only in a co-worker's files is
+  not a miss. Also F4 (the coverage test reads `name:` from each agent file and no longer lists a plausible
+  future role among the ignored names; checked with a `designer` agent and a README in `agents/`) and F5
+  (a teammate waiting on any answer, also from a co-worker, sets `blocked`; the gate's effect on teammates is
+  stated as untested). Rejected: serial writers only (drops the parallelism the user chose).

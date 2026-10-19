@@ -252,10 +252,10 @@ What changes, from [`teams.md`](plugins/triple-a-crew/skills/work/teams.md):
   subagents, and the same rules stay safe.
 - Each teammate is named after its status file (`T2-engineer`); the hooks match that form, so the protocol
   reminder and the status-file gate still apply.
-- Teammates share your working tree, with no worktrees. Writers run together only on disjoint files and
-  check only their own files (the full verify waits until every writer is done), readers wait for a writer
-  to finish, every teammate learns who else is running, and teammates never commit (the organizer commits
-  only when you ask, as in subagent mode).
+- Teammates share your working tree, with no worktrees. Writers run together only on files that don't
+  build together (separate modules), no writer runs the verify commands, reviewers and the verifier start
+  only after every writer is done, every teammate learns who else is running, and teammates never commit
+  (the organizer commits only when you ask, as in subagent mode).
 - A teammate with a question still sets `blocked`, then gets the answer by message.
 - `maxTurns` doesn't stop a teammate, so each brief carries a turn budget and the organizer shuts down a
   teammate that overruns or loops. A teammate gets its agent's tools, model and instructions, but not its

@@ -35,8 +35,8 @@ The organizer picks the model per task from three tiers (`mechanical`: haiku, `s
 `hooks/hooks.json` runs three POSIX `sh` scripts from `scripts/`: `SessionStart` lists open work items from
 `.crew/work/index.md`; `SubagentStart` reminds employees of the status-file protocol; `SubagentStop` sends an
 employee back while its status file or final report is incomplete. They match only `triple-a-crew:*` agents
-and agent-team teammates named `T<n>-<role>` (team mode, `skills/work/teams.md`). `SessionStart` prints nothing
-in projects without `.crew/`. Test them with `sh scripts/test-hooks.sh`.
+and agent-team teammates named `T<n>-<role>` (team mode, `skills/work/teams.md`). `SessionStart` prints
+nothing in projects without `.crew/`. Test them with `sh scripts/test-hooks.sh`.
 
 ## State
 

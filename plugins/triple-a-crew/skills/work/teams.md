@@ -33,18 +33,21 @@ is a full session.
 
 ## Shared working tree
 
-All teammates see one tree, live. A file can change under a reader, who cannot tell who changed it.
+All teammates see one tree, live. A file can change under a reader, who cannot tell who changed it, and a
+test run can fail on a co-worker's half-done edit.
 
-- Writers run at the same time only on disjoint file sets. Otherwise one at a time.
-- A writer running alongside others gets no verify commands in its brief, and its acceptance check covers
-  only its own files (its own test file, not the whole suite): a co-worker's half-done edit would fail it.
-  A failure in a co-worker's files goes under Findings; it never edits them. This also holds when a named
-  call falls back to a subagent, which then has no worktree either.
-- Readers (researcher, reviewer, verifier) stay off a writer's files until that writer is done.
+- Writers run at the same time only when their file sets are disjoint and don't build or import together
+  (separate packages or modules). Otherwise one at a time.
+- No writer's brief carries the verify commands, even if it starts alone: another writer may join later.
+  Its acceptance check runs only what builds without the other writers' files.
+- Staff reviewers and the verifier, and run verify, only after every writer on the item has finished.
+  Researchers may run alongside writers but stay off their files.
+- A check that fails only in a co-worker's files is not a miss: the teammate reports it under Findings,
+  never edits those files, and sets `done`. Rerun the check once that co-worker has finished.
 - Every brief lists the teammates running at the same time, each with its file set. When you start another
   teammate later, message the running ones its name and file set.
+- These rules also hold when a named call falls back to a subagent: it has no worktree either.
 - Teammates never commit. Commits stay with you, as in subagent mode: only when the user asks.
-- Run verify only after every writer on the item has finished.
 - Code changes come only from tasks you assign. A reviewer may question an engineer directly but never orders
   changes: findings come to you.
 
@@ -56,9 +59,10 @@ status file and re-staff the task if it is unfinished, at the next tier if it fa
 
 ## Questions and decisions
 
-- A teammate with a question sets `state: blocked`, writes the question with its proposed answer under
-  Questions, and messages you. The stop gate runs each time a teammate goes idle and sends back an
-  `in-progress` one, so say this in the brief.
+- A teammate waiting for any answer, from you or a co-worker, sets `state: blocked`, writes the question
+  with its proposed answer under Questions, and messages whoever it asks. Say this in the brief: the stop
+  gate runs each time a teammate goes idle, and if it blocks teammates as it blocks subagents (not yet
+  tested live), an `in-progress` one is sent back.
 - Answer by message; the teammate records your answer, sets `in-progress` and continues. Record real
   decisions in `decisions.md`.
 - Never use TaskCreate or the built-in task list (it lives in `~/.claude/tasks/`, outside the repo and the
