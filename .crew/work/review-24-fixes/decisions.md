@@ -23,3 +23,11 @@
   at either.
 - **2026-10-19 Not in scope (not chosen):** N4 (heading-only checks) and S5 (the organizer's `cd` exception in
   team mode); both stay in T12's status file.
+- **2026-10-19 T2 review: changes requested (2 must-fix), all applied.** `regressions-shown` now needs the
+  control plus three runs on a copy (four matches), accepts reporter flags and quoted or braced `$TMPDIR`, and
+  rejects the workspace root; on 17 real traces it matches exactly the three where a test-engineer worked on
+  copies. SKILL.md step 8 keeps the size-S condition, at the same line count. The test-engineer fixes a code
+  defect in the copy only when the control fails because the code is wrong. The coverage judge names the
+  five outcomes the request asks for. The copy folder is `<tmp>/<work-item id>-<task>-copy` with `<tmp>`
+  from `os.tmpdir()` (works where `$TMPDIR` is unset, and two items can't share a folder). Correction: the
+  test-engineer case's `max_turns` counts the organizer's turns, not the test-engineer's; 40 is harmless.

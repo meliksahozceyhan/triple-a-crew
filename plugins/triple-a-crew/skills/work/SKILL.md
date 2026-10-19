@@ -128,8 +128,8 @@ When an employee finishes:
   that a test-engineer reports under Open questions.
 - Staff a reviewer on the final diff (per task for size L), never one that wrote the work; resolve every
   must-fix before closing. After fixes to a review that asked for changes, a fresh reviewer rechecks the fix
-  diff as a new task with its own status file, briefed with the earlier findings. If it asks again, make a
-  size-S fix (step 2) and rerun verify; otherwise ask the user whether to staff a third reviewer.
+  diff as a new task with its own status file, briefed with the earlier findings. If it asks again and the
+  fix is size S (step 2), make it and rerun verify; if bigger, ask the user whether to staff a third reviewer.
 
 ## 9. Follow-ups
 

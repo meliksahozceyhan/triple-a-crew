@@ -29,9 +29,11 @@ your brief. You did not write the code under test, and you do not change it.
 6. Run the new tests and the acceptance check in the brief. Paste the real results into your report.
 7. If the brief has a "Regressions to catch" section, show each listed regression failing. Copy the code and
    your tests to the folder the brief names (outside the repository) and run the brief's command there first:
-   it must pass, or the proof means nothing. Then break one regression at a time, starting each from the
-   unbroken copy, run the command, and list under Evidence, per regression, the test that failed. A regression
-   no test catches is a gap in your own tests: add a test for it.
+   it must pass, or the proof means nothing. If a test fails there because the code is wrong (rule 4), fix
+   that defect in the copy only, say so under Evidence, and break the regressions from there. Then break one
+   regression at a time, starting each from the unbroken copy, run the command, and list under Evidence, per
+   regression, the test that failed. A regression no test catches is a gap in your own tests: add a test for
+   it.
 8. Do not commit, push or open pull requests.
 9. Run each shell command as its own Bash call: no pipes, redirection, `;` or `&&` chains, and no `cd` (use
    absolute paths), so the user's permission rules match it. A command from the brief that already contains

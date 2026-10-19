@@ -37,9 +37,10 @@ Write it for a reader who has seen nothing. Fixed sections:
 `## Regressions to catch` is optional. Add it to a test task on risky work (data, security, money, public API
 including consumed file or payload formats, migrations): 3-5 concrete regressions the tests must catch. The
 test-engineer shows each one failing on a broken copy outside the repository. Name a copy folder of its own
-for the task under the temp folder (`$TMPDIR/T3-copy`) and the exact command that runs the tests there: a
-test file path when the runner takes one (`node --test $TMPDIR/T3-copy/test/csv.test.js`; Node 22 won't take
-a folder), otherwise `cd $TMPDIR/T3-copy && <runner>`, which it may run as written. A test task on
+for the task: `<tmp>/<work-item id>-<task>-copy`, where `<tmp>` is what `node -e
+"console.log(require('os').tmpdir())"` prints, and the exact command that runs the tests there: a test file
+path when the runner takes one (`node --test /var/folders/x/T/csv-export-T3-copy/test/csv.test.js`; Node 22
+won't take a folder), otherwise `cd <copy folder> && <runner>`, which it may run as written. A test task on
 low-risk work needs no such list.
 
 Every brief also carries this rule for shell commands: run each command alone, as its own Bash call: no pipes,
