@@ -62,3 +62,6 @@
   have evidence (T5's table and T6). The brief's addition "fails on the current text" has none and can't get
   any on this fixture. It is the item's own line, so by the new rule the PR can say `Closes #30` if the user
   accepts that deferral, and `Refs #30` otherwise.
+- **2026-10-19 The user accepted the deferral:** "Push issue-30-criteria-check and open its PR against main
+  with Closes #30. I accept the guard-only eval as a deferral." Whether a Sonnet organizer tells the two
+  texts apart is being checked in a separate session.
