@@ -23,6 +23,8 @@ design.
 |---|---|---|
 | `researcher` | sonnet | Maps code, docs and tickets; ranks a bug's likely causes; writes only its status file |
 | `engineer` | sonnet | Implements one task inside its file set and runs its acceptance check |
+| `test-engineer` | sonnet | Writes the tests for a task, never production code; `test-harden` preloaded |
+| `verifier` | haiku | Runs the verify commands and reports exit codes and failing lines verbatim; never fixes |
 | `reviewer` | opus | Adversarial diff review; findings carry a failure scenario |
 
 The organizer picks the model per task from three tiers (`mechanical`: haiku, `standard`: sonnet,
@@ -43,11 +45,11 @@ ignored through `.crew/.gitignore`), and `handoffs/`.
 
 ## Evals
 
-11 cases in [evals/](evals/), each scaffolding its own small fixture repository.
+13 cases in [evals/](evals/), each scaffolding its own small fixture repository.
 
 | Tag | Cases | Run with |
 |---|---|---|
-| `organizer` | large request opens a work item and waits; small request and read-only investigation stay out; status of an open item; medium fix end to end | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` |
+| `organizer` | large request opens a work item and waits; small request and read-only investigation stay out; status of an open item; verify staffs the verifier; a test task keeps its failing test; medium fix end to end | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` |
 | `migrated` | test-harden, handoff | `claude plugin eval . --tag migrated --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` |
 | `hooks` | the session-start summary names the open item | `claude plugin eval . --tag hooks --scaffold` |
 | `onboard` | create a profile; refresh one and keep user values | `claude plugin eval . --tag onboard no-trigger --scaffold --allow-tools Write Edit` |

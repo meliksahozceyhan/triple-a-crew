@@ -122,12 +122,12 @@ Plugin agents with a fixed role, default model and tool set. The organizer can o
 | Role | Does | Default model | Tools | Notes |
 |---|---|---|---|---|
 | researcher | Maps code, docs and tickets; answers "where/how does X work" | haiku → sonnet | read-only | Cheap, parallel-friendly |
-| architect | Options and trade-offs for ambiguous or cross-cutting work | opus | read-only | Only staffed when the design is unclear |
+| architect | Options and trade-offs for ambiguous or cross-cutting work | opus | read-only | Not a separate agent: a researcher at critical tier answers design questions (work item `employees-v2`) |
 | engineer | Implements one task from the plan | sonnet | edit, bash | Own worktree when running in parallel |
-| test-engineer | Finds missing high-risk cases, adds tests | sonnet | edit, bash | Generalized from test-robustness-reviewer/filler |
+| test-engineer | Writes the tests for a task, never production code | sonnet | edit, bash | Built (`employees-v2`); `test-harden` preloaded with `skills: [test-harden]`; a test that exposes a bug stays failing and goes back to the code task |
 | reviewer | Fresh-context, adversarial review of a diff | opus | read-only | Never reviews its own work |
-| verifier | Runs the profile's check commands, reports facts | haiku | bash | Reports, does not fix |
-| scribe | Issues, handoffs, PR text, status reports | haiku | write | Uses tier-1 skills |
+| verifier | Runs the profile's check commands, reports facts | haiku | bash | Built (`employees-v2`); reports each exit code and the failing lines verbatim, does not fix; staffed for size L, and for M with more than one verify command |
+| scribe | Issues, handoffs, PR text, status reports | haiku | write | Dropped: subagents cannot confirm issues with the user; `file-issue` and `handoff` are skills; PR text needs the conversation |
 
 Roles stay few. A new role is added only when a task type keeps recurring and needs a different model,
 tool set or protocol than the existing ones.
@@ -163,7 +163,8 @@ A project overrides a tier's model with `models: { critical: fable }` in its pro
 Rules on top of the table:
 
 - **Escalate on failure.** A task that fails acceptance twice moves up one tier, with the failure in its brief.
-- **Separation of duties.** The agent that wrote a change never reviews it.
+- **Separation of duties.** The agent that wrote a change never reviews it. For size L, the test-engineer
+  writes the independent tests for a code task; engineers still write the tests their own acceptance check needs.
 - **Parallel only on disjoint file sets.** Overlapping writers run in sequence, or in separate worktrees with
   the organizer merging.
 - **Aliases, not model IDs.** Agents use `haiku` / `sonnet` / `opus` / `fable` so the plugin does not age
@@ -393,9 +394,9 @@ claude-skill-folder/
   plugins/
     triple-a-crew/                    organizer, employees, onboard, workflow skills, hooks
       .claude-plugin/plugin.json
-      agents/                         researcher, engineer, reviewer
+      agents/                         researcher, engineer, test-engineer, verifier, reviewer
       skills/                         work, onboard, test-harden, handoff
-      evals/                          11 cases, each on a scaffolded fixture repo
+      evals/                          13 cases, each on a scaffolded fixture repo
     file-issue/                       standalone, so others can install just this
       .claude-plugin/plugin.json
       skills/file-issue/
@@ -478,7 +479,8 @@ rules are in the rules file, the rest once the plugin versions have been used fo
    *Cut 2026-10-19:* `plan-review`, `cleanup` and `investigate`, whose sharpened eval cases scored Δ 0.00,
    0.00 and +0.17 against plain Claude. What they added moved into the organizer (size-L convention check,
    noise rule in the verify step) and the `researcher` (ranked likely causes).
-3. **v2**: remaining roles (architect, test engineer, verifier, scribe), `retro`, the three hooks (built in
+3. **v2**: remaining roles (test engineer and verifier built in `employees-v2`; architect folded into the
+   researcher; scribe dropped), `retro`, the three hooks (built in
    `crew-hooks`), team mode,
    Cursor check, actioner-new moved onto the plugin.
 4. **Publish**: README, license, examples, `version` set, git tags; strip anything personal. Test the

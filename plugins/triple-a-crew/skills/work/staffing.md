@@ -6,17 +6,20 @@
 |---|---|---|---|---|
 | researcher | `triple-a-crew:researcher` | Maps code, docs and tickets; answers "where and how does X work" | standard | no |
 | engineer | `triple-a-crew:engineer` | Implements one task from the plan and checks it | standard | yes |
+| test-engineer | `triple-a-crew:test-engineer` | Writes the tests for a task, never production code | standard | tests only |
+| verifier | `triple-a-crew:verifier` | Runs the profile's verify commands and reports exact results | mechanical | no |
 | reviewer | `triple-a-crew:reviewer` | Fresh-context, adversarial review of a diff | critical | no |
 
-Architect, test engineer, verifier and scribe roles come later. Until then, do that work yourself: design
-options in `decisions.md`, verify commands in step 8, issues through `file-issue`.
+There is no separate architect: design questions go to a researcher at critical tier, which returns its
+design-question report. There is no scribe: issues go through `file-issue`, handoffs through the `handoff`
+skill, and PR text stays with you, because you have the conversation.
 
 Point employees at the crew's methods in their briefs:
 
 - A researcher investigating a bug returns ranked likely causes (the format is in its agent file). Paste the
   report and all its comments into the brief: researchers have no tracker connectors.
-- An engineer whose task is tests follows the `test-harden` rules: the project's framework, behavior-first,
-  the edge-case catalog.
+- Test tasks go to the test-engineer, which has the `test-harden` rules preloaded.
+- A design question goes to a researcher at critical tier.
 
 ## Tiers
 
@@ -36,7 +39,10 @@ A profile entry such as `models: { critical: fable }` replaces a tier's model.
 
 - **Escalate on failure.** A task that misses its acceptance check twice moves up one tier, with both failures
   in the new brief.
-- **Separation of duties.** The agent that wrote a change never reviews it.
+- **Separation of duties.** The agent that wrote a change never reviews it. For size L, the independent tests
+  for a code task (edge cases beyond its own acceptance check) go to the test-engineer, not the engineer who
+  wrote the code; engineers still add the tests their own acceptance check needs. A test task depends on the
+  code task it tests.
 - **Parallel only on disjoint file sets.** Overlapping writers run in sequence, or in separate worktrees
   (`isolation: "worktree"`) with you merging.
 - **Effort before tier.** For a task with many edge cases, a stronger brief with explicit cases often beats a
