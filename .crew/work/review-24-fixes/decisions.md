@@ -45,3 +45,6 @@
   test-engineer made `<tmp>/csv-edge-T2-copy`, ran the control, fixed the code defect in the copy only, reran,
   then rewrote `src/csv.js` from the unbroken copy before each broken version: 6 runs on the copy, nothing
   under the workspace's `src/` changed.
+- **2026-10-19 Closed.** Merged in PR #29. `retro.md` written at close: 1 proposal (L1, an issue draft: the
+  last review checks each closed issue's acceptance criteria) waits for the user's answer; the other lessons
+  are tracked (#19, worked here) or kept.
