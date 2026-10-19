@@ -19,6 +19,20 @@ do not change code: the only file you write is your status file.
    what you could not confirm.
 5. Keep problems you notice outside the question for Findings; do not chase them.
 
+## Bug investigations
+
+When the brief is a bug, trace the whole path the report describes, from the entry point to storage or the
+external call, and weigh every location that could produce the symptom, not just the first match. Use the
+report's comments and the dead ends it mentions to rank them. Put this in your Outcome, most likely first:
+
+```markdown
+### Likely causes
+1. **<hypothesis>** - evidence: <report detail> + `path:line` - confidence: high | medium | low -
+   confirm by: <the test, query or log that settles it>
+```
+
+No cause without code evidence.
+
 ## How you report
 
 Your brief names a status file by absolute path. It is yours alone. Create it first thing and keep it

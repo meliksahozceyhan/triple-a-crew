@@ -46,9 +46,9 @@ Three tiers in the plugin, plus a layer each project owns.
 ┌─ Tier 3: automation (Claude Code only) ─────────────────────────────┐
 │  hooks: session-start board summary, subagent-stop status sync      │
 ├─ Tier 2: organization (Claude Code only) ───────────────────────────┤
-│  organizer skill · employee agents · .crew/work/ state            │
+│  organizer skill · employee agents · handoff · .crew/work/ state    │
 ├─ Tier 1: portable skills (Claude Code, Cursor, Claude chat) ────────┤
-│  file-issue · intake · plan-review · cleanup · handoff · onboard    │
+│  file-issue · onboard · test-harden                                 │
 └─────────────────────────────────────────────────────────────────────┘
    project layer (not in the plugin): .crew/profile.md, project skills and rules
 ```
@@ -56,8 +56,10 @@ Three tiers in the plugin, plus a layer each project owns.
 **Rules per tier**
 
 - **Tier 1** skills are a plain `SKILL.md` plus optional reference files. No dependency on hooks, subagents or
-  the work folder. If a work folder exists they write into it; if not, they still work. Every tier-2 feature
-  is built from tier-1 skills, so the organizer and a user calling a skill by hand get the same behavior.
+  the work folder. If a work folder exists they write into it; if not, they still work. Tier-2 features reuse
+  tier-1 skills where one exists (`file-issue`, `test-harden`), so the organizer and a user calling the skill
+  by hand get the same behavior. Checks too small to earn a skill of their own (the size-L convention check,
+  the noise rule in the verify step) live only in the organizer.
   Frontmatter is limited to `name` and `description`: other fields are Claude Code extensions to the
   [Agent Skills spec](https://agentskills.io/specification) and may be ignored elsewhere.
 - **Tier 2** may assume Claude Code: subagents, model selection, worktrees, background agents.
@@ -92,9 +94,11 @@ Responsibilities, in order:
 
 The organizer starts on its own; the user does not need a command.
 
-1. **Trigger.** The organizer skill's description makes Claude invoke it for requests that look multi-step:
-   building or fixing something across several files or areas, anything that needs investigation before
-   implementation, or a reference to a ticket. It does not trigger on questions, explanations or one-spot edits.
+1. **Trigger.** The organizer skill's description makes Claude invoke it for requests to build, change or fix
+   something across several files or areas, including fixes that need investigation first and tickets to
+   implement. It does not trigger on questions, explanations, one-spot edits, or requests only to investigate
+   or review with no change asked for ("investigate ACT-123", "review this plan"), even when they name a
+   ticket.
 2. **Resume before creating.** If the request matches an open work item in `.crew/work/index.md`, the
    organizer resumes that item instead of starting a new one.
 3. **Size the work** before creating anything:
@@ -236,7 +240,7 @@ and files them via `file-issue`, the way an engineer flags a problem and the lea
 ### Lifecycle
 
 ```
-intake → investigate → plan → plan-review → implement → verify → cleanup → review → ship → retro
+intake → investigate → plan → convention check → implement → cleanup → verify → review → ship → retro
 ```
 
 Each phase is skippable; the organizer records why in `decisions.md`. `work next` reads the current phase
@@ -378,12 +382,12 @@ claude-skill-folder/
     triple-a-crew/                    organizer, employees, onboard, workflow skills (hooks in v2)
       .claude-plugin/plugin.json
       agents/                         researcher, engineer, reviewer
-      skills/                         work, onboard, plan-review, cleanup, test-harden, investigate, handoff
-      evals/                          12 cases, each on a scaffolded fixture repo
+      skills/                         work, onboard, test-harden, handoff
+      evals/                          10 cases, each on a scaffolded fixture repo
     file-issue/                       standalone, so others can install just this
       .claude-plugin/plugin.json
       skills/file-issue/
-      evals/                          7 cases
+      evals/                          9 cases
   docs/DESIGN.md
 ```
 
@@ -426,17 +430,18 @@ calls a connector; whether Cursor reads `SKILL.md` from `.claude/skills` or a pl
 | Today (actioner-new) | Became (done 2026-10-16) | What moves to the actioner-new profile |
 |---|---|---|
 | `skills/session-handoff` (+ `handoff.mjs`) | `handoff` skill; the script writes to `.crew/handoffs/` and skips a home-directory git root | nothing |
-| `agents/plan-reinforcer` | `plan-review` skill, run by the organizer on size-L plans | the Actioner stack rules (Zod-first, Prisma, pnpm, queue, MinIO, sync lifecycle, React style) as a rules file listed in `conventions` |
-| `agents/post-plan-cleanup` | `cleanup` skill, run by the organizer before review | nothing; it was already generic |
-| `agents/investigate-linear-issue` | `investigate` skill (any tracker or pasted text); researchers return its report format | the `apps/*` / `packages/*` layout notes |
+| `agents/plan-reinforcer` | `plan-review` skill; cut 2026-10-19 (Δ 0). The organizer's size-L step checks each task against the `conventions` files and records the rules that change the plan in `decisions.md` | the Actioner stack rules (Zod-first, Prisma, pnpm, queue, MinIO, sync lifecycle, React style) as a rules file listed in `conventions` |
+| `agents/post-plan-cleanup` | `cleanup` skill; cut 2026-10-19 (Δ 0). One noise rule in the organizer's verify step | nothing; it was already generic |
+| `agents/investigate-linear-issue` | `investigate` skill; cut 2026-10-19 (Δ +0.17). The `researcher` agent returns ranked likely causes; plain Claude handles a read-only "investigate ACT-123" | the `apps/*` / `packages/*` layout notes |
 | `agents/test-robustness-reviewer` / `-filler` + `skills/test-robustness-review` | `test-harden` skill with review and fill modes | the Vitest paths and the `.cursor/rules` test manifests in `conventions` |
 | `.claude/handoffs/` | `.crew/handoffs/` | nothing; old handoffs resume with `HANDOFF_DIR=.claude/handoffs` |
 
 There is no separate `intake` skill: turning a vague ask into a brief is the organizer's step 3.
 
 **Still to do in actioner-new:** add `.crew/profile.md` (run `onboard`), put the Actioner rules from
-`plan-reinforcer` into a rules file listed in `conventions`, and retire the five old agents and two skills once
-the plugin versions have been used for real.
+`plan-reinforcer` into a rules file listed in `conventions`, and retire the old agents and skills: those
+whose plugin versions were cut (`plan-reinforcer`, `post-plan-cleanup`, `investigate-linear-issue`) once their
+rules are in the rules file, the rest once the plugin versions have been used for real.
 
 ## Build order
 
@@ -458,6 +463,9 @@ the plugin versions have been used for real.
    migrated from actioner-new, each with an eval case. Learned: a two-file fix reads as size S, so the
    end-to-end case starts the organizer explicitly; a slash command loads a skill without a `Skill` tool
    call; the organizer must not claim requests one crew skill handles alone.
+   *Cut 2026-10-19:* `plan-review`, `cleanup` and `investigate`, whose sharpened eval cases scored Δ 0.00,
+   0.00 and +0.17 against plain Claude. What they added moved into the organizer (size-L convention check,
+   noise rule in the verify step) and the `researcher` (ranked likely causes).
 3. **v2**: remaining roles (architect, test engineer, verifier, scribe), `retro`, the three hooks, team mode,
    Cursor check, actioner-new moved onto the plugin.
 4. **Publish**: README, license, examples, `version` set, git tags; strip anything personal. Test the

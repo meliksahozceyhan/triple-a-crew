@@ -1,7 +1,7 @@
 {
   "name": "triple-a-crew",
   "displayName": "Triple-A-Crew",
-  "description": "Workflow organizer for Claude Code. v0 ships onboard, which writes a project's .crew/profile.md (stack, verify commands, tests, conventions, issue tracker) for the other crew skills to read. The organizer arrives in v1.",
+  "description": "Workflow organizer for Claude Code. The work skill sizes a request, opens a work item in .crew/work/, stress-tests edge cases, plans, staffs researcher, engineer and reviewer subagents on model tiers, verifies and files follow-ups. Also ships onboard (writes the project's .crew/profile.md), test-harden and handoff.",
   "author": {
     "name": "meliksahozceyhan"
   },
@@ -9,7 +9,9 @@
   "keywords": [
     "workflow",
     "organizer",
+    "subagents",
     "onboarding",
-    "project-profile"
+    "project-profile",
+    "handoff"
   ]
 }
