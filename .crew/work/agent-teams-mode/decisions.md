@@ -91,3 +91,17 @@
   `agents/` holds no agent (N6, both probed); the organizer tells the user when an approved plan's parallel
   writers must run one at a time (N7). Not done: moving the team-mode check into step 5's planning, which
   would put team-mode text into SKILL.md for every L item; N7's note covers the gap.
+- **2026-10-19 T8 so far.** Organizer suite in subagent mode (no teams variable): 7/7 at 1.00, $3.29, so
+  subagent mode is unchanged. Live phase A (gate probe, user's embedded terminal, teams on from
+  `settings.local.json` only): `printenv` printed `1` without the command prefix; the crew reminder reached
+  `T9-researcher` (the new matcher works); the stop gate blocked its bare first stop (`stop_hook_active`
+  false, then true) and the teammate came back and wrote its status file. The session ran in auto mode,
+  so whether `printenv` prompts in default mode is still open. New finding: the gate's message offers
+  "finish as failed", and the haiku teammate took that instead of doing the task.
+- **2026-10-19 T8 phase B (planning half) and the gate wording.** The organizer detected team mode, read
+  `teams.md` before planning, and planned by it: two chains on modules that don't import each other, each
+  acceptance check on its own test file, the verifier and reviewers after all four writers. The session
+  ended at the go-ahead (three design questions open), so the staffing half is not yet observed. The stop
+  gate's messages now say to create or finish the status file and carry on with the task, with `failed`
+  only for a task that cannot be done at all (phase A's haiku teammate had taken the old "finish as
+  failed" way out). Details in `team/T8-organizer.md`.

@@ -106,11 +106,11 @@ block() {
   exit 0
 }
 
-minimal="To finish without completing the task, write the file with this content: a frontmatter block (--- lines) containing task, role, model, state: failed and updated, followed by a line ## Progress and one line saying why you could not do the task. Then end your reply with the final report."
+minimal="Only if you cannot do the task at all, write the file with this content instead: a frontmatter block (--- lines) containing task, role, model, state: failed and updated, followed by a line ## Progress and one line saying why you could not do the task. Then end your reply with the final report."
 
 if [ ! -f "$path" ]; then
   forget_done
-  block "Your status file does not exist: $path. Create it now (frontmatter with task, role, model, state, updated; sections Progress, Assumptions, Questions, Findings) and keep it current. $minimal"
+  block "Your status file does not exist: $path. Create it now (frontmatter with task, role, model, state, updated; sections Progress, Assumptions, Questions, Findings), then carry on with the task in your brief and keep the file current. $minimal"
 fi
 
 state=$(awk '
@@ -123,8 +123,8 @@ state=$(printf '%s' "$state" | sed "s/^[\"']//; s/[\"']\$//")
 case "$state" in
   blocked) allow ;;
   done | failed) ;;
-  '') forget_done; block "Your status file $path has no state: line in a frontmatter block (--- lines at the top). Add one, set to done, blocked or failed, and update the updated field. If you could not do the task, set state: failed. $minimal" ;;
-  *) forget_done; block "Your status file $path has state: '$state', which is not final. Set the frontmatter state to done, blocked or failed and update the updated field. If you could not do the task, set state: failed. $minimal" ;;
+  '') forget_done; block "Your status file $path has no state: line in a frontmatter block (--- lines at the top). Finish the task in your brief, then add one, set to done (or blocked, with your question under Questions) and update the updated field. $minimal" ;;
+  *) forget_done; block "Your status file $path has state: '$state', which is not final. Finish the task in your brief, then set the frontmatter state to done (or blocked, with your question under Questions) and update the updated field. $minimal" ;;
 esac
 
 # A finished employee answering a follow-up needs no new report.
