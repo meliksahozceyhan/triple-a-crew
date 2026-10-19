@@ -232,9 +232,12 @@ by a spike on Claude Code 2.1.299 (work item `crew-hooks`):
   unless it is the home directory, otherwise the working directory), at most 15 lines, as plain text that
   reaches the main session; it prints nothing in projects without crew state.
 - Both subagent hooks match `^(triple-a-crew:[a-z-]+|[Tt][0-9]+[a-z]?-(researcher|engineer|test-engineer|verifier|reviewer))$`,
-  so built-in agents and other plugins' agents are never touched, and roles added later under the plugin's
+  so built-in agents and other plugins' agents are left alone, and roles added later under the plugin's
   prefix are covered. The second half exists for team mode: for a teammate, `agent_type` is its name, so the
-  organizer names teammates `T<n>-<role>`. A new role must be added to that list.
+  organizer names teammates `T<n>-<role>`. A new role must be added to that list (`test-hooks.sh` fails until
+  it is). An unrelated teammate with such a name gets the reminder but no gate, since its brief has no
+  `**Status file:**` line. SubagentStart fires again each time an in-process teammate handles a new message,
+  so a teammate sees the reminder more than once.
 
 **Two channel modes.**
 
@@ -246,7 +249,7 @@ by a spike on Claude Code 2.1.299 (work item `crew-hooks`):
 | Working directory | an engineer may get its own worktree (`isolation: "worktree"` on the call) | shared with the lead: a teammate gets no worktree, so writers running at the same time need disjoint files |
 | Questions | stop as `blocked`; the organizer resumes them with `SendMessage` | live messages by name, to the lead and to each other; a finished teammate's final answer reaches the lead automatically; teammates' permission prompts appear in the lead's session |
 | Task list | `board.md` + `team/*.md` in the repository | a shared list in `~/.claude/tasks/<team>/`, outside the repository, with dependencies; the lead assigns tasks or teammates claim them. File locking covers claiming a task, not editing files |
-| Hooks | `SubagentStart` and `SubagentStop` (see above) | the same two fire for a teammate, but `agent_type` is its name, so the crew matcher also accepts `T<n>-<role>`; plus `TeammateIdle`, `TaskCreated`, `TaskCompleted` (live test) |
+| Hooks | `SubagentStart` and `SubagentStop` (see above) | the same two fire for a teammate, but `agent_type` is its name, so the crew matcher also accepts `T<n>-<role>`; plus `TeammateIdle` (seen in the live test), `TaskCreated` and `TaskCompleted` |
 | Limits | one round trip per question | experimental; one team per session; no nested teams; `/resume` and `/rewind` don't restore in-process teammates; token use grows with each teammate; the docs suggest 3-5 teammates |
 
 Team mode is checked against [agent teams](https://code.claude.com/docs/en/agent-teams) and [subagent

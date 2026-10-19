@@ -16,7 +16,8 @@ is a full session.
 ## When to use it
 
 - Use team mode for size L work with parallel tasks or questions you expect mid-task. Size S and M: subagents.
-- Keep 3-5 teammates at once. Tokens grow with each one. One team per session; teammates cannot spawn teams.
+- At most 5 teammates at once (the docs suggest 3-5); tokens grow with each one. One team per session;
+  teammates cannot spawn teams.
 - Every role may be a teammate, writers included.
 
 ## Spawn
@@ -27,16 +28,22 @@ is a full session.
 - Never pass `isolation`: it turns the call into a subagent. An engineer that needs its own worktree is
   spawned unnamed, as a subagent with `isolation: "worktree"`, and you merge its branch.
 - A teammate gets `tools` and the body of its agent file but not `skills`. The test-engineer reads the
-  `test-harden` skill itself; say so in its brief.
+  `test-harden` skill itself: put the absolute path of `../test-harden/SKILL.md` (next to this skill's
+  folder) in its brief.
 
 ## Shared working tree
 
 All teammates see one tree, live. A file can change under a reader, who cannot tell who changed it.
 
 - Writers run at the same time only on disjoint file sets. Otherwise one at a time.
+- A writer running alongside others gets no verify commands in its brief, and its acceptance check covers
+  only its own files (its own test file, not the whole suite): a co-worker's half-done edit would fail it.
+  A failure in a co-worker's files goes under Findings; it never edits them. This also holds when a named
+  call falls back to a subagent, which then has no worktree either.
 - Readers (researcher, reviewer, verifier) stay off a writer's files until that writer is done.
-- Every brief lists the teammates running at the same time, each with its file set.
-- Teammates never commit. You commit.
+- Every brief lists the teammates running at the same time, each with its file set. When you start another
+  teammate later, message the running ones its name and file set.
+- Teammates never commit. Commits stay with you, as in subagent mode: only when the user asks.
 - Run verify only after every writer on the item has finished.
 - Code changes come only from tasks you assign. A reviewer may question an engineer directly but never orders
   changes: findings come to you.
@@ -49,8 +56,11 @@ status file and re-staff the task if it is unfinished, at the next tier if it fa
 
 ## Questions and decisions
 
-- Teammates message you and also write the question and your answer under Questions in their status file.
-- Answer by message. Record real decisions in `decisions.md`.
+- A teammate with a question sets `state: blocked`, writes the question with its proposed answer under
+  Questions, and messages you. The stop gate runs each time a teammate goes idle and sends back an
+  `in-progress` one, so say this in the brief.
+- Answer by message; the teammate records your answer, sets `in-progress` and continues. Record real
+  decisions in `decisions.md`.
 - Never use TaskCreate or the built-in task list (it lives in `~/.claude/tasks/`, outside the repo and the
   crew's control). `board.md` stays the only task list, so no teammate claims work itself. A writer can
   never pick up the review of its own change.

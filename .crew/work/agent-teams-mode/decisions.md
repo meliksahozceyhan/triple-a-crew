@@ -59,3 +59,15 @@
   away. T6 was done by the organizer (README "Team mode", hook wording in both READMEs and DESIGN, DESIGN's
   Verified mechanics Hooks row) since it needed T3's details. Open for T7: the lead cannot count a teammate's
   turns, so "runs well past its budget" is a judgment call.
+- **2026-10-19 T7 review: changes requested** (`team/T7-reviewer.md`, git-ignored): 1 must-fix, 4 should-fix,
+  7 nits, all applied by the organizer. M1: parallel writers share the tree, and the engineer runs the
+  brief's verify commands, so a co-worker's half-done edit fails them; their briefs now carry no verify
+  commands and an acceptance check on their own files only. S1: commits only when the user asks, as in
+  subagent mode. S2: running teammates are told when another one starts. S3: the test-engineer's brief gets
+  the absolute path to test-harden. S4: `test-hooks.sh` fails when an agent file is missing from the
+  teammate roles (checked with a throwaway `designer` agent). Nits: no invented cost figure, "at most 5",
+  "never touched" corrected, TeammateIdle is the only team hook seen live, the reminder repeats on every new
+  message, a teammate with a question sets `blocked` (the stop gate runs at every idle), and the manual
+  check runs before the session ends. Also from its open question: step 6 runs `printenv` only for size L,
+  so M items gain no Bash call or prompt. For T8: whether `printenv` prompts in default mode, and whether it
+  sees the variable set only in `settings.local.json`.
