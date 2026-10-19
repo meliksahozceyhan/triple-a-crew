@@ -42,7 +42,7 @@ or a protocol.
 
 ```
 ┌─ Tier 3: automation (Claude Code only) ─────────────────────────────┐
-│  hooks: session-start summary, subagent status checks        (v2)   │
+│  hooks: open-items summary, employee protocol, status-file gate     │
 ├─ Tier 2: organization (Claude Code only) ───────────────────────────┤
 │  work (organizer) · researcher, engineer, reviewer · handoff        │
 ├─ Tier 1: portable skills (Claude Code, Claude chat, Cursor*) ───────┤
@@ -201,6 +201,24 @@ Every employee keeps a status file (`.crew/work/<id>/team/<task>-<role>.md`) and
 outcome, changed files, evidence, assumptions, open questions, findings. Employees never spawn agents, never
 file issues and never write under `.claude/`.
 
+### Hooks
+
+The plugin ships three hooks that keep the organizer and its employees honest. They match only this plugin's
+agents (`triple-a-crew:*`), never built-in agents or other plugins' agents, and nothing breaks with hooks
+turned off.
+
+| Hook | Runs when | What it does |
+|---|---|---|
+| `SessionStart` | a session starts, resumes, clears or compacts | Lists the open work items from `.crew/work/index.md` at the project root (the git root, unless that is your home folder; otherwise the session's folder), at most 15. Prints nothing in projects without one |
+| `SubagentStart` | an employee starts | Adds a short reminder of the status-file protocol to the employee's context |
+| `SubagentStop` | an employee tries to finish | Sends it back while its status file is missing or not `done`, `blocked` or `failed`, or while a `done` or `failed` reply lacks a report section. It reads the status-file path from the first line of the brief that starts with `**Status file:**` (in the employee's transcript); if that path doesn't exist and doesn't end in `.md`, it stays silent. It sends the same employee back at most 3 times, and a finished employee answering a follow-up question needs no new report |
+
+The scripts are POSIX `sh` and use `jq` when it is installed. Test them without a model call:
+
+```bash
+sh plugins/triple-a-crew/scripts/test-hooks.sh
+```
+
 ### The workflow skills
 
 These came from skills that lived in actioner-new with Actioner's stack rules built in. They now read each
@@ -327,6 +345,12 @@ claude plugin validate .
 
 The only expected warnings are the missing `version` fields, left out on purpose while iterating.
 
+Test the hooks without a model call:
+
+```bash
+sh plugins/triple-a-crew/scripts/test-hooks.sh
+```
+
 Do not add `dependencies` between the plugins. A plugin whose dependency is not installed does not load at
 all, which breaks `--plugin-dir` and the eval sandbox. See [Troubleshooting](#troubleshooting).
 
@@ -345,6 +369,7 @@ Every run is a real model call on your account. A full run of both suites costs 
 | `file-issue` | `claude plugin eval . --tag mock-tracker --ablation none --scaffold` | 3 mocked-Linear cases, one arm |
 | `triple-a-crew` | `claude plugin eval . --tag migrated onboard no-trigger --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` | 2 migrated-skill cases, 2 onboard, 3 no-trigger, with baseline |
 | `triple-a-crew` | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` | 5 organizer cases, one arm |
+| `triple-a-crew` | `claude plugin eval . --tag hooks --scaffold` | 1 hooks case, with baseline |
 
 Add `--runs 1 --ablation none --case <name>` to iterate on one case cheaply. Add `--keep-temp` to keep each
 run's sandbox, including `out/trace.jsonl` with every tool call.
@@ -374,6 +399,8 @@ ones that test the no-tracker path.
   - **"Where are we?":** answers from the open item's board without starting work.
   - **Medium fix, end to end:** fixes the quoting in both writers, runs the verify command, and staffs a
     reviewer on opus that writes its status file.
+- Hooks: with one open item in `.crew/work/index.md`, Claude names it without using any tool, because the
+  `SessionStart` hook put it in its context. The baseline cannot know.
 - Migrated skills, one fixture each:
   - `test-harden` adds risky cursor cases in `node:test`, not another framework.
   - `handoff` writes and finalizes to `.crew/handoffs/`.
@@ -392,11 +419,12 @@ ones that test the no-tracker path.
 | `file-issue` | `linear-confirms-before-creating` | 1.00 | one arm | | 3 + 2 |
 | `file-issue` | `linear-duplicate-offers-comment` | 1.00 | one arm | | 3 + 2 |
 | `file-issue` | `profile-confirm-never-creates` | 1.00 | one arm | | 3 + 2 |
-| `triple-a-crew` | `starts-work-item-on-large-request` | 1.00 | one arm | | 2 + 1 |
-| `triple-a-crew` | `stays-out-of-small-request` | 1.00 | 1.00 | 0.00 | 4 + 1 |
-| `triple-a-crew` | `stays-out-of-read-only-investigation` | 1.00 | not run | | 1 |
-| `triple-a-crew` | `reports-status-of-open-item` | 1.00 | one arm | | 2 + 1 |
-| `triple-a-crew` | `medium-fix-end-to-end` | 1.00 | one arm | | 1 + 1 |
+| `triple-a-crew` | `starts-work-item-on-large-request` | 1.00 | one arm | | 2 + 2 |
+| `triple-a-crew` | `stays-out-of-small-request` | 1.00 | 1.00 | 0.00 | 4 + 2 |
+| `triple-a-crew` | `stays-out-of-read-only-investigation` | 1.00 | not run | | 1 + 1 |
+| `triple-a-crew` | `session-start-mentions-open-item` | 1.00 | 0.80 | +0.20 | 1 |
+| `triple-a-crew` | `reports-status-of-open-item` | 1.00 | one arm | | 2 + 2 |
+| `triple-a-crew` | `medium-fix-end-to-end` | 1.00 | one arm | | 1 + 2 |
 | `triple-a-crew` | `creates-profile-from-repo` | 1.00 | 0.00 | +1.00 | 2 |
 | `triple-a-crew` | `refreshes-profile-keeps-user-values` | 1.00 | 1.00 | 0.00 | 2 |
 | `triple-a-crew` | `no-fire-setup-question` | 1.00 | 1.00 | 0.00 | 2 |
@@ -444,10 +472,14 @@ How to read it:
   the skill body, which loads once the skill has fired, so they cannot change whether it fires. The tracker
   cases were rerun twice after those changes.
 - **The organizer's description changed on 2026-10-19** (read-only requests stay out). The rerun that day
-  (the second number in "Runs") scored 1.00 on all five organizer cases. In
+  (the second and third numbers in "Runs"; the third ran with the hooks) scored 1.00 on all five organizer cases. In
   `stays-out-of-read-only-investigation` Claude read the issue's comments from the mocked Linear without
   starting the organizer, writing or editing anything. In `medium-fix-end-to-end` the fix kept the
-  comments that were already in the file, as the noise rule now requires.
+  comments that were already in the file, as the noise rule now requires. The suite ran once more the same
+  day with the hooks loaded: 5/5 at 1.00 ($1.53), so the stop hook let a reviewer that did its job finish.
+- **`session-start-mentions-open-item`** scores 0.80 without the plugin only because its four "no tool used"
+  graders pass in both arms. The grader that matters, naming the open item, passed with the hook and failed
+  without it.
 
 ## Repository layout
 
@@ -468,12 +500,14 @@ How to read it:
 │       ├── .claude-plugin/plugin.json
 │       ├── README.md
 │       ├── agents/                     researcher, engineer, reviewer
+│       ├── hooks/hooks.json            SessionStart, SubagentStart, SubagentStop
+│       ├── scripts/                    the hook scripts (POSIX sh) and test-hooks.sh
 │       ├── skills/
 │       │   ├── work/                   the organizer: SKILL.md, formats, staffing, protocol
 │       │   ├── onboard/                SKILL.md, profile-format.md (the profile contract)
 │       │   ├── test-harden/            SKILL.md, examples.md
 │       │   └── handoff/                SKILL.md, handoff.mjs (facts from git and the transcript)
-│       └── evals/                      10 cases; each fixture.sh scaffolds a sample repo
+│       └── evals/                      11 cases; each fixture.sh scaffolds a sample repo
 └── README.md
 ```
 
@@ -483,7 +517,7 @@ How to read it:
 |---|---|
 | **v0** (done) | Marketplace, `file-issue` with tracker reference files and evals, `onboard` with the profile format and evals |
 | **v1** (done) | The organizer (`work`): sizing, the `.crew/work/` folder, the status protocol, and three employees: researcher, engineer, reviewer. The actioner-new skills migrated as generic skills: `plan-review`, `cleanup`, `test-harden`, `investigate`, `handoff`. `plan-review`, `cleanup` and `investigate` were cut afterwards and folded into the organizer and the researcher (see [Evals](#evals)) |
-| **Next** (planned) | In this order: hooks (`crew-hooks`); `verifier` and `test-engineer`, with the architect folded into the researcher and no scribe (`employees-v2`); `retro` (`retro-skill`). When their live tests are run: an opt-in agent-teams mode (`agent-teams-mode`) and a Cursor check (`cursor-check`). Each plan is in `.crew/work/<id>/plan.md`. Separately: move actioner-new onto the plugin |
+| **Next** (planned) | In this order: hooks (`crew-hooks`, built); `verifier` and `test-engineer`, with the architect folded into the researcher and no scribe (`employees-v2`); `retro` (`retro-skill`). When their live tests are run: an opt-in agent-teams mode (`agent-teams-mode`) and a Cursor check (`cursor-check`). Each plan is in `.crew/work/<id>/plan.md`. Separately: move actioner-new onto the plugin |
 | **Publish** (planned, `publish-v1`) | License, versions and git tags, an exposure audit, make the repository public, test the `file-issue` zip in Claude chat |
 
 The organizer's model choice is a rule table: `mechanical` work goes to haiku, `standard` to sonnet,
@@ -522,6 +556,8 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
 | Plugin does not load; `plugin_errors` shows `dependency-unsatisfied` | A declared dependency is not installed. Remove `dependencies`, or install the dependency first |
 | Permission prompt on every write under `.claude/` | `.claude/` is protected in Claude Code. Write crew state to `.crew/` |
 | Eval stops after about a second with `partialReason: auth_failed` and $0 cost | The standalone `claude` CLI is not logged in (`claude auth status` shows `loggedIn: false`). A Claude desktop-app session authenticates through the app, not the CLI, so evals started from it fail. Run them from a terminal after `claude auth login` |
+| An employee keeps being told to fix its status file | The `SubagentStop` hook found the status file named in its brief, and the file is missing, not final, or the reply lacks a report section. The reason it gives says what to fix. The hook gives up after 3 tries for the same employee |
+| No open-items summary at session start | The `SessionStart` hook reads `.crew/work/index.md` at the git root (or the session's folder outside a repository, or when the git root is your home folder) and prints only the `## Open` list. Check that the file exists and has items under `## Open`, then run `sh plugins/triple-a-crew/scripts/test-hooks.sh` |
 | Eval: `a plugins entry names the case directory ... or a directory covering them` | Do not list the plugin under test in a case's `plugins:`. Fixture plugins must sit inside the case directory |
 | Eval: `outside the containment root` | A case can only load plugins inside the plugin under test, so a sibling plugin cannot be loaded |
 | Eval: tracker tools show up in a no-tracker case | Suite-wide `evals/mocks/` applies to every case. Move the mocks into the cases that need them |

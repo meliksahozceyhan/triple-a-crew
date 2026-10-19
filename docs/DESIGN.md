@@ -44,7 +44,7 @@ Three tiers in the plugin, plus a layer each project owns.
 
 ```
 ┌─ Tier 3: automation (Claude Code only) ─────────────────────────────┐
-│  hooks: session-start board summary, subagent-stop status sync      │
+│  hooks: open-items summary, employee protocol, status-file gate     │
 ├─ Tier 2: organization (Claude Code only) ───────────────────────────┤
 │  organizer skill · employee agents · handoff · .crew/work/ state    │
 ├─ Tier 1: portable skills (Claude Code, Cursor, Claude chat) ────────┤
@@ -211,12 +211,24 @@ with its full history), or escalates to the user. Stopping is the reliable way t
 instead of starting a new one that would have to rediscover everything. Built-in Explore and Plan agents
 cannot be resumed, which is one more reason employees are plugin agents.
 
-**Enforcement through hooks** (tier 3, so the protocol holds even when an employee forgets it):
+**Enforcement through hooks** (tier 3, so the protocol holds even when an employee forgets it). Built in
+`plugins/triple-a-crew/hooks/hooks.json` with POSIX `sh` scripts in `scripts/`; the payloads were confirmed
+by a spike on Claude Code 2.1.299 (work item `crew-hooks`):
 
-- `SubagentStart` injects the protocol and the employee's status-file path as additional context.
-- `SubagentStop` blocks an employee from finishing while its status file is missing, not in a final state
-  (`done`, `blocked`, `failed`), or lacks the final report sections.
-- `SessionStart` injects a one-paragraph summary of open work items from `.crew/work/index.md`.
+- `SubagentStart` injects a short protocol reminder as `additionalContext`. Its input carries neither the
+  prompt nor the subagent's transcript path, so the status-file path stays in the brief.
+- `SubagentStop` finds the status file through the brief, which is line 1 of `agent_transcript_path`: the
+  first line starting with `**Status file:**`. It blocks while the file is missing or not in a final state
+  (`done`, `blocked`, `failed`), or while a `done` or `failed` reply (`last_assistant_message`) lacks a final
+  report section. It never blocks when it cannot resolve a path (no marker, or a missing path that doesn't
+  end in `.md`), sends the same employee back at most 3 times (a counter per `agent_id`), and skips the
+  report check for a finished employee answering a follow-up question. The spike also saw Claude Code end a
+  subagent after 9 consecutive blocks; the hook's own cap doesn't rely on that.
+- `SessionStart` prints the `## Open` list of `.crew/work/index.md` at the organizer's root (the git root
+  unless it is the home directory, otherwise the working directory), at most 15 lines, as plain text that
+  reaches the main session; it prints nothing in projects without crew state.
+- Both subagent hooks match `^triple-a-crew:[a-z-]+$`, so built-in agents and other plugins' agents are never
+  touched, and roles added later are covered.
 
 **Two channel modes.**
 
@@ -379,11 +391,11 @@ Free-form notes: architecture boundaries, things that keep going wrong, people t
 claude-skill-folder/
   .claude-plugin/marketplace.json     marketplace "triple-a-crew", lists both plugins with relative sources
   plugins/
-    triple-a-crew/                    organizer, employees, onboard, workflow skills (hooks in v2)
+    triple-a-crew/                    organizer, employees, onboard, workflow skills, hooks
       .claude-plugin/plugin.json
       agents/                         researcher, engineer, reviewer
       skills/                         work, onboard, test-harden, handoff
-      evals/                          10 cases, each on a scaffolded fixture repo
+      evals/                          11 cases, each on a scaffolded fixture repo
     file-issue/                       standalone, so others can install just this
       .claude-plugin/plugin.json
       skills/file-issue/
@@ -414,7 +426,7 @@ Checked against the Claude Code docs on 2026-10-16.
 | Validation | `claude plugin validate ./plugins/triple-a-crew` | [manifest reference](https://code.claude.com/docs/en/plugins/manifest-reference) |
 | Agents | `model` (aliases incl. `fable`), `effort`, `tools`, `isolation: worktree`, `maxTurns`, `background`, `skills`. Plugin agents ignore `permissionMode`, `hooks`, `mcpServers`, `initialPrompt` | [subagents](https://code.claude.com/docs/en/sub-agents) |
 | Nesting | Subagents may spawn subagents up to 3 levels deep by default | [subagents](https://code.claude.com/docs/en/sub-agents) |
-| Hooks | `SessionStart` and `SubagentStart` can add context; `SubagentStop` and `Stop` can block. Scripts use `${CLAUDE_PLUGIN_ROOT}`; persistent plugin data goes in `${CLAUDE_PLUGIN_DATA}` | [hooks](https://code.claude.com/docs/en/hooks) |
+| Hooks | `SessionStart` and `SubagentStart` can add context; `SubagentStop` and `Stop` can block. Scripts use `${CLAUDE_PLUGIN_ROOT}`; persistent plugin data goes in `${CLAUDE_PLUGIN_DATA}`. Plugin hooks live in `hooks/hooks.json` under a top-level `hooks` key and run with `sh -c`. Subagent matchers see plugin agents as `<plugin>:<agent>`. Subagent hook input has no prompt; SubagentStop gets `agent_transcript_path` (line 1 is the brief), `last_assistant_message` and `stop_hook_active`. In the spike a subagent ended after 9 consecutive blocks (the hook keeps its own cap of 3). Eval runs load plugin hooks | [hooks](https://code.claude.com/docs/en/hooks); spike 2026-10-19 (`crew-hooks` T2) |
 | Skills | Bundled reference files load on demand; scripts via `${CLAUDE_SKILL_DIR}`; `context: fork` runs a skill in a chosen agent | [skills](https://code.claude.com/docs/en/skills) |
 | Workflows | Plugins can ship `workflows/*.js`, but a run cannot take user input mid-way, so the organizer's Q&A loop stays in the main session | [workflows](https://code.claude.com/docs/en/workflows) |
 | Evals | `claude plugin eval .` runs `evals/<case>/prompt.md` with graders (`tool_used` to check a skill fired, `llm` rubrics), with and without the plugin, and reports the difference | [plugin evals](https://code.claude.com/docs/en/plugin-evals) |
@@ -466,7 +478,8 @@ rules are in the rules file, the rest once the plugin versions have been used fo
    *Cut 2026-10-19:* `plan-review`, `cleanup` and `investigate`, whose sharpened eval cases scored Δ 0.00,
    0.00 and +0.17 against plain Claude. What they added moved into the organizer (size-L convention check,
    noise rule in the verify step) and the `researcher` (ranked likely causes).
-3. **v2**: remaining roles (architect, test engineer, verifier, scribe), `retro`, the three hooks, team mode,
+3. **v2**: remaining roles (architect, test engineer, verifier, scribe), `retro`, the three hooks (built in
+   `crew-hooks`), team mode,
    Cursor check, actioner-new moved onto the plugin.
 4. **Publish**: README, license, examples, `version` set, git tags; strip anything personal. Test the
    `file-issue` plugin zip in Claude chat.

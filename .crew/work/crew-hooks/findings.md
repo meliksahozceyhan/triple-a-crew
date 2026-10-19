@@ -5,3 +5,6 @@
   T1 researcher · fixed by T8 of this plan
 - 2026-10-19 · Hooks run through `sh -c`; Windows users without a POSIX shell get no hooks (nothing breaks,
   tier 3) · organizer · not filed
+- 2026-10-19 · The reviewer agent's `maxTurns: 40` (`plugins/triple-a-crew/agents/reviewer.md`) ran out
+  mid-review on this 9-file change (scripts plus adversarial probes) before it recorded any finding; it had
+  to be resumed. Raise the limit, or tell reviewers to write findings as they go · organizer · not filed
