@@ -517,6 +517,7 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
 |---|---|
 | Plugin does not load; `plugin_errors` shows `dependency-unsatisfied` | A declared dependency is not installed. Remove `dependencies`, or install the dependency first |
 | Permission prompt on every write under `.claude/` | `.claude/` is protected in Claude Code. Write crew state to `.crew/` |
+| Eval stops after about a second with `partialReason: auth_failed` and $0 cost | The standalone `claude` CLI is not logged in (`claude auth status` shows `loggedIn: false`). A Claude desktop-app session authenticates through the app, not the CLI, so evals started from it fail. Run them from a terminal after `claude auth login` |
 | Eval: `a plugins entry names the case directory ... or a directory covering them` | Do not list the plugin under test in a case's `plugins:`. Fixture plugins must sit inside the case directory |
 | Eval: `outside the containment root` | A case can only load plugins inside the plugin under test, so a sibling plugin cannot be loaded |
 | Eval: tracker tools show up in a no-tracker case | Suite-wide `evals/mocks/` applies to every case. Move the mocks into the cases that need them |
