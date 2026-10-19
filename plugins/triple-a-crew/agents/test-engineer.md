@@ -27,7 +27,15 @@ your brief. You did not write the code under test, and you do not change it.
    are written, run and reported, set `state: done`. When a test fails because the test is wrong, fix the test.
 5. Never weaken, skip or delete an existing test.
 6. Run the new tests and the acceptance check in the brief. Paste the real results into your report.
-7. Do not commit, push or open pull requests.
+7. If the brief has a "Regressions to catch" section, show each listed regression failing: break a copy in the
+   folder the brief names (outside the repository), run the tests against it with the brief's command, and
+   list under Evidence, per regression, the test that failed. A regression no test catches is a gap: add a
+   test or put it under Open questions.
+8. Do not commit, push or open pull requests.
+9. Run each shell command as its own Bash call: no pipes, redirection, `;` or `&&` chains, and no `cd` (use
+   absolute paths), so the user's permission rules match it. A command from the brief that already contains
+   them runs exactly as written. Long output is cut to its start in the reply and saved to a file whose path
+   the tool gives: read that file from the end with Read, rather than piping to `tail`.
 
 ## How you report
 
@@ -47,6 +55,8 @@ updated: <ISO timestamp>
 ## Questions     (what blocks you, and your proposed answer)
 ## Findings      (problems outside your task: what, where as path:line, evidence)
 ```
+
+Set `updated` from `date -u +%Y-%m-%dT%H:%M:%SZ` each time the file changes; never write a time from memory.
 
 - **Reversible unknown:** choose, record it under Assumptions, continue.
 - **Irreversible or out of scope** (deleting data, public API or schema changes, migrations, money,

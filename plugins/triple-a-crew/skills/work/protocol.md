@@ -29,7 +29,24 @@ Write it for a reader who has seen nothing. Fixed sections:
 
 ## Edge cases to cover
 - empty table, a field with quotes and newlines
+
+## Regressions to catch
+- stops quoting line breaks inside a field
 ```
+
+`## Regressions to catch` is optional. Add it to a test task on risky work (data, security, money, public API
+including consumed file or payload formats, migrations): 3-5 concrete regressions the tests must catch. The
+test-engineer shows each one failing on a broken copy outside the repository; name the folder for the copy
+and the exact command that runs the tests there, as a folder argument when the runner takes one (`node --test
+/tmp/copy/test`), otherwise as `cd /tmp/copy && <runner>`, which it may run as written. A test task on
+low-risk work needs no such list.
+
+Every brief also carries this rule for shell commands: run each command alone, as its own Bash call: no pipes,
+redirection, `;` or `&&` chains, no `cd` (use absolute paths), and no `echo $?`, `time` or other wrappers of
+your own (a command that already contains them, such as `cd web && pnpm test`, runs exactly as listed). Then
+the exit code the Bash tool reports is the command's own, and the user's permission rules match the command.
+Long output is cut to its start in the reply and saved to a file whose path the tool gives: the employee
+reads that file from the end with Read, rather than piping to `tail`.
 
 ## Status file
 
@@ -41,7 +58,7 @@ task: T2
 role: engineer
 model: sonnet
 state: in-progress   # in-progress | blocked | done | failed
-updated: 2026-10-16T14:05
+updated: 2026-10-16T14:05:00Z
 ---
 ## Progress
 - [x] Cursor query
@@ -56,6 +73,9 @@ updated: 2026-10-16T14:05
 ## Findings
 <problems outside the task: what, where (path:line), evidence>
 ```
+
+Set `updated` from `date -u +%Y-%m-%dT%H:%M:%SZ` (one plain command) each time the file changes. Never invent
+a timestamp.
 
 ## Questions
 
