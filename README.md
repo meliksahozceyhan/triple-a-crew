@@ -643,7 +643,13 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
   skills such as `simplify`. A case shows what a skill adds only if the fixture holds back what plain Claude
   gets anyway. `plan-review`, `cleanup` and `investigate` failed this test and were cut; see the eval notes.
   Run the baseline arm on the case's fixture before building the skill: plain Claude's trace shows what is
-  left to add. `retro` was built in full (four tasks, a review) before its baseline matched it.
+  left to add. `retro` was built in full (four tasks, a review) before its baseline matched it. A case for a
+  new rule must hold back the rule's own output: `flags-unmet-ticket-criterion` first gave the organizer a
+  brief that already listed each ticket's criteria, which is what the new rule produces, and the old text
+  passed. A failure seen at scale or on another model may not reproduce on a small fixture with the default
+  model. Before writing the text, settle whether the case can fail on the current text; if it can't, say up
+  front that the case will be a guard, or plan the run on a weaker organizer model. #30 came from eleven
+  tickets in #24, and its case passed on the old text twice.
 - **Portable frontmatter.** Tier-1 skills use only `name` and `description`; other fields are Claude Code
   extensions that other hosts may ignore. Put the key use case first and keep the description under 1,024
   characters. If the skill should run without being asked, say so ("use proactively, without waiting to be
@@ -678,7 +684,8 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
   one literal path, and a missing file fails the grader (CLI 2.1.299). Check a file in a folder the organizer
   names itself, such as `.crew/work/<id>/decisions.md`, through its Write and Edit calls in the trace. Test a
   regex grader on rows from a real trace, not only on rows you built: Edit inputs start with `"replace_all"`,
-  not `"file_path"`.
+  not `"file_path"`. Also try the near miss the grader must reject: `whole-diff-review` passed a reviewer
+  briefed on the README fix alone, until it also required another ticket's id.
 
 ## Troubleshooting
 

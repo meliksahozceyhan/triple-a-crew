@@ -65,3 +65,6 @@
 - **2026-10-19 The user accepted the deferral:** "Push issue-30-criteria-check and open its PR against main
   with Closes #30. I accept the guard-only eval as a deferral." Whether a Sonnet organizer tells the two
   texts apart is being checked in a separate session.
+- **2026-10-19 Closed.** PR #33 merged at 21:23Z (checked with `gh pr view`), and #30 is closed. `retro.md`
+  has five lessons. The user accepted all three README convention edits (L1-L3, applied on branch
+  `close-issue-30`); L4 and L5 stay in the retro.
