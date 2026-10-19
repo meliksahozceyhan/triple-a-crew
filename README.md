@@ -483,8 +483,8 @@ How to read it:
 |---|---|
 | **v0** (done) | Marketplace, `file-issue` with tracker reference files and evals, `onboard` with the profile format and evals |
 | **v1** (done) | The organizer (`work`): sizing, the `.crew/work/` folder, the status protocol, and three employees: researcher, engineer, reviewer. The actioner-new skills migrated as generic skills: `plan-review`, `cleanup`, `test-harden`, `investigate`, `handoff`. `plan-review`, `cleanup` and `investigate` were cut afterwards and folded into the organizer and the researcher (see [Evals](#evals)) |
-| **Next** | Move actioner-new onto the plugin (its own profile and rules, retire the old agents); remaining employees (architect, test engineer, verifier, scribe); `retro`; hooks; agent-teams mode; a Cursor check |
-| **Publish** | License, versions and git tags, make the repository public, test the plugin zip in Claude chat |
+| **Next** (planned) | In this order: hooks (`crew-hooks`); `verifier` and `test-engineer`, with the architect folded into the researcher and no scribe (`employees-v2`); `retro` (`retro-skill`). When their live tests are run: an opt-in agent-teams mode (`agent-teams-mode`) and a Cursor check (`cursor-check`). Each plan is in `.crew/work/<id>/plan.md`. Separately: move actioner-new onto the plugin |
+| **Publish** (planned, `publish-v1`) | License, versions and git tags, an exposure audit, make the repository public, test the `file-issue` zip in Claude chat |
 
 The organizer's model choice is a rule table: `mechanical` work goes to haiku, `standard` to sonnet,
 `critical` to opus. It escalates one tier after two failed attempts, never lets an agent review its own work,
