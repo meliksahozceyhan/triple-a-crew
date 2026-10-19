@@ -13,6 +13,9 @@ from your brief and report back in files. All state lives in `.crew/` at the pro
 File formats: [formats.md](formats.md). Roles and models: [staffing.md](staffing.md). Briefs, status files
 and reports: [protocol.md](protocol.md).
 
+Run each shell command as its own Bash call: no pipes, redirection, `;` or `&&` chains, no `cd` (use absolute
+paths); a `verify` command that contains `&&` runs as listed. Employees get the rule in every brief.
+
 Arguments: `$ARGUMENTS`. `status` → step 1 only. `next` → resume the most recently updated open item.
 `start <request>` → skip the size check and open a work item. Empty → work from the conversation.
 
@@ -42,7 +45,7 @@ asks for the change.
 |---|---|---|
 | S | one spot, no unknowns, a file or two | Step aside: do it as a normal session, no work item, no announcement |
 | M | several files, or one real unknown | Open a work item. Do most of it yourself; staff an employee where it helps, and always a reviewer |
-| L | several areas, unknowns, or risk (data, security, money, public API, migrations) | Open a work item and staff it. Get the user's go-ahead on the plan before any engineer starts |
+| L | several areas, unknowns, or risk (data, security, money, public API, migrations); public API also covers a file or payload format another system consumes | Open a work item and staff it. Get the user's go-ahead on the plan before any engineer starts |
 
 Announce M and L in one line, for example "Organizing this as work item `csv-export` (size L)." If the user
 says "just do it", mark the item abandoned in the index and continue as a normal session.
@@ -79,11 +82,11 @@ dependencies.
 
 **Size L:** read the profile's `conventions` files (without a profile: `CLAUDE.md`, `AGENTS.md`,
 `CONTRIBUTING.md`, `.claude/rules/`, `.cursor/rules/` and ADR folders, where they exist) and check every task
-against them. Record each rule that
-changes the plan in `decisions.md` with the file it comes from, for example "Queries live in `src/db/`
-(docs/adr/0003.md): T2 moves the query out of the route." Then show the plan (tasks, who does what on which
-model, the risky edge cases) and ask for the go-ahead before any engineer starts. Researchers may run before
-the go-ahead.
+against them. Record each rule that changes the plan in `decisions.md` with the file it comes from, for
+example "Queries live in `src/db/` (docs/adr/0003.md): T2 moves the query out of the route." Add a
+"Done-when coverage" table to `plan.md` (formats.md): each done-when line of `brief.md` and the task that
+meets it, or the deferral in `decisions.md`. Then show the plan (tasks, who does what on which model, the risky
+edge cases) and ask for the go-ahead before any engineer starts. Researchers may run before the go-ahead.
 
 ## 6. Staff and brief
 
@@ -96,8 +99,7 @@ the go-ahead.
 - Each brief names the employee's status file by absolute path in the main checkout:
   `<root>/.crew/work/<id>/team/<task>-<role>.md`, even when the employee works in a worktree.
 - Update `board.md` with task, role, model and state.
-- If the Agent tool or these agents are unavailable, do the tasks yourself in the same order and keep the same
-  files.
+- If the Agent tool or these agents are unavailable, do the tasks yourself in the same order, same files.
 
 ## 7. Track and unblock
 
@@ -125,7 +127,9 @@ When an employee finishes:
   unavailable, run them yourself. A failure goes back to the task that caused it, and so does a failing test
   that a test-engineer reports under Open questions.
 - Staff a reviewer on the final diff (per task for size L). The reviewer never reviews work it wrote. Resolve
-  every must-fix finding before closing.
+  every must-fix finding before closing. After fixes to a review that requested changes, staff a fresh
+  reviewer on the fix diff as a new task with its own status file, briefed with the earlier findings. If the
+  recheck asks for changes again and the fix is size S (step 2), make it and close; else ask about a third.
 
 ## 9. Follow-ups
 

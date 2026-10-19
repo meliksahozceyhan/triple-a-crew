@@ -46,11 +46,11 @@ handoff ignored through `.crew/.gitignore`), and `handoffs/`.
 
 ## Evals
 
-13 cases in [evals/](evals/), each scaffolding its own small fixture repository.
+14 cases in [evals/](evals/), each scaffolding its own small fixture repository.
 
 | Tag | Cases | Run with |
 |---|---|---|
-| `organizer` | large request opens a work item and waits; small request and read-only investigation stay out; status of an open item; verify staffs the verifier; a test task keeps its failing test; medium fix end to end | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` |
+| `organizer` | large request opens a work item and waits; small request and read-only investigation stay out; status of an open item; verify staffs the verifier; a test task keeps its failing test; medium fix end to end; a size-L plan cites the project's convention files | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)" "Bash(date *)"` |
 | `migrated` | test-harden, handoff | `claude plugin eval . --tag migrated --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` |
 | `hooks` | the session-start summary names the open item | `claude plugin eval . --tag hooks --scaffold` |
 | `onboard` | create a profile; refresh one and keep user values | `claude plugin eval . --tag onboard no-trigger --scaffold --allow-tools Write Edit` |

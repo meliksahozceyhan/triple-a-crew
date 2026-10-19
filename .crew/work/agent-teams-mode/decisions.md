@@ -123,3 +123,5 @@
   suite).
 - **2026-10-19 `test-engineer-keeps-failing-test` after the mutation-copy rule: 1.00, $0.96** (all 5 graders,
   including test-engineer-edits-tests-only).
+- **2026-10-19 Closed.** Merged in PR #23. `retro.md` written at close; no new proposals: its lessons are
+  filed (#12, #19, #21, #22), fixed in this item, already a README convention, or kept.

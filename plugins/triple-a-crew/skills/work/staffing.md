@@ -18,14 +18,15 @@ Point employees at the crew's methods in their briefs:
 
 - A researcher investigating a bug returns ranked likely causes (the format is in its agent file). Paste the
   report and all its comments into the brief: researchers have no tracker connectors.
-- Test tasks go to the test-engineer, which has the `test-harden` rules preloaded.
+- Test tasks go to the test-engineer, which has the `test-harden` rules preloaded. For risky work, list 3-5
+  concrete regressions in its brief under "Regressions to catch" (protocol.md).
 - A design question goes to a researcher at critical tier.
 
 ## Tiers
 
 Model choice is a rule, not a mood. Judge each task on ambiguity (is the outcome fully specified?), blast
-radius (data, security, money, public API, migrations), novelty (has this codebase done it before?),
-reversibility (can a mistake be undone cheaply?) and size.
+radius (data, security, money, public API including a file format another system consumes, migrations),
+novelty (has this codebase done it before?), reversibility (can a mistake be undone cheaply?) and size.
 
 | Tier | Situation | Default model |
 |---|---|---|

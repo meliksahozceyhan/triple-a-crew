@@ -81,12 +81,15 @@ Responsibilities, in order:
    found in the code, the tracker or the profile.
 2. **Stress-test.** Before planning, list edge and extreme cases: empty and huge inputs, concurrency, partial
    failure, permissions, migrations, rollback. Record which ones the plan must cover and which are out of scope.
-3. **Plan and decompose.** Break the work into tasks with clear inputs, outputs and file sets.
+3. **Plan and decompose.** Break the work into tasks with clear inputs, outputs and file sets. For size L, map
+   every done-when line to a task or a recorded deferral before asking for the go-ahead.
 4. **Staff.** Pick a role and model per task (see staffing policy), and decide sequential vs parallel.
 5. **Brief.** Hand each employee a self-contained brief (see protocol). Employees never see the conversation.
 6. **Track.** Keep `board.md` current from the employees' status files.
 7. **Unblock.** Answer employee questions, or escalate to the user when the answer is the user's call.
 8. **Integrate and verify.** Check results against acceptance criteria; send work back when it falls short.
+   When a review requests changes, a fresh reviewer rechecks the fix diff once: in four items in a row the
+   second round found something new, sometimes caused by the fixes.
 9. **File follow-ups.** Collect out-of-scope findings from all employees, dedupe them, file them via `file-issue`.
    Crew feedback (about the organizer, an employee or a hook) waits for the close step.
 10. **Close.** For size M and L, write `retro.md`: what happened, repeats from earlier retros, and where each
@@ -150,7 +153,8 @@ How a role maps onto an agent file (`agents/<role>.md`):
 Model choice is a rule table, not a judgment call buried in prose. Signals per task:
 
 - **Ambiguity**: is the outcome fully specified?
-- **Blast radius**: data, security, money, public API, migrations?
+- **Blast radius**: data, security, money, public API (including a file format another system consumes),
+  migrations? A test task on such work lists the regressions its tests must catch.
 - **Novelty**: has this codebase done it before?
 - **Reversibility**: can a mistake be undone cheaply?
 - **Size**: files touched, steps.
@@ -195,7 +199,7 @@ task: T3
 role: engineer
 model: sonnet
 state: in-progress   # todo | in-progress | blocked | done | failed
-updated: 2026-10-16T14:05
+updated: 2026-10-16T14:05:00Z   # from `date -u +%Y-%m-%dT%H:%M:%SZ`, never from memory
 ---
 ## Progress
 - [x] Added schema
@@ -262,6 +266,11 @@ the only task list, and re-staffing after `/resume`.
 
 The design must work fully in subagent mode. Team mode is an upgrade the organizer uses when it is enabled,
 and the files on disk stay the source of truth in both modes so a later session can pick up the work.
+
+**Shell commands.** The organizer and every employee run one plain command per Bash call: no pipes,
+redirection, `;` or `&&` chains, and no `cd`. Permission rules such as `Bash(node *)` don't match a compound
+line, so each one prompts the user (or is denied in an eval), and `cmd | tail` reports `tail`'s exit code. A
+profile verify command that itself contains `&&` runs exactly as listed.
 
 **Final report.** Every employee ends with the same shape: outcome, what changed (files), evidence (commands
 and results), assumptions, open questions, findings. The organizer copies findings into `findings.md`.
@@ -416,7 +425,7 @@ claude-skill-folder/
       .claude-plugin/plugin.json
       agents/                         researcher, engineer, test-engineer, verifier, reviewer
       skills/                         work, onboard, test-harden, handoff
-      evals/                          13 cases, each on a scaffolded fixture repo
+      evals/                          14 cases, each on a scaffolded fixture repo
     file-issue/                       standalone, so others can install just this
       .claude-plugin/plugin.json
       skills/file-issue/

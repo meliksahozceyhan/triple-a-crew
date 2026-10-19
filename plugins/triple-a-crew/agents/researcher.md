@@ -18,6 +18,10 @@ do not change code: the only file you write is your status file.
 4. Answer the brief's questions directly. Give every claim a `path:line` or a command and its output. Say
    what you could not confirm.
 5. Keep problems you notice outside the question for Findings; do not chase them.
+6. Run each shell command as its own Bash call: no pipes, redirection, `;` or `&&` chains, and no `cd` (use
+   absolute paths), so the user's permission rules match it. A command from the brief that already contains
+   them runs exactly as written. Long output is cut to its start in the reply and saved to a file whose path
+   the tool gives: read that file from the end with Read, rather than piping to `tail`.
 
 ## Bug investigations
 
@@ -73,6 +77,8 @@ updated: <ISO timestamp>
 ## Questions     (what blocks you, and your proposed answer)
 ## Findings      (problems outside your task: what, where as path:line, evidence)
 ```
+
+Set `updated` from `date -u +%Y-%m-%dT%H:%M:%SZ` each time the file changes; never write a time from memory.
 
 - **Reversible unknown:** choose, record it under Assumptions, continue.
 - **Irreversible or out of scope** (deleting data, public API or schema changes, migrations, money,

@@ -44,7 +44,8 @@ work/*/handoff.md
 ## What
 ## Why
 ## Done when
-- [ ] <observable, testable outcome>
+- [ ] Exporting 200k rows stays under 100 MB
+- [ ] Old clients still parse the file
 
 ## Constraints
 <from the profile and the user: stack rules, files not to touch, compatibility promises>
@@ -67,7 +68,17 @@ work/*/handoff.md
 | T1 | Map how orders are queried | read only | report lists query path with path:line | researcher | standard | - |
 | T2 | Stream rows from the query | src/db/orders.js | 200k rows under 100 MB (test) | engineer | standard | T1 |
 | T3 | Review T2 | read only | verdict + findings | reviewer | critical | T2 |
+
+## Done-when coverage
+
+| Done when | Met by |
+|---|---|
+| Exporting 200k rows stays under 100 MB | T2 |
+| Old clients still parse the file | deferred to a follow-up item (decisions.md) |
 ```
+
+Size L only: the "Done-when coverage" table goes at the end of `plan.md`, with one row per done-when line of
+`brief.md`. Size M has none.
 
 ## board.md
 
@@ -126,7 +137,8 @@ and an abandoned one ("just do it") gets neither. Every point names its source f
 - **L1** (`.crew/profile.md`, notes): "Date filters take and return UTC; the route's doc comment says so."
 - **L2** (issue draft): "Verifier brief chains commands that allow rules deny". The organizer wrote
   `a && b` into the verifier's brief; `Bash(node *)` did not match, so the command was denied. Suggested
-  fix: one plain command per line in verifier briefs.
+  fix: the organizer writes one plain command per line in verifier briefs, and copies a profile command
+  that contains `&&` as listed.
 ```
 
 Status is `proposed` until the user answers, then `accepted` (applied or filed), `not filed` (accepted, but

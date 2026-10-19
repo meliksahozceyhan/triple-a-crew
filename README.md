@@ -159,13 +159,15 @@ Starts on its own for multi-step requests, or with `/triple-a-crew:work [start <
    - **S** (one spot, no unknowns): it steps aside, and Claude just does the work.
    - **M** (several files, or one unknown): it opens a work item, does most of the work itself, and always
      staffs a reviewer.
-   - **L** (several areas, unknowns, or risk): it opens a work item and staffs it fully.
+   - **L** (several areas, unknowns, or risk, including a file format another system consumes): it opens a
+     work item and staffs it fully.
 2. **Opens a work item** in `.crew/work/<id>/`, with brief, plan, decisions, findings and board.
 3. **Stress-tests before planning.** It lists edge cases (empty and huge inputs, concurrency, partial
    failure, time zones, migrations, backward compatibility) and marks each one in or out of scope.
 4. **Plans tasks.** Each task has a file set, an acceptance check, a role and a model tier. For size L it
    checks every task against your convention files, records each rule that changes the plan (with its file)
-   in `decisions.md`, and asks for your go-ahead before any engineer starts.
+   in `decisions.md`, maps every done-when line of the brief to a task or a recorded deferral, and asks for
+   your go-ahead before any engineer starts.
 5. **Staffs employees.** Model choice follows a rule table: `mechanical` work goes to haiku, `standard`
    to sonnet, `critical` to opus.
    - Parallel tasks run only on disjoint file sets.
@@ -176,6 +178,7 @@ Starts on its own for multi-step requests, or with `/triple-a-crew:work [start <
 7. **Verifies and reviews.** It strips debug logs, commented-out code and log-and-rethrow try-catch from the
    lines it changed, runs your profile's verify commands (through the haiku verifier for bigger items), staffs
    a reviewer, and files the findings through `file-issue` in one batch. Crew feedback waits for the retro.
+   When a review requests changes, a fresh reviewer rechecks the fix diff once before the item closes.
 8. **Closes with a short retro** (sizes M and L): writes `retro.md`, marks problems an earlier item's retro
    already had, and proposes where each lesson should live (a profile note, a convention file, or crew
    feedback for this plugin's repository). It changes nothing until you accept.
@@ -198,13 +201,15 @@ injection and a `NaN` total.
 |---|---|---|---|
 | `researcher` | sonnet | Maps code, docs and tickets with `path:line` evidence; for a bug, ranks the likely causes with a confidence and a way to confirm each | only its status file |
 | `engineer` | sonnet | Implements one task inside its file set and runs the acceptance check | code in its file set |
-| `test-engineer` | sonnet | Writes the tests for a task, never production code, with the `test-harden` rules preloaded; a test that exposes a bug stays failing and goes back to the code task | tests in its file set |
+| `test-engineer` | sonnet | Writes the tests for a task, never production code, with the `test-harden` rules preloaded; a test that exposes a bug stays failing and goes back to the code task; for risky work it shows each regression the brief lists failing on a broken copy outside the repository | tests in its file set |
 | `verifier` | haiku | Runs the profile's verify commands, all of them even after a failure, and reports each exit code and the failing lines verbatim; never fixes | only its status file |
-| `reviewer` | opus | Adversarial review of a diff: must-fix, should-fix and nit, each with a failure scenario | only its status file |
+| `reviewer` | opus | Adversarial review of a diff: must-fix, should-fix and nit, each with a failure scenario, written to its status file as it goes | only its status file |
 
 Every employee keeps a status file (`.crew/work/<id>/team/<task>-<role>.md`) and ends with the same report:
-outcome, changed files, evidence, assumptions, open questions, findings. Employees never spawn agents, never
-file issues and never write under `.claude/`.
+outcome, changed files, evidence, assumptions, open questions, findings. It takes the file's `updated` time
+from the clock (`date -u`). Employees and the organizer run one plain command per Bash call, with no pipes,
+`;`, `&&` or `cd`, so your permission rules match each command. Employees never spawn agents, never file
+issues and never write under `.claude/`.
 
 The researcher also answers design questions, staffed on opus, with options, trade-offs and a
 recommendation ready for `decisions.md`. There is no separate architect. There is no scribe either: issues go
@@ -406,6 +411,9 @@ Test the hooks without a model call:
 sh plugins/triple-a-crew/scripts/test-hooks.sh
 ```
 
+Every eval `fixture.sh` refuses to run unless its folder is empty, because it writes files and runs git
+there. To try one by hand, run it inside a fresh `mktemp -d` folder.
+
 Do not add `dependencies` between the plugins. A plugin whose dependency is not installed does not load at
 all, which breaks `--plugin-dir` and the eval sandbox. See [Troubleshooting](#troubleshooting).
 
@@ -423,7 +431,7 @@ Every run is a real model call on your account. A full run of both suites costs 
 | `file-issue` | `claude plugin eval . --tag trigger no-trigger --allow-tools Write` | 3 trigger, 3 no-trigger, with baseline |
 | `file-issue` | `claude plugin eval . --tag mock-tracker --ablation none --scaffold` | 3 mocked-Linear cases, one arm |
 | `triple-a-crew` | `claude plugin eval . --tag migrated onboard no-trigger --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` | 2 migrated-skill cases, 2 onboard, 3 no-trigger, with baseline |
-| `triple-a-crew` | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` | 7 organizer cases, one arm |
+| `triple-a-crew` | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)" "Bash(date *)"` | 8 organizer cases, one arm |
 | `triple-a-crew` | `claude plugin eval . --tag hooks --scaffold` | 1 hooks case, with baseline |
 
 Add `--runs 1 --ablation none --case <name>` to iterate on one case cheaply. Add `--keep-temp` to keep each
@@ -480,14 +488,15 @@ ones that test the no-tracker path.
 | `file-issue` | `linear-confirms-before-creating` | 1.00 | one arm | | 3 + 2 |
 | `file-issue` | `linear-duplicate-offers-comment` | 1.00 | one arm | | 3 + 2 |
 | `file-issue` | `profile-confirm-never-creates` | 1.00 | one arm | | 3 + 2 |
-| `triple-a-crew` | `starts-work-item-on-large-request` | 1.00 | one arm | | 2 + 2 |
+| `triple-a-crew` | `starts-work-item-on-large-request` | 1.00 | one arm | | 2 + 2 + 3 |
 | `triple-a-crew` | `stays-out-of-small-request` | 1.00 | 1.00 | 0.00 | 4 + 2 |
 | `triple-a-crew` | `stays-out-of-read-only-investigation` | 1.00 | not run | | 1 + 1 |
 | `triple-a-crew` | `session-start-mentions-open-item` | 1.00 | 0.80 | +0.20 | 1 |
 | `triple-a-crew` | `reports-status-of-open-item` | 1.00 | one arm | | 2 + 2 |
-| `triple-a-crew` | `verify-staffs-verifier` | 1.00 | one arm | | 4 (0.86, 1.00, 0.88, 1.00) |
-| `triple-a-crew` | `test-engineer-keeps-failing-test` | 1.00 | one arm | | 3 (1.00, 0.80, 1.00) |
-| `triple-a-crew` | `medium-fix-end-to-end` | 1.00 | one arm | | 1 + 2 |
+| `triple-a-crew` | `verify-staffs-verifier` | 1.00 | one arm | | 4 (0.86, 1.00, 0.88, 1.00) + 4 (0.92, 0.92, 0.92, 1.00) |
+| `triple-a-crew` | `test-engineer-keeps-failing-test` | 1.00 | one arm | | 3 (1.00, 0.80, 1.00) + 2 (0.83, 1.00) |
+| `triple-a-crew` | `medium-fix-end-to-end` | 1.00 | one arm | | 1 + 2 + 1 |
+| `triple-a-crew` | `plans-against-project-conventions` | 1.00 | one arm | | 1 |
 | `triple-a-crew` | `creates-profile-from-repo` | 1.00 | 0.00 | +1.00 | 2 |
 | `triple-a-crew` | `refreshes-profile-keeps-user-values` | 1.00 | 1.00 | 0.00 | 2 |
 | `triple-a-crew` | `no-fire-setup-question` | 1.00 | 1.00 | 0.00 | 2 |
@@ -497,6 +506,12 @@ ones that test the no-tracker path.
 How to read it:
 
 - **No-trigger cases** score 1.00 in both arms by design: they check that the skill stays out of the way.
+- **The open-issue fixes (2026-10-19)** added graders for the organizer's newer rules (one plain command per
+  call, the organizer running a single verify itself, real timestamps, done-when coverage, regressions in
+  risky test briefs, the convention check, the full noise rule). Two first runs missed for reasons the
+  traces explained: the `test-engineer` judge varied once, and `verify-staffs-verifier`'s fixture planted
+  unused, out-of-plan retry code that the organizer rightly deleted. The fixture now makes the retry part of
+  the plan, and both cases scored 1.00.
 - **Refresh** has Δ 0: without the plugin, Claude also updates an existing profile correctly. The case
   guards against regressions rather than showing what the plugin adds.
 - **A standalone `retro` skill was built and cut** (2026-10-19). On a closed item whose time-zone bug
@@ -580,7 +595,7 @@ How to read it:
 │       │   ├── onboard/                SKILL.md, profile-format.md (the profile contract)
 │       │   ├── test-harden/            SKILL.md, examples.md
 │       │   └── handoff/                SKILL.md, handoff.mjs (facts from git and the transcript)
-│       └── evals/                      13 cases; each fixture.sh scaffolds a sample repo
+│       └── evals/                      14 cases; each fixture.sh scaffolds a sample repo
 └── README.md
 ```
 
@@ -626,8 +641,15 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
 - **Ship evals with the skill:** at least one case that should trigger it, one that should not, a near miss
   for each trigger phrase you add, and one case per key rule. Keep mocks per case. When the answer to the
   user's question may come before the skill runs, judge the whole transcript (`focus: trace`), not only the
-  last message. A trace judge can miss facts near the end of a long run (about 330 KB in `employees-v2`);
-  when the final reply carries the facts, judge the final reply.
+  last message. But a trace judge sees only the first and last 12 messages of a run, so a fact in the middle
+  of a long run goes unseen: judge the final reply when it carries the facts, or use a `regex` grader with
+  `target: trace`, which sees every message.
+- **Graders match what you mean.** A `tool_used` grader's `input_match` is matched against the whole tool
+  input, file content included, so a "never writes `profile.md`" check also fails on a write to another file
+  that mentions `profile.md`. Anchor a path check on the path: `'"file_path"\s*:\s*"[^"]*profile\.md"'`.
+  No grader option limits a check to the main agent; a `regex` grader on the trace can, because main-agent
+  rows carry `"parent_tool_use_id":null` and subagent rows carry a tool-use id there. `file_exists` sees only
+  files created during the run.
 
 ## Troubleshooting
 
@@ -644,7 +666,7 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
 | Eval: `Permission to use Write has been denied ... don't ask mode` | Eval runs use don't-ask mode. Grant the tool with `--allow-tools`, and never write under `.claude/` |
 | Eval refused: `not a trusted plugin directory` | Run once in a terminal and answer the prompt, or pass `--trust-plugin` for your own plugin |
 | Eval: a file lands one level above the working directory and the write is denied | The sandbox's home directory is a git repository with the working directory inside it, so "the git root" is the home directory. Skills must not treat a home-directory git root as the project root |
-| Eval: an `llm` grader fails although the answer was given | The default focus is the final message only. Use `focus: trace` when the answer can come earlier in the run |
+| Eval: an `llm` grader fails although the answer was given | The default focus is the final message only. Use `focus: trace` when the answer can come earlier in the run, but that judge sees only the first and last 12 messages; for a fact in the middle of a long run, use a `regex` grader with `target: trace` |
 | A script fails with `EPERM` reading `~/.claude/projects/...` | The Bash sandbox (on in eval runs, optional in normal sessions) blocks reading Claude Code's config directory. `handoff.mjs` now falls back to git-only facts |
 | Eval: "skill fired" fails although the skill clearly ran | The prompt used a slash command, which loads the skill without a `Skill` tool call. Grade the outcome instead |
 | Eval: `results directory ... already existed` | Two runs started in the same second. Give each one its own `--output-dir` |

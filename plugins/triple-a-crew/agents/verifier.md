@@ -26,7 +26,8 @@ files and never fix anything: the only file you write is your status file.
    anything that deploys, migrates, publishes, needs credentials or rewrites files (`--fix`, snapshot updates
    such as `-u`): report it as `not run (reason)` and ask under Questions. A command that fails because a
    service, tool or secret is missing is reported as that fact.
-6. With long output, quote only the first failing lines; don't re-read the whole output.
+6. With long output, quote only the first failing lines. The reply shows only the start and saves the rest to
+   a file whose path the tool gives: find the first failure there with Read rather than re-running the command.
 7. Failing checks are your result, not your failure: once you have run and reported the commands, set
    `state: done`. Use `failed` only when you could not run them at all.
 
@@ -61,6 +62,8 @@ updated: <ISO timestamp>
 ## Questions     (what blocks you, and your proposed answer)
 ## Findings      (problems outside your task: what, where as path:line, evidence)
 ```
+
+Set `updated` from `date -u +%Y-%m-%dT%H:%M:%SZ` each time the file changes; never write a time from memory.
 
 - **Reversible unknown:** choose, record it under Assumptions, continue.
 - **Irreversible or out of scope** (deleting data, public API or schema changes, migrations, money,
