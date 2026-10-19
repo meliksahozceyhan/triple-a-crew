@@ -236,13 +236,21 @@ by a spike on Claude Code 2.1.299 (work item `crew-hooks`):
 
 **Two channel modes.**
 
-| | Subagent mode (default) | Team mode (optional) |
+| | Subagent mode (default) | Team mode (opt-in, experimental) |
 |---|---|---|
-| Requires | nothing | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, interactive session |
-| Employees | subagents spawned by the organizer | teammates led by the organizer |
-| Questions | stop as `blocked`, organizer resumes them | live messages, teammates can talk to each other |
-| Task list | `board.md` + `team/*.md` | built-in shared task list with dependencies and file locking |
-| Limits | one round-trip per question | experimental, one team per session, `/resume` does not restore teammates |
+| Requires | nothing | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` (shell or settings `env`) and an interactive session. Under `-p`, the Agent SDK and eval runs, a named call stays a subagent |
+| Starts | the organizer spawns each employee with the Agent tool | no separate create step: an Agent call from the main session with a `name` launches a teammate, unless it is a fork or passes `isolation` on the call itself. Claude also names subagents on its own, so a team can form unasked |
+| Employees | subagents; their plugin agent definition applies, including `skills` and `maxTurns` | separate Claude Code sessions. From a plugin agent definition a teammate gets `tools` (plus `SendMessage` and the task tools), `model` (unless the spawn prompt names one), `effort` and the body, but not `skills`: it loads the project's and the user's skills instead. `maxTurns` is not documented |
+| Working directory | an engineer may get its own worktree (`isolation: "worktree"` on the call) | shared with the lead: a teammate gets no worktree, so writers running at the same time need disjoint files |
+| Questions | stop as `blocked`; the organizer resumes them with `SendMessage` | live messages by name, to the lead and to each other; a finished teammate's final answer reaches the lead automatically; teammates' permission prompts appear in the lead's session |
+| Task list | `board.md` + `team/*.md` in the repository | a shared list in `~/.claude/tasks/<team>/`, outside the repository, with dependencies; the lead assigns tasks or teammates claim them. File locking covers claiming a task, not editing files |
+| Hooks | `SubagentStart` and `SubagentStop` (see above) | `TeammateIdle`, `TaskCreated`, `TaskCompleted`; whether the subagent hooks fire for teammates is not documented |
+| Limits | one round trip per question | experimental; one team per session; no nested teams; `/resume` and `/rewind` don't restore in-process teammates; token use grows with each teammate; the docs suggest 3-5 teammates |
+
+Team mode is checked against [agent teams](https://code.claude.com/docs/en/agent-teams) and [subagent
+names](https://code.claude.com/docs/en/sub-agents#subagent-names) on 2026-10-19 (Claude Code 2.1.299). The live
+test in `agent-teams-mode` (T3) settles what the docs leave open: `maxTurns`, the subagent hooks, and the
+desktop app.
 
 The design must work fully in subagent mode. Team mode is an upgrade the organizer uses when it is enabled,
 and the files on disk stay the source of truth in both modes so a later session can pick up the work.
@@ -485,9 +493,9 @@ rules are in the rules file, the rest once the plugin versions have been used fo
    noise rule in the verify step) and the `researcher` (ranked likely causes).
 3. **v2**: remaining roles (test engineer and verifier built in `employees-v2`; architect folded into the
    researcher; scribe dropped), `retro` (a standalone skill was built in `retro-skill` and cut, no gain over
-   plain Claude; the close step writes `retro.md`), the three hooks (built in
-   `crew-hooks`), team mode,
-   Cursor check, actioner-new moved onto the plugin.
+   plain Claude; the close step writes `retro.md`) and the three hooks (built in `crew-hooks`), all done.
+   Still open: team mode (`agent-teams-mode`, in progress), the Cursor check, and actioner-new moved onto
+   the plugin.
 4. **Publish**: README, license, examples, `version` set, git tags; strip anything personal. Test the
    `file-issue` plugin zip in Claude chat.
 

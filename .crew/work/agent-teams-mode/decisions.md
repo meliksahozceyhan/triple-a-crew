@@ -16,3 +16,16 @@
 - **2026-10-19 Team-mode rules live in `skills/work/teams.md`,** loaded only when team mode is detected, so
   the organizer's SKILL.md stays short and the experimental part is easy to change or remove.
 - **2026-10-19 Plan approved by the user with writers as teammates.**
+- **2026-10-19 T2 done by the organizer, with the README roadmap row.** The table had to be checked against
+  the docs, and the engineer has no WebFetch, so the organizer fetched the agent-teams and subagent-names
+  pages and rewrote DESIGN "Two channel modes" with a sourced row each for start, employees, working
+  directory, questions, task list, hooks and limits. The README roadmap gained a done `v2` row; DESIGN's v2
+  phase says the same. T7 reviews this with the rest of the diff. Rejected: an engineer on T2 (a doc check it
+  cannot do), a researcher plus an engineer (two hand-offs for one table).
+- **2026-10-19 The docs already answer part of T3.** A plugin agent type can be a teammate; the model the
+  spawn prompt names wins over the definition's; `tools` and the body apply; `skills` does not (so the
+  test-engineer's `test-harden` preload won't happen as a teammate, and its fallback read is what covers
+  it); a named call with `isolation` stays a subagent; `-p`, SDK and eval runs never spawn teammates. Still
+  open for the live test: `maxTurns`, whether SubagentStart/SubagentStop fire for teammates, the plugin
+  agents in practice, detection from a skill, and the desktop app. The test enables teams only in a scratch
+  folder's `.claude/settings.local.json`, so other sessions keep subagent mode.
