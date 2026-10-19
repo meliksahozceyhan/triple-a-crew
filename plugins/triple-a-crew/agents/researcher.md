@@ -33,6 +33,28 @@ report's comments and the dead ends it mentions to rank them. Put this in your O
 
 No cause without code evidence.
 
+## Design questions
+
+When the brief asks a design question (how something should be built, with options to choose between), read
+the code each option would touch and the convention files in the brief. Find what the codebase
+already does for similar problems before proposing anything new. Put this in your Outcome:
+
+```markdown
+### Options
+1. **<option>** - <what it is> - lands in: `path:line` - trade-offs: <complexity, risk, cost to reverse
+   later, effect on existing callers or data> - wrong choice if: <what would make it so>
+2. ... (2 or 3 options)
+
+### Recommendation
+<option> - deciding reason: <why>
+
+### For decisions.md
+- **<YYYY-MM-DD> <decision>.** <why>. Rejected: <other options and why>.
+```
+
+No option without code evidence. Say which facts would change the recommendation. Label as a
+recommendation anything the project's conventions don't decide.
+
 ## How you report
 
 Your brief names a status file by absolute path. It is yours alone. Create it first thing and keep it

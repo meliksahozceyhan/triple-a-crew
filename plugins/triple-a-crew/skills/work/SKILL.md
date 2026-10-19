@@ -1,6 +1,6 @@
 ---
 name: work
-description: Triple-A-Crew organizer. Runs multi-step work like a team lead - sizes the request, opens a work item in .crew/work/, stress-tests edge cases, plans tasks, staffs employee subagents (researcher, engineer, reviewer) on the right model, tracks their status, answers their questions, verifies the result and files follow-ups. Use proactively, without waiting to be asked, for requests to build, change or fix something across several files or areas, including fixes that need investigation first and tickets to implement. Also use when the user wants to continue, check or advance open work ("pick up the CSV export", "where are we on X", "what's next"). Not for questions, explanations, one-spot edits, requests only to investigate or review with no change asked for ("investigate ACT-123", "review this plan"), a cleanup pass over recent changes, or requests a single crew skill handles on its own (hardening tests, writing a handoff).
+description: Triple-A-Crew organizer. Runs multi-step work like a team lead - sizes the request, opens a work item in .crew/work/, stress-tests edge cases, plans tasks, staffs employee subagents (researcher, engineer, test engineer, verifier, reviewer) on the right model, tracks their status, answers their questions, verifies the result and files follow-ups. Use proactively, without waiting to be asked, for requests to build, change or fix something across several files or areas, including fixes that need investigation first and tickets to implement. Also use when the user wants to continue, check or advance open work ("pick up the CSV export", "where are we on X", "what's next"). Not for questions, explanations, one-spot edits, requests only to investigate or review with no change asked for ("investigate ACT-123", "review this plan"), a cleanup pass over recent changes, or requests a single crew skill handles on its own (hardening tests, writing a handoff).
 argument-hint: "[start <request> | next | status]"
 ---
 
@@ -70,7 +70,8 @@ Write `plan.md`: tasks T1..Tn, each with goal, inputs, outputs, file set, accept
 dependencies.
 
 - A task is something one employee can finish and check alone.
-- Investigation comes first when the cause or the design is unclear.
+- Investigation comes first when the cause or the design is unclear. For a design, the first task can be a
+  design question for a researcher at critical tier; its recommendation goes to `decisions.md`.
 - Run tasks in parallel only when their file sets do not overlap. Overlapping writers go in sequence, or each
   in its own worktree with you merging the results.
 - Every change gets a review by someone who did not write it.
@@ -105,7 +106,8 @@ When an employee finishes:
 - **Blocked:** if the question is yours to answer, answer it and resume that employee with `SendMessage`
   (it keeps its context). If it is the user's call, ask the user, then resume.
 - **Failed, or misses its acceptance check:** send it back once with what is missing. After a second miss,
-  staff it again one tier up, with both failures in the brief.
+  staff it again one tier up, with both failures in the brief. A test-engineer's test that exposes a bug in the
+  code is not a miss: send the defect to the code task.
 - You decide when a task is done, never the employee.
 
 ## 8. Verify and review
@@ -115,8 +117,11 @@ When an employee finishes:
   logs and error handling that does real work (retries, fallbacks, error translation, cleanup in `finally`).
   The project's convention files win over these defaults. If a check below fails on a line you stripped,
   restore it.
-- Run the profile's `verify` commands (or the checks the plan names) on the combined result. A failure goes
-  back to the task that caused it.
+- Run the profile's `verify` commands (or the checks the plan names) on the combined result. For size L, and
+  for M when the profile lists more than one, staff the verifier (mechanical tier); its brief lists the
+  commands, the folder, a timeout and whether one rerun is allowed. Otherwise, or if the verifier is
+  unavailable, run them yourself. A failure goes back to the task that caused it, and so does a failing test
+  that a test-engineer reports under Open questions.
 - Staff a reviewer on the final diff (per task for size L). The reviewer never reviews work it wrote. Resolve
   every must-fix finding before closing.
 

@@ -44,7 +44,7 @@ or a protocol.
 ┌─ Tier 3: automation (Claude Code only) ─────────────────────────────┐
 │  hooks: open-items summary, employee protocol, status-file gate     │
 ├─ Tier 2: organization (Claude Code only) ───────────────────────────┤
-│  work (organizer) · researcher, engineer, reviewer · handoff        │
+│  work (organizer) · 5 employees · handoff                           │
 ├─ Tier 1: portable skills (Claude Code, Claude chat, Cursor*) ───────┤
 │  file-issue · onboard · test-harden                                 │
 └─────────────────────────────────────────────────────────────────────┘
@@ -62,7 +62,7 @@ or a protocol.
 | Plugin | Skills and agents | What it does |
 |---|---|---|
 | [`file-issue`](plugins/file-issue) | `file-issue` | Turns problems found outside the current task into complete follow-up issues in whatever tracker you use |
-| [`triple-a-crew`](plugins/triple-a-crew) | `work`, `onboard`, `test-harden`, `handoff`; agents `researcher`, `engineer`, `reviewer` | The organizer and its employees, the project profile, and the workflow skills they use |
+| [`triple-a-crew`](plugins/triple-a-crew) | `work`, `onboard`, `test-harden`, `handoff`; agents `researcher`, `engineer`, `test-engineer`, `verifier`, `reviewer` | The organizer and its employees, the project profile, and the workflow skills they use |
 
 ### file-issue
 
@@ -170,12 +170,12 @@ Starts on its own for multi-step requests, or with `/triple-a-crew:work [start <
    to sonnet, `critical` to opus.
    - Parallel tasks run only on disjoint file sets.
    - A task escalates one tier after two misses.
-   - Whoever writes a change never reviews it.
+   - Whoever writes a change never reviews it, and for size L a test-engineer adds the independent tests.
 6. **Tracks progress through status files.** A blocked employee is resumed with the answer and keeps its
    context. You decide anything that is your call.
 7. **Verifies and reviews.** It strips debug logs, commented-out code and log-and-rethrow try-catch from the
-   lines it changed, runs your profile's verify commands, staffs a reviewer, and files the findings through
-   `file-issue` in one batch.
+   lines it changed, runs your profile's verify commands (through the haiku verifier for bigger items), staffs
+   a reviewer, and files the findings through `file-issue` in one batch.
 8. **Answers status questions** ("where are we on X?") from the board, without starting more work.
 
 A real plan from the eval fixture, for "make the orders CSV export production-ready":
@@ -195,11 +195,17 @@ injection and a `NaN` total.
 |---|---|---|---|
 | `researcher` | sonnet | Maps code, docs and tickets with `path:line` evidence; for a bug, ranks the likely causes with a confidence and a way to confirm each | only its status file |
 | `engineer` | sonnet | Implements one task inside its file set and runs the acceptance check | code in its file set |
+| `test-engineer` | sonnet | Writes the tests for a task, never production code, with the `test-harden` rules preloaded; a test that exposes a bug stays failing and goes back to the code task | tests in its file set |
+| `verifier` | haiku | Runs the profile's verify commands, all of them even after a failure, and reports each exit code and the failing lines verbatim; never fixes | only its status file |
 | `reviewer` | opus | Adversarial review of a diff: must-fix, should-fix and nit, each with a failure scenario | only its status file |
 
 Every employee keeps a status file (`.crew/work/<id>/team/<task>-<role>.md`) and ends with the same report:
 outcome, changed files, evidence, assumptions, open questions, findings. Employees never spawn agents, never
 file issues and never write under `.claude/`.
+
+The researcher also answers design questions, staffed on opus, with options, trade-offs and a
+recommendation ready for `decisions.md`. There is no separate architect. There is no scribe either: issues go
+through `file-issue`, handoffs through the `handoff` skill, and PR text stays with the organizer.
 
 ### Hooks
 
@@ -368,7 +374,7 @@ Every run is a real model call on your account. A full run of both suites costs 
 | `file-issue` | `claude plugin eval . --tag trigger no-trigger --allow-tools Write` | 3 trigger, 3 no-trigger, with baseline |
 | `file-issue` | `claude plugin eval . --tag mock-tracker --ablation none --scaffold` | 3 mocked-Linear cases, one arm |
 | `triple-a-crew` | `claude plugin eval . --tag migrated onboard no-trigger --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` | 2 migrated-skill cases, 2 onboard, 3 no-trigger, with baseline |
-| `triple-a-crew` | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` | 5 organizer cases, one arm |
+| `triple-a-crew` | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` | 7 organizer cases, one arm |
 | `triple-a-crew` | `claude plugin eval . --tag hooks --scaffold` | 1 hooks case, with baseline |
 
 Add `--runs 1 --ablation none --case <name>` to iterate on one case cheaply. Add `--keep-temp` to keep each
@@ -397,6 +403,12 @@ ones that test the no-tracker path.
   - **Read-only investigation** ("investigate ACT-512 before we fix anything", with a mocked Linear): stays
     out, creates no work item and edits nothing, but still reads the issue's comments.
   - **"Where are we?":** answers from the open item's board without starting work.
+  - **Verify with the verifier** (`work next` on a size-L item at phase verify): strips only the debug log
+    the work added, keeps the comments that were already there, staffs the verifier on haiku, and reports the
+    failing database check with its exit code instead of calling verify passed.
+  - **Test task with the test-engineer** (`work next` at phase implement): the test-engineer's line-break test
+    fails because the code ignores CR and LF; it keeps the test failing, edits nothing under `src/`, and the
+    defect goes back to the code task instead of becoming a follow-up issue.
   - **Medium fix, end to end:** fixes the quoting in both writers, runs the verify command, and staffs a
     reviewer on opus that writes its status file.
 - Hooks: with one open item in `.crew/work/index.md`, Claude names it without using any tool, because the
@@ -424,6 +436,8 @@ ones that test the no-tracker path.
 | `triple-a-crew` | `stays-out-of-read-only-investigation` | 1.00 | not run | | 1 + 1 |
 | `triple-a-crew` | `session-start-mentions-open-item` | 1.00 | 0.80 | +0.20 | 1 |
 | `triple-a-crew` | `reports-status-of-open-item` | 1.00 | one arm | | 2 + 2 |
+| `triple-a-crew` | `verify-staffs-verifier` | 1.00 | one arm | | 4 (0.86, 1.00, 0.88, 1.00) |
+| `triple-a-crew` | `test-engineer-keeps-failing-test` | 1.00 | one arm | | 3 (1.00, 0.80, 1.00) |
 | `triple-a-crew` | `medium-fix-end-to-end` | 1.00 | one arm | | 1 + 2 |
 | `triple-a-crew` | `creates-profile-from-repo` | 1.00 | 0.00 | +1.00 | 2 |
 | `triple-a-crew` | `refreshes-profile-keeps-user-values` | 1.00 | 1.00 | 0.00 | 2 |
@@ -477,6 +491,10 @@ How to read it:
   starting the organizer, writing or editing anything. In `medium-fix-end-to-end` the fix kept the
   comments that were already in the file, as the noise rule now requires. The suite ran once more the same
   day with the hooks loaded: 5/5 at 1.00 ($1.53), so the stop hook let a reviewer that did its job finish.
+- **`verify-staffs-verifier` and `test-engineer-keeps-failing-test`** (2026-10-19, latest runs 1.00). The first
+  verifier run failed because the verifier wrapped commands in compound shell lines that permission rules don't
+  match; it now runs each command alone. The 0.88 and 0.80 runs failed one judge each that read the whole run
+  log (about 330 KB); those two judges now read only the final reply, which carries the facts they check.
 - **`session-start-mentions-open-item`** scores 0.80 without the plugin only because its four "no tool used"
   graders pass in both arms. The grader that matters, naming the open item, passed with the hook and failed
   without it.
@@ -499,7 +517,7 @@ How to read it:
 │   └── triple-a-crew/
 │       ├── .claude-plugin/plugin.json
 │       ├── README.md
-│       ├── agents/                     researcher, engineer, reviewer
+│       ├── agents/                     researcher, engineer, test-engineer, verifier, reviewer
 │       ├── hooks/hooks.json            SessionStart, SubagentStart, SubagentStop
 │       ├── scripts/                    the hook scripts (POSIX sh) and test-hooks.sh
 │       ├── skills/
@@ -507,7 +525,7 @@ How to read it:
 │       │   ├── onboard/                SKILL.md, profile-format.md (the profile contract)
 │       │   ├── test-harden/            SKILL.md, examples.md
 │       │   └── handoff/                SKILL.md, handoff.mjs (facts from git and the transcript)
-│       └── evals/                      11 cases; each fixture.sh scaffolds a sample repo
+│       └── evals/                      13 cases; each fixture.sh scaffolds a sample repo
 └── README.md
 ```
 
@@ -517,7 +535,7 @@ How to read it:
 |---|---|
 | **v0** (done) | Marketplace, `file-issue` with tracker reference files and evals, `onboard` with the profile format and evals |
 | **v1** (done) | The organizer (`work`): sizing, the `.crew/work/` folder, the status protocol, and three employees: researcher, engineer, reviewer. The actioner-new skills migrated as generic skills: `plan-review`, `cleanup`, `test-harden`, `investigate`, `handoff`. `plan-review`, `cleanup` and `investigate` were cut afterwards and folded into the organizer and the researcher (see [Evals](#evals)) |
-| **Next** (planned) | In this order: hooks (`crew-hooks`, built); `verifier` and `test-engineer`, with the architect folded into the researcher and no scribe (`employees-v2`); `retro` (`retro-skill`). When their live tests are run: an opt-in agent-teams mode (`agent-teams-mode`) and a Cursor check (`cursor-check`). Each plan is in `.crew/work/<id>/plan.md`. Separately: move actioner-new onto the plugin |
+| **Next** (planned) | In this order: hooks (`crew-hooks`, built); `verifier` and `test-engineer`, with the architect folded into the researcher and no scribe (`employees-v2`, built); `retro` (`retro-skill`). When their live tests are run: an opt-in agent-teams mode (`agent-teams-mode`) and a Cursor check (`cursor-check`). Each plan is in `.crew/work/<id>/plan.md`. Separately: move actioner-new onto the plugin |
 | **Publish** (planned, `publish-v1`) | License, versions and git tags, an exposure audit, make the repository public, test the `file-issue` zip in Claude chat |
 
 The organizer's model choice is a rule table: `mechanical` work goes to haiku, `standard` to sonnet,
