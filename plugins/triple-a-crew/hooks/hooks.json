@@ -10,7 +10,7 @@
     ],
     "SubagentStart": [
       {
-        "matcher": "^triple-a-crew:[a-z-]+$",
+        "matcher": "^(triple-a-crew:[a-z-]+|[Tt][0-9]+[a-z]?-(researcher|engineer|test-engineer|verifier|reviewer))$",
         "hooks": [
           { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/subagent-start.sh\"", "timeout": 10 }
         ]
@@ -18,7 +18,7 @@
     ],
     "SubagentStop": [
       {
-        "matcher": "^triple-a-crew:[a-z-]+$",
+        "matcher": "^(triple-a-crew:[a-z-]+|[Tt][0-9]+[a-z]?-(researcher|engineer|test-engineer|verifier|reviewer))$",
         "hooks": [
           { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/subagent-stop.sh\"", "timeout": 10 }
         ]

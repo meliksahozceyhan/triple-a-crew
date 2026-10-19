@@ -91,6 +91,8 @@ the go-ahead.
 - Spawn with the Agent tool: `subagent_type: "triple-a-crew:<role>"`, `model: <alias>`, and a brief written
   to [protocol.md](protocol.md). Add `isolation: "worktree"` only for engineers running in parallel.
   Independent tasks go out in one message; dependent ones wait.
+- Give the call no `name`: with agent teams enabled, a named call becomes a teammate. For size L, if `printenv
+  CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` prints `1`, read [teams.md](teams.md) before staffing and follow it.
 - Each brief names the employee's status file by absolute path in the main checkout:
   `<root>/.crew/work/<id>/team/<task>-<role>.md`, even when the employee works in a worktree.
 - Update `board.md` with task, role, model and state.

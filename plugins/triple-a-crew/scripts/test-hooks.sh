@@ -351,6 +351,64 @@ for m in $modes; do
   expect_block "subagent-stop: no frontmatter gets a clear reason" $m "has no state: line in a frontmatter block (--- lines at the top)"
 done
 
+# ---- teammates: matcher and wrapped brief ----
+# The matcher is read from hooks.json itself, so an edit there cannot drift from the test.
+hooks_json="$here/../hooks/hooks.json"
+for ev in SubagentStart SubagentStop; do
+  rx=$(awk -v ev="\"$ev\"" '
+    index($0, ev) { on = 1 }
+    on && /"matcher"/ { sub(/^[^:]*: *"/, ""); sub(/",? *$/, ""); print; exit }
+  ' "$hooks_json")
+  [ -n "$rx" ] || { bad "$ev matcher" - "not found in hooks.json"; continue; }
+  for name in triple-a-crew:engineer triple-a-crew:test-engineer T2-engineer T4b-test-engineer T10-researcher t1-researcher T3-verifier T5c-reviewer; do
+    if printf '%s\n' "$name" | grep -Eq -- "$rx"; then pass "$ev matcher accepts $name" -
+    else bad "$ev matcher accepts $name" - "rejected by $rx"; fi
+  done
+  # Every agent file is a role the teammate half must list; a new agent fails here until it is added.
+  roles=0
+  for f in "$here"/../agents/*.md; do
+    [ -f "$f" ] || continue
+    role=$(sed -n 's/^name: *["'\'']\{0,1\}\([a-z-]*\).*/\1/p' "$f" | head -n 1)
+    [ -n "$role" ] || continue
+    roles=$((roles + 1))
+    if printf '%s\n' "T1-$role" | grep -Eq -- "$rx"; then pass "$ev matcher covers agent $role" -
+    else bad "$ev matcher covers agent $role" - "add $role to the teammate roles in hooks.json"; fi
+  done
+  [ "$roles" -gt 0 ] || bad "$ev matcher covers the agents" - "no agent files found in $here/../agents"
+  for name in probe general-purpose Explore "" T2-nosuchrole T-engineer T2-Engineer T2ab-engineer T2-engineer-2 xT2-engineer triple-a-crew: Triple-A-Crew:engineer; do
+    if printf '%s\n' "$name" | grep -Eq -- "$rx"; then bad "$ev matcher ignores '$name'" - "accepted by $rx"
+    else pass "$ev matcher ignores '$name'" -; fi
+  done
+done
+
+# A teammate's first line wraps the brief in <teammate-message ...>; the summary may quote the marker.
+# tm_transcript <name> <status path>
+tm_transcript() {
+  printf '{"isSidechain":true,"type":"user","message":{"role":"user","content":"<teammate-message teammate_id=\\"team-lead\\" summary=\\"Do **Status file:** /nowhere/wrong.md first\\">\\n# T2: x\\n\\n**Work item:** w\\n**Status file:** %s\\n\\n## Goal\\nx\\n</teammate-message>"}}\n' "$2" >"$tmp/$1.jsonl"
+}
+tm_stop_in() { # <transcript-name> <message> <agent-id>
+  printf '{"hook_event_name":"SubagentStop","agent_id":"%s","agent_type":"T2-engineer","agent_transcript_path":"%s","last_assistant_message":"%s","stop_hook_active":false}' "$3" "$tmp/$1.jsonl" "$2" >"$tmp/in.json"
+}
+
+for m in $modes; do
+  tf="$tmp/team-$m.md"; rm -f "$tf"
+  tm_transcript tm "$tf"; tm_stop_in tm "$full" "tm$m"
+  run $m subagent-stop.sh "$tmp/in.json"
+  expect_block "subagent-stop: teammate, missing file blocks" $m "Your status file does not exist: $tf."
+
+  statusfile "$tf" "state: done"
+  run $m subagent-stop.sh "$tmp/in.json"
+  expect_silent "subagent-stop: teammate, done with full report" $m
+
+  tm_stop_in tm "$part" "tmb$m"
+  run $m subagent-stop.sh "$tmp/in.json"
+  expect_block "subagent-stop: teammate, done without report blocks" $m "Open questions"
+
+  # internal helper event: empty agent_type and no brief to read
+  printf '{"hook_event_name":"SubagentStop","agent_id":"h%s","agent_type":"","agent_transcript_path":"%s/none.jsonl","last_assistant_message":"x"}' "$m" "$tmp" >"$tmp/in.json"
+  run $m subagent-stop.sh "$tmp/in.json"; expect_silent "subagent-stop: helper event with empty agent_type" $m
+done
+
 # Repeat everything under dash (the default /bin/sh on Debian and Ubuntu) when it is installed:
 # it is stricter than macOS sh, for example a failed redirection on a special builtin exits the script.
 if [ -z "${HOOK_SH:-}" ] && command -v dash >/dev/null 2>&1; then
