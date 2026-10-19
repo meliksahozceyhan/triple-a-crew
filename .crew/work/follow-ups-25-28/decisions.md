@@ -24,3 +24,5 @@
   `originalCwd`); README names `test-hooks.sh` as POSIX too and gives the right reason (`hooks.json` runs
   `sh <script>`), and a long line is rewrapped. The reviewer hit its 60-turn limit once, mostly on checking the
   cwd claim in the CLI binary, and was resumed.
+- **2026-10-19 T5: `medium-fix-end-to-end` 1.00 ($0.81)** on the repaired fixture, so #25's last criterion is met.
+  No other case's graders changed (#27 kept them on the trace).
