@@ -85,7 +85,7 @@ Size L only: the "Done-when coverage" table goes at the end of `plan.md`, with o
 ```markdown
 # Board: <id>
 
-**Phase:** implement · **Updated:** 2026-10-16T14:05
+**Phase:** implement · **Updated:** 2026-10-16T14:05:00Z
 
 | Task | Role | Model | State | Status file |
 |---|---|---|---|---|

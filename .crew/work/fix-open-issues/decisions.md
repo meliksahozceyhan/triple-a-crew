@@ -82,3 +82,17 @@
   confirming reruns $4.54. Issue status for the PR: #7, #12, #13, #15-#19, #21, #22 resolved with evidence;
   #14's text change is in, but its acceptance check (a 10-file review finishing unresumed) needs a session
   that loads the new reviewer definition, since this session's reviewers still ran the old 40-turn one.
+- **2026-10-19 Closed.** Merged in PR #24; ten issues closed by it, #14 left open until a review in a session
+  with the new reviewer definition finishes unresumed. `retro.md` written at close: 4 proposals (L1 profile
+  note; L3, L4, L5 README conventions) and 4 follow-up issue drafts (the medium-fix fixture's syntax error,
+  bash fixtures vs POSIX docs, whether a grader's file path globs, the verifier's folder handling) wait for the
+  user's answer; the other lessons are fixed in this item (#12, #19) or tracked (#14).
+- **2026-10-19 The user accepted every retro proposal and every follow-up.** P1 profile note and P2-P4 README
+  conventions applied; follow-ups filed as #25 (fixture syntax error), #26 (bash fixtures vs POSIX docs),
+  #27 (grader path glob), #28 (verifier subfolder commands).
+- **2026-10-19 #14 proven and closed.** After the merge and a plugin reload, one opus reviewer (T12) reviewed
+  #24's 50-file diff and finished with a verdict, unresumed: 69 tool calls, about 12 minutes, its status file
+  written 5 times during the run, `updated` from the clock. Evidence commented on #14. The same review
+  requested changes on the merged work (3 must-fix: the #17 grader can't fail when a verifier is staffed,
+  #22's "shown" is unchecked, #18's coverage isn't shown at the go-ahead; 6 should-fix; 7 nits), which go to
+  the user as a decision.

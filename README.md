@@ -630,6 +630,8 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
 - **Short `SKILL.md`.** Aim for about 150 lines; move details into reference files that load on demand.
 - **No state under `.claude/`.** Use `.crew/`.
 - **Never invent values.** IDs, labels, team names and commands come from tools or files, or from the user.
+- **Run every command example.** Models copy examples literally: a wrong `node --test <dir>` in `protocol.md`
+  turned up in a verifier's brief.
 - **Probe what the docs leave open.** When a skill depends on a Claude Code mechanic the docs don't settle,
   run a throwaway plugin on haiku in a scratch folder (it costs cents) and record the result with its date in
   DESIGN's Verified mechanics. `crew-hooks` (hook payloads) and `employees-v2` (`skills:` names) both did.
@@ -643,13 +645,16 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
   user's question may come before the skill runs, judge the whole transcript (`focus: trace`), not only the
   last message. But a trace judge sees only the first and last 12 messages of a run, so a fact in the middle
   of a long run goes unseen: judge the final reply when it carries the facts, or use a `regex` grader with
-  `target: trace`, which sees every message.
+  `target: trace`, which sees every message. A fixture's planted change must agree with its own work item: in
+  the plan, used, and correct. Otherwise the organizer rightly changes it, and the case fails for the wrong
+  reason (`verify-staffs-verifier` once planted an unused retry the organizer deleted).
 - **Graders match what you mean.** A `tool_used` grader's `input_match` is matched against the whole tool
   input, file content included, so a "never writes `profile.md`" check also fails on a write to another file
   that mentions `profile.md`. Anchor a path check on the path: `'"file_path"\s*:\s*"[^"]*profile\.md"'`.
   No grader option limits a check to the main agent; a `regex` grader on the trace can, because main-agent
   rows carry `"parent_tool_use_id":null` and subagent rows carry a tool-use id there. `file_exists` sees only
-  files created during the run.
+  files created during the run. Test a regex grader on rows from a real trace, not only on rows you built:
+  Edit inputs start with `"replace_all"`, not `"file_path"`.
 
 ## Troubleshooting
 
