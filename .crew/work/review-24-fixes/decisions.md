@@ -48,3 +48,4 @@
 - **2026-10-19 Closed.** Merged in PR #29. `retro.md` written at close: 1 proposal (L1, an issue draft: the
   last review checks each closed issue's acceptance criteria) waits for the user's answer; the other lessons
   are tracked (#19, worked here) or kept.
+- **2026-10-19 The user accepted L1;** filed as #30.

@@ -412,7 +412,9 @@ sh plugins/triple-a-crew/scripts/test-hooks.sh
 ```
 
 Every eval `fixture.sh` refuses to run unless its folder is empty, because it writes files and runs git
-there. To try one by hand, run it inside a fresh `mktemp -d` folder.
+there. To try one by hand, run `bash <path to fixture.sh>` inside a fresh `mktemp -d` folder. Fixtures are
+bash scripts (`set -euo pipefail`), and the eval harness runs them with `bash`; only the hook scripts in
+`plugins/triple-a-crew/scripts/` are POSIX `sh`, because Claude Code runs hooks with `sh -c`.
 
 Do not add `dependencies` between the plugins. A plugin whose dependency is not installed does not load at
 all, which breaks `--plugin-dir` and the eval sandbox. See [Troubleshooting](#troubleshooting).

@@ -20,7 +20,7 @@
 ## Lessons
 | # | Lesson | Evidence | Repeat of | Goes to | Status |
 |---|---|---|---|---|---|
-| L1 | Reviews split by area left each closed issue's acceptance criteria unchecked end to end | `fix-open-issues/team/T12-reviewer.md` M1-M3 | | https://github.com/meliksahozceyhan/triple-a-crew (issue draft) | proposed |
+| L1 | Reviews split by area left each closed issue's acceptance criteria unchecked end to end | `fix-open-issues/team/T12-reviewer.md` M1-M3 | | https://github.com/meliksahozceyhan/triple-a-crew/issues/30 | accepted |
 | L2 | Trimming text to fit the line budget dropped a condition | team/T2-reviewer.md must-fix 2 | | `retro.md` only | kept |
 | L3 | The recheck after the fixes found new problems again, and the new step 8 rule handled them | team/T4-reviewer.md | fix-open-issues L6 | https://github.com/meliksahozceyhan/triple-a-crew/issues/19 (fixed; worked here) | accepted |
 | L4 | A kept sandbox shows behavior a grader can only approximate | decisions.md "T3 evals" | | `retro.md` only | kept |

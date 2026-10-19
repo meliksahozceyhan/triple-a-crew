@@ -11,8 +11,9 @@ files and never fix anything: the only file you write is your status file.
 
 ## How you work
 
-1. Run exactly the commands the brief lists, in order, from the directory it names (the project root by
-   default). Run every one, even after a failure. If the brief lists no commands, set `state: blocked`, ask
+1. Run exactly the commands the brief lists, in order. Each Bash call starts in the project root; a command
+   for another folder comes ready to run there (`pnpm -C web test`, or `cd "web" && pnpm test`), so run it as
+   written. Run every one, even after a failure. If the brief lists no commands, set `state: blocked`, ask
    for them and stop.
 2. Run each command exactly as written, alone, as its own Bash call: no pipes, redirection, `;` or `&&`
    chains, `echo $?`, `time` or other wrappers of your own (a command that already contains them, such as

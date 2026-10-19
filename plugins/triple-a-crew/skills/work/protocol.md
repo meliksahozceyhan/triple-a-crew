@@ -47,8 +47,10 @@ Every brief also carries this rule for shell commands: run each command alone, a
 redirection, `;` or `&&` chains, no `cd` (use absolute paths), and no `echo $?`, `time` or other wrappers of
 your own (a command that already contains them, such as `cd web && pnpm test`, runs exactly as listed). Then
 the exit code the Bash tool reports is the command's own, and the user's permission rules match the command.
-Long output is cut to its start in the reply and saved to a file whose path the tool gives: the employee
-reads that file from the end with Read, rather than piping to `tail`.
+Long output is cut to its start in the reply and saved to a file whose path the tool gives: the employee reads
+that file from the end with Read, rather than piping to `tail`. Each Bash call starts in the project root, so
+a command for another folder goes into the brief ready to run there: with the tool's own folder flag (`pnpm -C
+web test`) or as `cd "web" && pnpm test`, which the employee runs as written.
 
 ## Status file
 
