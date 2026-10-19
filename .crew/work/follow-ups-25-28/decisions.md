@@ -26,3 +26,6 @@
   cwd claim in the CLI binary, and was resumed.
 - **2026-10-19 T5: `medium-fix-end-to-end` 1.00 ($0.81)** on the repaired fixture, so #25's last criterion is met.
   No other case's graders changed (#27 kept them on the trace).
+- **2026-10-19 Closed.** PR #31 merged (2026-10-19T20:42:15Z, checked with `gh pr view`). retro.md written:
+  L1 (invented `updated` time again) proposed as an issue draft, L4 and L5 as profile notes; L2 and L3 kept
+  (#14's fix held; the criteria check feeds #30).

@@ -31,3 +31,8 @@ models: {}
   the old text (fix-open-issues: reviewers hit the old 40-turn limit, employees wrote invented timestamps).
 - Git has no HTTPS credential helper; push with
   `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push`.
+- A rule here is often stated in several places: `SKILL.md`, `protocol.md` and an agent file (follow-ups-25-28:
+  the verifier's folder rule). When one changes, grep the others for the same rule before review.
+- Before closing a work item or deleting its branch, confirm the PR is merged with
+  `gh pr view <n> --repo meliksahozceyhan/triple-a-crew --json state`; the user may say "merged" before GitHub
+  has it (review-24-fixes, follow-ups-25-28).

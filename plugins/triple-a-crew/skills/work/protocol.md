@@ -43,6 +43,25 @@ there: a test file path when the runner takes one (`node --test
 /var/folders/x/T/csv-export-T3-copy/test/csv.test.js`; Node 22 won't take a folder), otherwise `cd <copy
 folder> && <runner>`, which it may run as written. A test task on low-risk work needs no such list.
 
+`## Criteria` goes into the last review's brief (SKILL.md step 8): every done-when line of `brief.md`, each
+ticket's criteria as written and numbered by ticket (`#41.2` is #41's second). A line that only points at
+tickets ("every issue's acceptance criteria hold") is replaced first by those criteria, copied from the
+tracker; write them into `brief.md` too. Mark a deferral the user accepted as such. For size L, that review
+covers the whole diff against the base. The reviewer reports each line with one of:
+
+| Evidence | Means |
+|---|---|
+| met | it checked the line itself: a command and its result, or `path:line` |
+| pending | only a later task can show it (an eval score, a live test, the user's own test); it names that task |
+| as given | it has only another report's word for it (a status file, your summary); never counts as met |
+| none | nothing shows that the line holds: a must-fix, or a deferral the user accepts in `decisions.md` |
+
+Before the PR, add the evidence for each `pending` or `as given` line yourself, or treat it as `none`. A
+recheck after fixes gets the lines that had `none`, plus every line whose files the fixes touched. A ticket
+whose lines are all met is `Closes #N`; one with a line still open is `Refs #N`, with the open lines named,
+unless the user says to close it anyway. Name the derived lines in your final report, so the user sees what
+a `Closes` rests on.
+
 Every brief also carries this rule for shell commands: run each command alone, as its own Bash call: no pipes,
 redirection, `;` or `&&` chains, no `cd` (use absolute paths), and no `echo $?`, `time` or other wrappers of
 your own (a command that already contains them, such as `cd web && pnpm test`, runs exactly as listed). Then
