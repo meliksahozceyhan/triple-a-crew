@@ -14,7 +14,7 @@ File formats: [formats.md](formats.md). Roles and models: [staffing.md](staffing
 and reports: [protocol.md](protocol.md).
 
 Run each shell command as its own Bash call: no pipes, redirection, `;` or `&&` chains, no `cd` (use absolute
-paths); a `verify` command that contains `&&` runs as listed. Employees get the rule in every brief.
+paths); a command the profile or a brief lists runs as listed. Employees get the rule in every brief.
 
 Arguments: `$ARGUMENTS`. `status` → step 1 only. `next` → resume the most recently updated open item.
 `start <request>` → skip the size check and open a work item. Empty → work from the conversation.
@@ -82,11 +82,11 @@ dependencies.
 
 **Size L:** read the profile's `conventions` files (without a profile: `CLAUDE.md`, `AGENTS.md`,
 `CONTRIBUTING.md`, `.claude/rules/`, `.cursor/rules/` and ADR folders, where they exist) and check every task
-against them. Record each rule that changes the plan in `decisions.md` with the file it comes from, for
-example "Queries live in `src/db/` (docs/adr/0003.md): T2 moves the query out of the route." Add a
-"Done-when coverage" table to `plan.md` (formats.md): each done-when line of `brief.md` and the task that
-meets it, or the deferral in `decisions.md`. Then show the plan (tasks, who does what on which model, the risky
-edge cases) and ask for the go-ahead before any engineer starts. Researchers may run before the go-ahead.
+against them. Record each rule that changes the plan in `decisions.md` with the file it comes from, e.g.
+"Queries live in `src/db/` (docs/adr/0003.md): T2 moves the query out of the route." Add a "Done-when
+coverage" table to `plan.md` (formats.md): each done-when line of `brief.md` with the task that meets it or
+its deferral in `decisions.md`. Show the plan (tasks, who does what on which model, the risky edge cases, the
+coverage and every deferral) and get the go-ahead before any engineer starts; researchers may run before.
 
 ## 6. Staff and brief
 
@@ -126,10 +126,10 @@ When an employee finishes:
   commands, the folder, a timeout and whether one rerun is allowed. Otherwise, or if the verifier is
   unavailable, run them yourself. A failure goes back to the task that caused it, and so does a failing test
   that a test-engineer reports under Open questions.
-- Staff a reviewer on the final diff (per task for size L). The reviewer never reviews work it wrote. Resolve
-  every must-fix finding before closing. After fixes to a review that requested changes, staff a fresh
-  reviewer on the fix diff as a new task with its own status file, briefed with the earlier findings. If the
-  recheck asks for changes again and the fix is size S (step 2), make it and close; else ask about a third.
+- Staff a reviewer on the final diff (per task for size L), never one that wrote the work; resolve every
+  must-fix before closing. After fixes to a review that asked for changes, a fresh reviewer rechecks the fix
+  diff as a new task with its own status file, briefed with the earlier findings. If it asks again, make a
+  size-S fix (step 2) and rerun verify; otherwise ask the user whether to staff a third reviewer.
 
 ## 9. Follow-ups
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shop-api with a size-L work item at phase verify: T1 (quoting) is done and left a debug log in the lines it
-# changed; one verify command fails because a database isn't running. `work next` should strip the new debug
-# log only, staff the verifier on haiku, and report the failure instead of calling verify passed.
+# changed, plus a log-and-rethrow; one verify command fails because a database isn't running. `work next` should
+# strip only that noise, staff the verifier on haiku, and report the failure instead of calling verify passed.
 set -euo pipefail
 # Refuse to run outside a fresh eval sandbox: this script writes files and runs git in the current folder.
 if [ -n "$(ls -A . 2>/dev/null)" ]; then
