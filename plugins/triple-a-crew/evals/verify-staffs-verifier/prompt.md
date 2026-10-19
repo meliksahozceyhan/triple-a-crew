@@ -1,5 +1,5 @@
 ---
-description: A size-L work item at phase verify, resumed with `work next`. The organizer should strip only the debug log the work added (not the comments that were already there), staff the verifier on haiku with the profile's verify commands, and report the failing database check with its exit code and error instead of calling verify passed. Covers the verifier role and the noise rule (half of issue #7). Needs --scaffold and --allow-tools Write Edit "Bash(node *)" "Bash(git *)".
+description: A size-L work item at phase verify, resumed with `work next`. The organizer should strip only the noise the work added (the debug log and a log-and-rethrow try-catch), keeping the JSDoc, the why-comment, the real retry and the comments that were already there, staff the verifier on haiku with the profile's verify commands, and report the failing database check with its exit code and error instead of calling verify passed. Covers the verifier role and the noise rule (half of issue #7). Needs --scaffold and --allow-tools Write Edit "Bash(node *)" "Bash(git *)" "Bash(date *)".
 tags: [organizer, employees]
 max_turns: 30
 timeout_seconds: 900
