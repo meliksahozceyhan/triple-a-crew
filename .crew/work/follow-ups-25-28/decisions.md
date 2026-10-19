@@ -11,3 +11,9 @@
   `bash <path>`), and only the hook scripts are POSIX `sh`. #28: protocol.md's shell rule and the verifier's
   step 1 say each Bash call starts in the project root, so a command for another folder comes ready to run
   (`pnpm -C web test`, or `cd "web" && pnpm test`) and runs as written. SKILL.md untouched (160 lines).
+- **2026-10-19 #27 answered: no glob (T1).** The docs say a file target is "the contents of one file"; in CLI
+  2.1.299 the target's path goes through `realpath` as a literal and a missing file fails the grader with
+  "grader threw"; only the `file_exists` matcher turns `*` and `**/` into a pattern. So the `decisions-cite-*`
+  and `done-when-coverage` graders keep the trace form (Write and Edit calls), and the README says so.
+  Rejected: pinning the work-item id in the case prompts (it tests the organizer obeying an id, not its own
+  behavior).

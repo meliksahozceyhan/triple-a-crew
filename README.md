@@ -655,7 +655,9 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
   that mentions `profile.md`. Anchor a path check on the path: `'"file_path"\s*:\s*"[^"]*profile\.md"'`.
   No grader option limits a check to the main agent; a `regex` grader on the trace can, because main-agent
   rows carry `"parent_tool_use_id":null` and subagent rows carry a tool-use id there. `file_exists` sees only
-  files created during the run. Test a regex grader on rows from a real trace, not only on rows you built:
+  files created during the run, and it is the only grader whose `path` takes a glob: `{ source: file, path }`
+  reads one literal path, and a missing file fails the grader (CLI 2.1.299). Check a file in a folder the
+  organizer names itself, such as `.crew/work/<id>/decisions.md`, through its Write and Edit calls in the trace. Test a regex grader on rows from a real trace, not only on rows you built:
   Edit inputs start with `"replace_all"`, not `"file_path"`.
 
 ## Troubleshooting
