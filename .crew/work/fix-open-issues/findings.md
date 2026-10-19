@@ -8,7 +8,8 @@
   found by T5b test-engineer · not filed
 - 2026-10-19 · The #21 rule makes employees run `date -u` for every status update; eval runs need
   `"Bash(date *)"` in `--allow-tools` (added to the documented commands), and in a user's default permission
-  mode it may prompt unless `date` is treated as read-only · found by T5a test-engineer · open for the review
+  mode it may prompt unless `date` is treated as read-only · found by T5a test-engineer · resolved: Claude
+  Code 2.1.299 lists `date -u` as a read-only command (T8)
 - 2026-10-19 · `medium-fix-end-to-end/fixture.sh` writes a literal newline inside `lines.join("…")` in
   `src/routes/orders.js`, a JavaScript syntax error that predates this work · found by T9 reviewer · not filed
 - 2026-10-19 · This session's employees still run the agent definitions loaded at session start (40-turn

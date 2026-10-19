@@ -82,3 +82,8 @@
   confirming reruns $4.54. Issue status for the PR: #7, #12, #13, #15-#19, #21, #22 resolved with evidence;
   #14's text change is in, but its acceptance check (a 10-file review finishing unresumed) needs a session
   that loads the new reviewer definition, since this session's reviewers still ran the old 40-turn one.
+- **2026-10-19 Closed.** Merged in PR #24; ten issues closed by it, #14 left open until a review in a session
+  with the new reviewer definition finishes unresumed. `retro.md` written at close: 4 proposals (L1 profile
+  note; L3, L4, L5 README conventions) and 4 follow-up issue drafts (the medium-fix fixture's syntax error,
+  bash fixtures vs POSIX docs, whether a grader's file path globs, the verifier's folder handling) wait for the
+  user's answer; the other lessons are fixed in this item (#12, #19) or tracked (#14).
