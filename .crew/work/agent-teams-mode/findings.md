@@ -11,3 +11,9 @@
   out; in T8 phase A a haiku teammate chose that over doing its task. Lead with "create it and continue
   your task" and frame `failed` as the last resort (`plugins/triple-a-crew/scripts/subagent-stop.sh`;
   affects subagents too) · found by T8 live test · fixed in this item (gate wording)
+- 2026-10-19 · Employees write placeholder `updated` times in their status files (T8 phase B, round 1) ·
+  found by T8 live test · filed as #21 https://github.com/meliksahozceyhan/triple-a-crew/issues/21
+- 2026-10-19 · Test-engineer briefs name no regressions the tests must catch; reviewers' broken copies
+  survived (T8 phase B) · found by T8 live test · filed as #22 https://github.com/meliksahozceyhan/triple-a-crew/issues/22
+- 2026-10-19 · A test-engineer edited the code under test in place for a mutation check, and the organizer's
+  `cd` became later teammates' starting folder (T8 phase B) · found by T8 live test · fixed in this item
