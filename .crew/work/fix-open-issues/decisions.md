@@ -90,3 +90,9 @@
 - **2026-10-19 The user accepted every retro proposal and every follow-up.** P1 profile note and P2-P4 README
   conventions applied; follow-ups filed as #25 (fixture syntax error), #26 (bash fixtures vs POSIX docs),
   #27 (grader path glob), #28 (verifier subfolder commands).
+- **2026-10-19 #14 proven and closed.** After the merge and a plugin reload, one opus reviewer (T12) reviewed
+  #24's 50-file diff and finished with a verdict, unresumed: 69 tool calls, about 12 minutes, its status file
+  written 5 times during the run, `updated` from the clock. Evidence commented on #14. The same review
+  requested changes on the merged work (3 must-fix: the #17 grader can't fail when a verifier is staffed,
+  #22's "shown" is unchecked, #18's coverage isn't shown at the go-ahead; 6 should-fix; 7 nits), which go to
+  the user as a decision.
