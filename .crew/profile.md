@@ -1,6 +1,7 @@
 ---
 stack: [claude-code-plugins, markdown-skills, node, bash]
 verify:
+  - sh plugins/triple-a-crew/scripts/test-hooks.sh
   - node --check plugins/triple-a-crew/skills/handoff/handoff.mjs
   - claude plugin validate .
 tests: ["plugins/*/evals/**"]
