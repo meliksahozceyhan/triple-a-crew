@@ -31,3 +31,11 @@
   five outcomes the request asks for. The copy folder is `<tmp>/<work-item id>-<task>-copy` with `<tmp>`
   from `os.tmpdir()` (works where `$TMPDIR` is unset, and two items can't share a folder). Correction: the
   test-engineer case's `max_turns` counts the organizer's turns, not the test-engineer's; 40 is harmless.
+- **2026-10-19 T4 recheck: approve.** Its size-S findings fixed without a third review (SKILL.md step 8):
+  rule 7 says to rerun the command after fixing a code defect in the copy and calls that passing copy the
+  unbroken one; the protocol falls back to `/tmp` when Node is missing. Recorded, not fixed:
+  `regressions-shown` counts four runs on a copy, which approximates "each listed regression shown" (a
+  fixture whose control first fails adds a run, so one regression can go unshown); and it misses rarer
+  command shapes (a space-separated reporter flag, a flag before `--test`, a single-quoted path). The brief
+  gives the exact command, so the common case is covered. Rejected: an `llm` trace judge per regression (it
+  sees only the first and last 12 messages).
