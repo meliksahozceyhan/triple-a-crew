@@ -49,8 +49,7 @@ export function exportOrdersCsv(db) {
   for (const order of db.orders) {
     lines.push(toCsvRow(COLUMNS.map((c) => (c.key === "total" ? fmt(order.total) : String(order[c.key] ?? "")))));
   }
-  return lines.join("
-");
+  return lines.join("\n");
 }
 EOF
 cat > test/csv.test.js <<'EOF'
