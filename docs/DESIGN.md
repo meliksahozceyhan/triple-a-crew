@@ -231,8 +231,10 @@ by a spike on Claude Code 2.1.299 (work item `crew-hooks`):
 - `SessionStart` prints the `## Open` list of `.crew/work/index.md` at the organizer's root (the git root
   unless it is the home directory, otherwise the working directory), at most 15 lines, as plain text that
   reaches the main session; it prints nothing in projects without crew state.
-- Both subagent hooks match `^triple-a-crew:[a-z-]+$`, so built-in agents and other plugins' agents are never
-  touched, and roles added later are covered.
+- Both subagent hooks match `^(triple-a-crew:[a-z-]+|[Tt][0-9]+[a-z]?-(researcher|engineer|test-engineer|verifier|reviewer))$`,
+  so built-in agents and other plugins' agents are never touched, and roles added later under the plugin's
+  prefix are covered. The second half exists for team mode: for a teammate, `agent_type` is its name, so the
+  organizer names teammates `T<n>-<role>`. A new role must be added to that list.
 
 **Two channel modes.**
 
@@ -244,13 +246,16 @@ by a spike on Claude Code 2.1.299 (work item `crew-hooks`):
 | Working directory | an engineer may get its own worktree (`isolation: "worktree"` on the call) | shared with the lead: a teammate gets no worktree, so writers running at the same time need disjoint files |
 | Questions | stop as `blocked`; the organizer resumes them with `SendMessage` | live messages by name, to the lead and to each other; a finished teammate's final answer reaches the lead automatically; teammates' permission prompts appear in the lead's session |
 | Task list | `board.md` + `team/*.md` in the repository | a shared list in `~/.claude/tasks/<team>/`, outside the repository, with dependencies; the lead assigns tasks or teammates claim them. File locking covers claiming a task, not editing files |
-| Hooks | `SubagentStart` and `SubagentStop` (see above) | `TeammateIdle`, `TaskCreated`, `TaskCompleted`; whether the subagent hooks fire for teammates is not documented |
+| Hooks | `SubagentStart` and `SubagentStop` (see above) | the same two fire for a teammate, but `agent_type` is its name, so the crew matcher also accepts `T<n>-<role>`; plus `TeammateIdle`, `TaskCreated`, `TaskCompleted` (live test) |
 | Limits | one round trip per question | experimental; one team per session; no nested teams; `/resume` and `/rewind` don't restore in-process teammates; token use grows with each teammate; the docs suggest 3-5 teammates |
 
 Team mode is checked against [agent teams](https://code.claude.com/docs/en/agent-teams) and [subagent
-names](https://code.claude.com/docs/en/sub-agents#subagent-names) on 2026-10-19 (Claude Code 2.1.299). The live
-test in `agent-teams-mode` (T3) settles what the docs leave open: `maxTurns`, the subagent hooks, and the
-desktop app.
+names](https://code.claude.com/docs/en/sub-agents#subagent-names) on 2026-10-19 (Claude Code 2.1.299), and in
+a live test the same day (`agent-teams-mode` T3): `maxTurns` does not cap an in-process teammate, the subagent
+hooks fire with the teammate's name as `agent_type`, and readers see writers' edits mid-run. The desktop app
+was not tested. The organizer's rules for this mode are in `skills/work/teams.md`: teammates named after
+their status file, writers on disjoint files, readers after writers, a turn budget per brief, `board.md` as
+the only task list, and re-staffing after `/resume`.
 
 The design must work fully in subagent mode. Team mode is an upgrade the organizer uses when it is enabled,
 and the files on disk stay the source of truth in both modes so a later session can pick up the work.
@@ -439,7 +444,7 @@ Checked against the Claude Code docs on 2026-10-16.
 | Validation | `claude plugin validate ./plugins/triple-a-crew` | [manifest reference](https://code.claude.com/docs/en/plugins/manifest-reference) |
 | Agents | `model` (aliases incl. `fable`), `effort`, `tools`, `isolation: worktree`, `maxTurns`, `background`, `skills`. Plugin agents ignore `permissionMode`, `hooks`, `mcpServers`, `initialPrompt`. A plugin agent's `skills: [x]` preloads the plugin's own skill only by its bare name; `plugin:x` loads nothing, silently, and eval traces never show the injected text | [subagents](https://code.claude.com/docs/en/sub-agents); probe 2026-10-19 (`employees-v2`) |
 | Nesting | Subagents may spawn subagents up to 3 levels deep by default | [subagents](https://code.claude.com/docs/en/sub-agents) |
-| Hooks | `SessionStart` and `SubagentStart` can add context; `SubagentStop` and `Stop` can block. Scripts use `${CLAUDE_PLUGIN_ROOT}`; persistent plugin data goes in `${CLAUDE_PLUGIN_DATA}`. Plugin hooks live in `hooks/hooks.json` under a top-level `hooks` key and run with `sh -c`. Subagent matchers see plugin agents as `<plugin>:<agent>`. Subagent hook input has no prompt; SubagentStop gets `agent_transcript_path` (line 1 is the brief), `last_assistant_message` and `stop_hook_active`. In the spike a subagent ended after 9 consecutive blocks (the hook keeps its own cap of 3). Eval runs load plugin hooks | [hooks](https://code.claude.com/docs/en/hooks); spike 2026-10-19 (`crew-hooks` T2) |
+| Hooks | `SessionStart` and `SubagentStart` can add context; `SubagentStop` and `Stop` can block. Scripts use `${CLAUDE_PLUGIN_ROOT}`; persistent plugin data goes in `${CLAUDE_PLUGIN_DATA}`. Plugin hooks live in `hooks/hooks.json` under a top-level `hooks` key and run with `sh -c`. Subagent matchers see plugin agents as `<plugin>:<agent>`. Subagent hook input has no prompt; SubagentStop gets `agent_transcript_path` (line 1 is the brief), `last_assistant_message` and `stop_hook_active`. In the spike a subagent ended after 9 consecutive blocks (the hook keeps its own cap of 3). Eval runs load plugin hooks. For an agent-team teammate both subagent hooks fire with the teammate's name as `agent_type`; line 1 of its transcript is the brief inside a `<teammate-message>` tag | [hooks](https://code.claude.com/docs/en/hooks); spike 2026-10-19 (`crew-hooks` T2); live test 2026-10-19 (`agent-teams-mode` T3) |
 | Skills | Bundled reference files load on demand; scripts via `${CLAUDE_SKILL_DIR}`; `context: fork` runs a skill in a chosen agent | [skills](https://code.claude.com/docs/en/skills) |
 | Workflows | Plugins can ship `workflows/*.js`, but a run cannot take user input mid-way, so the organizer's Q&A loop stays in the main session | [workflows](https://code.claude.com/docs/en/workflows) |
 | Evals | `claude plugin eval .` runs `evals/<case>/prompt.md` with graders (`tool_used` to check a skill fired, `llm` rubrics), with and without the plugin, and reports the difference | [plugin evals](https://code.claude.com/docs/en/plugin-evals) |

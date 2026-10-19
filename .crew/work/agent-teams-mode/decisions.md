@@ -29,3 +29,33 @@
   open for the live test: `maxTurns`, whether SubagentStart/SubagentStop fire for teammates, the plugin
   agents in practice, detection from a skill, and the desktop app. The test enables teams only in a scratch
   folder's `.claude/settings.local.json`, so other sessions keep subagent mode.
+- **2026-10-19 T3 results (live test, `team/T3-organizer.md`).** Teams form from named calls, and a plugin
+  agent's model (from the call), `tools` and body apply. Three results change the plan. (1) SubagentStart
+  and SubagentStop fire for teammates, but `agent_type` is the teammate's name, so the crew matcher
+  `^triple-a-crew:[a-z-]+$` skips them: no protocol reminder and no stop gate in team mode. Line 1 of a
+  teammate's transcript still holds the brief (inside a `<teammate-message>` tag) with the `**Status
+  file:**` line. (2) `maxTurns` does not apply to in-process teammates (the probe made 7 tool calls with
+  `maxTurns: 3`). (3) Teammates share one working tree live: the researcher saw the engineer's edit mid-run
+  and could not tell who made it.
+- **2026-10-19 Proposed plan change (waiting for the user).** T4's teams.md adds: name each teammate after its
+  status file (`T2-engineer`), tell every teammate who else runs at the same time and on which files, keep
+  readers off a writer's files until it finishes, and give each brief a turn budget the organizer enforces
+  (shutdown request) since `maxTurns` is gone. New T4b: the crew hooks also match those names
+  (`^T[0-9]+[a-z]?-(researcher|engineer|test-engineer|verifier|reviewer)$`), with test cases for a teammate
+  payload and the `<teammate-message>` wrapper. T8's manual test then checks that a teammate gets the
+  reminder and that a stop-gate block keeps it working (untested so far). Rejected: gating through
+  `TeammateIdle`, whose payload has no transcript path or final message; accepting team mode without the
+  gate (status files would go unchecked exactly where turns are uncapped).
+- **2026-10-19 Plan change approved by the user as written.** T4 gains the naming, co-worker, reader,
+  turn-budget and resume rules; T4b makes the crew hooks match teammate names; T8 checks both live.
+- **2026-10-19 T5 done by the organizer while T4 and T4b ran** (SKILL.md is in neither file set): step 6
+  spawns with no `name`, and reads `teams.md` when `printenv CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` prints
+  `1`. Two lines; SKILL.md is 156 lines.
+- **2026-10-19 T4, T4b and T6 results.** T4 (sonnet): `skills/work/teams.md`, 68 lines, rules 1-11. It adds
+  "ask a silent teammate once, then shut it down and re-staff", which the organizer kept. T4b (sonnet): both
+  subagent matchers accept `[Tt]<n>[letter]-<role>`; the scripts needed no change; new cases in
+  `test-hooks.sh` read the regex from `hooks.json`. The organizer also ran the stop hook on the real T3
+  teammate payload: allowed with the status file present, blocked with the right path when it was moved
+  away. T6 was done by the organizer (README "Team mode", hook wording in both READMEs and DESIGN, DESIGN's
+  Verified mechanics Hooks row) since it needed T3's details. Open for T7: the lead cannot count a teammate's
+  turns, so "runs well past its budget" is a judgment call.

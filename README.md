@@ -213,8 +213,8 @@ through `file-issue`, handoffs through the `handoff` skill, and PR text stays wi
 ### Hooks
 
 The plugin ships three hooks that keep the organizer and its employees honest. They match only this plugin's
-agents (`triple-a-crew:*`), never built-in agents or other plugins' agents, and nothing breaks with hooks
-turned off.
+agents (`triple-a-crew:*`, or a [team-mode](#team-mode-experimental-opt-in) teammate named `T<n>-<role>`),
+never built-in agents or other plugins' agents, and nothing breaks with hooks turned off.
 
 | Hook | Runs when | What it does |
 |---|---|---|
@@ -227,6 +227,47 @@ The scripts are POSIX `sh` and use `jq` when it is installed. Test them without 
 ```bash
 sh plugins/triple-a-crew/scripts/test-hooks.sh
 ```
+
+### Team mode (experimental, opt-in)
+
+Claude Code's [agent teams](https://code.claude.com/docs/en/agent-teams) let employees run as teammates:
+they message the organizer and each other while they work, instead of stopping as `blocked` and being
+resumed. The organizer uses them only when you turn the feature on, and only for size L work with parallel
+tasks or questions worth asking live. Everything else stays in subagent mode, which is the default.
+
+Turn it on for one project, not everywhere: a named Agent call becomes a teammate in every session that
+has the variable, including sessions where you didn't ask for a team. In
+`<project>/.claude/settings.local.json`:
+
+```json
+{ "env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" } }
+```
+
+What changes, from [`teams.md`](plugins/triple-a-crew/skills/work/teams.md):
+
+- Teams need an interactive session. Under `-p`, the Agent SDK and evals, named calls fall back to
+  subagents, and the same rules stay safe.
+- Each teammate is named after its status file (`T2-engineer`); the hooks match that form, so the protocol
+  reminder and the status-file gate still apply.
+- Teammates share your working tree, with no worktrees. Writers run together only on disjoint files,
+  readers wait for a writer to finish, every brief names who else is running, and only the organizer
+  commits.
+- `maxTurns` doesn't stop a teammate, so each brief carries a turn budget and the organizer shuts down a
+  teammate that overruns or loops. A teammate gets its agent's tools, model and instructions, but not its
+  preloaded skills.
+- `board.md` stays the only task list; the built-in team task list is not used. Teammates don't survive
+  `/resume`: the organizer re-staffs unfinished tasks from the status files.
+- **Cost:** each teammate is a full Claude Code session, so a team of four uses several times the tokens of
+  the same work done by subagents.
+
+Team mode has no eval case, because evals can't start an interactive session. To check it by hand, turn it
+on in a scratch repository, start `claude` there, and give the organizer a size-L request with two parallel
+tasks. Then check that:
+
+- `~/.claude/teams/session-*/config.json` lists the teammates under their `T<n>-<role>` names;
+- each crew teammate received the "Triple-A-Crew protocol" reminder at start;
+- a teammate that tries to finish without its status file is sent back by the stop gate;
+- `board.md` and every status file end complete, and no teammate committed.
 
 ### The workflow skills
 
