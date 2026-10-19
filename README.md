@@ -378,7 +378,8 @@ ones that test the no-tracker path.
   - `test-harden` adds risky cursor cases in `node:test`, not another framework.
   - `handoff` writes and finalizes to `.crew/handoffs/`.
 
-**Latest results:** 2026-10-16, Claude Code 2.1.295, default model.
+**Latest results:** 2026-10-16, Claude Code 2.1.295, default model. The organizer rows were rerun on
+2026-10-19 (Claude Code 2.1.299) after the skill cut: one run per case, one arm, $1.69 for the suite.
 
 | Plugin | Case | With plugin | Without | Δ | Runs (with) |
 |---|---|---|---|---|---|
@@ -391,10 +392,11 @@ ones that test the no-tracker path.
 | `file-issue` | `linear-confirms-before-creating` | 1.00 | one arm | | 3 + 2 |
 | `file-issue` | `linear-duplicate-offers-comment` | 1.00 | one arm | | 3 + 2 |
 | `file-issue` | `profile-confirm-never-creates` | 1.00 | one arm | | 3 + 2 |
-| `triple-a-crew` | `starts-work-item-on-large-request` | 1.00 | one arm | | 2 |
-| `triple-a-crew` | `stays-out-of-small-request` | 1.00 | 1.00 | 0.00 | 4 |
-| `triple-a-crew` | `reports-status-of-open-item` | 1.00 | one arm | | 2 |
-| `triple-a-crew` | `medium-fix-end-to-end` | 1.00 | one arm | | 1 |
+| `triple-a-crew` | `starts-work-item-on-large-request` | 1.00 | one arm | | 2 + 1 |
+| `triple-a-crew` | `stays-out-of-small-request` | 1.00 | 1.00 | 0.00 | 4 + 1 |
+| `triple-a-crew` | `stays-out-of-read-only-investigation` | 1.00 | not run | | 1 |
+| `triple-a-crew` | `reports-status-of-open-item` | 1.00 | one arm | | 2 + 1 |
+| `triple-a-crew` | `medium-fix-end-to-end` | 1.00 | one arm | | 1 + 1 |
 | `triple-a-crew` | `creates-profile-from-repo` | 1.00 | 0.00 | +1.00 | 2 |
 | `triple-a-crew` | `refreshes-profile-keeps-user-values` | 1.00 | 1.00 | 0.00 | 2 |
 | `triple-a-crew` | `no-fire-setup-question` | 1.00 | 1.00 | 0.00 | 2 |
@@ -441,9 +443,11 @@ How to read it:
 - The `file-issue` no-trigger cases ran with its current description. Changes made after them touch only
   the skill body, which loads once the skill has fired, so they cannot change whether it fires. The tracker
   cases were rerun twice after those changes.
-- **The organizer's description changed on 2026-10-19** (read-only requests stay out), after the results
-  above, and `stays-out-of-read-only-investigation` is new. Rerun the organizer suite before trusting its
-  numbers.
+- **The organizer's description changed on 2026-10-19** (read-only requests stay out). The rerun that day
+  (the second number in "Runs") scored 1.00 on all five organizer cases. In
+  `stays-out-of-read-only-investigation` Claude read the issue's comments from the mocked Linear without
+  starting the organizer, writing or editing anything. In `medium-fix-end-to-end` the fix kept the
+  comments that were already in the file, as the noise rule now requires.
 
 ## Repository layout
 

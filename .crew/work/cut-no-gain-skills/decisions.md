@@ -40,3 +40,6 @@
   trigger and read-only exclusion (it is a convention file here, so stale wording there would undo the fix);
   README wording matches "the lines it changed"; both READMEs name the stay-out cases that run with a
   baseline; the new case regained the `no-writes` grader so "edits nothing" is checked for Write as well.
+- **2026-10-19 Organizer evals ran after the user logged the CLI in** (`claude auth login`): 5/5 cases at
+  1.00, one run each, one arm, $1.69, 322 s. `stays-out-of-read-only-investigation` confirms the must-fix
+  fix: no Skill call, no Write or Edit, the issue's comments read.

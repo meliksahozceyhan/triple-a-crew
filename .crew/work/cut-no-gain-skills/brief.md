@@ -21,15 +21,14 @@ The sharpened evals (PR #4) scored Δ 0.00, 0.00 and +0.17 against plain Claude.
 matches costs description space and trigger ambiguity for nothing (README "Earn the place").
 
 ## Done when
-- [ ] The three skill folders and the cases `plan-review-cites-project-rules`,
+- [x] The three skill folders and the cases `plan-review-cites-project-rules`,
       `cleanup-stays-in-scope-and-verifies` and `investigate-reads-tracker-ranks-causes` are gone.
-- [ ] `grep -rn 'plan-review\|cleanup\|investigate' plugins/` finds only intended mentions.
-- [ ] `node --check plugins/triple-a-crew/skills/handoff/handoff.mjs` and `claude plugin validate .` pass
+- [x] `grep -rn 'plan-review\|cleanup\|investigate' plugins/` finds only intended mentions.
+- [x] `node --check plugins/triple-a-crew/skills/handoff/handoff.mjs` and `claude plugin validate .` pass
       (only the expected `version` warnings).
-- [ ] Organizer evals (`--tag organizer --ablation none --scaffold`, `--runs 1`) score 1.00. (Run by the user:
-      the CLI here is not logged in; see decisions.md.)
-- [ ] A reviewer has read the diff and every must-fix is resolved.
-- [ ] A PR from `cut-no-gain-skills` into `main` is open.
+- [x] Organizer evals (`--tag organizer --ablation none --scaffold`, `--runs 1`) score 1.00 (5/5, 2026-10-19).
+- [x] A reviewer has read the diff and every must-fix is resolved.
+- [x] A PR from `cut-no-gain-skills` into `main` is open.
 
 ## Constraints
 - Profile `conventions`: README.md ("Conventions for new skills": earn the place, short SKILL.md, portable
