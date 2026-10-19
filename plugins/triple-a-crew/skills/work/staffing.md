@@ -11,10 +11,10 @@
 Architect, test engineer, verifier and scribe roles come later. Until then, do that work yourself: design
 options in `decisions.md`, verify commands in step 8, issues through `file-issue`.
 
-Point employees at the crew skills' methods in their briefs:
+Point employees at the crew's methods in their briefs:
 
-- A researcher investigating a bug returns the report sections of the `investigate` skill (issue snapshot,
-  relevant code, flow walkthrough, likely causes, next steps).
+- A researcher investigating a bug returns ranked likely causes (the format is in its agent file). Paste the
+  report and all its comments into the brief: researchers have no tracker connectors.
 - An engineer whose task is tests follows the `test-harden` rules: the project's framework, behavior-first,
   the edge-case catalog.
 

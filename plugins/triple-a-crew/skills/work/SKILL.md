@@ -1,6 +1,6 @@
 ---
 name: work
-description: Triple-A-Crew organizer. Runs multi-step work like a team lead - sizes the request, opens a work item in .crew/work/, stress-tests edge cases, plans tasks, staffs employee subagents (researcher, engineer, reviewer) on the right model, tracks their status, answers their questions, verifies the result and files follow-ups. Use proactively, without waiting to be asked, for requests that need changes across several files or areas, investigation before implementation, or that reference a ticket. Also use when the user wants to continue, check or advance open work ("pick up the CSV export", "where are we on X", "what's next"). Not for questions, explanations, one-spot edits, or requests a single crew skill handles on its own (investigating a bug, reviewing a plan, cleaning up, hardening tests, writing a handoff).
+description: Triple-A-Crew organizer. Runs multi-step work like a team lead - sizes the request, opens a work item in .crew/work/, stress-tests edge cases, plans tasks, staffs employee subagents (researcher, engineer, reviewer) on the right model, tracks their status, answers their questions, verifies the result and files follow-ups. Use proactively, without waiting to be asked, for requests to build, change or fix something across several files or areas, including fixes that need investigation first and tickets to implement. Also use when the user wants to continue, check or advance open work ("pick up the CSV export", "where are we on X", "what's next"). Not for questions, explanations, one-spot edits, requests only to investigate or review with no change asked for ("investigate ACT-123", "review this plan"), a cleanup pass over recent changes, or requests a single crew skill handles on its own (hardening tests, writing a handoff).
 argument-hint: "[start <request> | next | status]"
 ---
 
@@ -33,6 +33,10 @@ For `status`, or a question about where things stand ("where are we on X?"), rep
 and the next step, then stop and let the user decide. Only continue the work when they ask you to.
 
 ## 2. Size the request
+
+A request only to investigate, explain or review, with no change asked for, is not work for the organizer,
+even when it names a ticket: step aside, with no work item and no announcement. It becomes work when the user
+asks for the change.
 
 | Size | Looks like | Then |
 |---|---|---|
@@ -72,9 +76,13 @@ dependencies.
 - Every change gets a review by someone who did not write it.
 - Record each real decision in `decisions.md`, with the reason and the alternatives you rejected.
 
-**Size L:** run the `plan-review` skill on your plan if it is available, then show the plan (tasks, who does
-what on which model, the risky edge cases) and ask for the go-ahead before any engineer starts. Researchers
-may run before the go-ahead.
+**Size L:** read the profile's `conventions` files (without a profile: `CLAUDE.md`, `AGENTS.md`,
+`CONTRIBUTING.md`, `.claude/rules/`, `.cursor/rules/` and ADR folders, where they exist) and check every task
+against them. Record each rule that
+changes the plan in `decisions.md` with the file it comes from, for example "Queries live in `src/db/`
+(docs/adr/0003.md): T2 moves the query out of the route." Then show the plan (tasks, who does what on which
+model, the risky edge cases) and ask for the go-ahead before any engineer starts. Researchers may run before
+the go-ahead.
 
 ## 6. Staff and brief
 
@@ -102,7 +110,11 @@ When an employee finishes:
 
 ## 8. Verify and review
 
-- Run the `cleanup` skill on the changed files if it is available.
+- Strip the noise this work added, in the lines it changed: debug logs, commented-out code, comments that
+  restate the code, and try-catch blocks that only log and rethrow. Keep API docs, why-comments, operational
+  logs and error handling that does real work (retries, fallbacks, error translation, cleanup in `finally`).
+  The project's convention files win over these defaults. If a check below fails on a line you stripped,
+  restore it.
 - Run the profile's `verify` commands (or the checks the plan names) on the combined result. A failure goes
   back to the task that caused it.
 - Staff a reviewer on the final diff (per task for size L). The reviewer never reviews work it wrote. Resolve

@@ -9,8 +9,8 @@ on the right models, tracks their state, answers their questions, and files foll
 out of scope.
 
 > **Status: v1, private.** Two plugins: `file-issue`, and `triple-a-crew` with the organizer, three
-> employees, `onboard`, and the workflow skills migrated from actioner-new (`plan-review`, `cleanup`,
-> `test-harden`, `investigate`, `handoff`). The full design is in [docs/DESIGN.md](docs/DESIGN.md).
+> employees, `onboard`, and two workflow skills migrated from actioner-new (`test-harden`, `handoff`). The
+> full design is in [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Contents
 
@@ -46,8 +46,7 @@ or a protocol.
 ├─ Tier 2: organization (Claude Code only) ───────────────────────────┤
 │  work (organizer) · researcher, engineer, reviewer · handoff        │
 ├─ Tier 1: portable skills (Claude Code, Claude chat, Cursor*) ───────┤
-│  file-issue · onboard · plan-review · cleanup · test-harden ·       │
-│  investigate                                                        │
+│  file-issue · onboard · test-harden                                 │
 └─────────────────────────────────────────────────────────────────────┘
    project layer (not in this repo): .crew/profile.md, CLAUDE.md, rules
 ```
@@ -63,7 +62,7 @@ or a protocol.
 | Plugin | Skills and agents | What it does |
 |---|---|---|
 | [`file-issue`](plugins/file-issue) | `file-issue` | Turns problems found outside the current task into complete follow-up issues in whatever tracker you use |
-| [`triple-a-crew`](plugins/triple-a-crew) | `work`, `onboard`, `plan-review`, `cleanup`, `test-harden`, `investigate`, `handoff`; agents `researcher`, `engineer`, `reviewer` | The organizer and its employees, the project profile, and the workflow skills they use |
+| [`triple-a-crew`](plugins/triple-a-crew) | `work`, `onboard`, `test-harden`, `handoff`; agents `researcher`, `engineer`, `reviewer` | The organizer and its employees, the project profile, and the workflow skills they use |
 
 ### file-issue
 
@@ -165,7 +164,8 @@ Starts on its own for multi-step requests, or with `/triple-a-crew:work [start <
 3. **Stress-tests before planning.** It lists edge cases (empty and huge inputs, concurrency, partial
    failure, time zones, migrations, backward compatibility) and marks each one in or out of scope.
 4. **Plans tasks.** Each task has a file set, an acceptance check, a role and a model tier. For size L it
-   runs `plan-review` on the plan and asks for your go-ahead before any engineer starts.
+   checks every task against your convention files, records each rule that changes the plan (with its file)
+   in `decisions.md`, and asks for your go-ahead before any engineer starts.
 5. **Staffs employees.** Model choice follows a rule table: `mechanical` work goes to haiku, `standard`
    to sonnet, `critical` to opus.
    - Parallel tasks run only on disjoint file sets.
@@ -173,8 +173,9 @@ Starts on its own for multi-step requests, or with `/triple-a-crew:work [start <
    - Whoever writes a change never reviews it.
 6. **Tracks progress through status files.** A blocked employee is resumed with the answer and keeps its
    context. You decide anything that is your call.
-7. **Verifies and reviews.** It runs `cleanup`, runs your profile's verify commands, staffs a reviewer, and
-   files the findings through `file-issue` in one batch.
+7. **Verifies and reviews.** It strips debug logs, commented-out code and log-and-rethrow try-catch from the
+   lines it changed, runs your profile's verify commands, staffs a reviewer, and files the findings through
+   `file-issue` in one batch.
 8. **Answers status questions** ("where are we on X?") from the board, without starting more work.
 
 A real plan from the eval fixture, for "make the orders CSV export production-ready":
@@ -192,7 +193,7 @@ injection and a `NaN` total.
 
 | Agent | Model | Does | Writes |
 |---|---|---|---|
-| `researcher` | sonnet | Maps code, docs and tickets with `path:line` evidence | only its status file |
+| `researcher` | sonnet | Maps code, docs and tickets with `path:line` evidence; for a bug, ranks the likely causes with a confidence and a way to confirm each | only its status file |
 | `engineer` | sonnet | Implements one task inside its file set and runs the acceptance check | code in its file set |
 | `reviewer` | opus | Adversarial review of a diff: must-fix, should-fix and nit, each with a failure scenario | only its status file |
 
@@ -207,11 +208,12 @@ project's rules from its profile and convention files instead.
 
 | Skill | Use it for | Came from |
 |---|---|---|
-| `plan-review` | Tighten a plan before building: project rules (cited by file), reuse, edge cases, failure handling, 10x/100x scale. Returns a reinforced plan; writes no code | `plan-reinforcer` agent |
-| `cleanup` | Remove debug logs, redundant comments, dead code and log-and-rethrow try-catch from the changed files only. Keeps API docs, why-comments and real error handling, and proves behavior with the verify commands | `post-plan-cleanup` agent |
 | `test-harden` | Find the risky missing test cases (cursor loops, DST, malformed data, retries, partial failure) and report or add them in the project's own framework | `test-robustness-review` skill + reviewer and filler agents |
-| `investigate` | Read a bug report from any tracker, a URL or pasted text, trace the flow, and rank root causes with `path:line` evidence. Read-only | `investigate-linear-issue` agent |
 | `handoff` | Write, resume or brief from a session handoff, with a facts appendix built from git and the transcript. Writes to `.crew/handoffs/` | `session-handoff` skill |
+
+Three more were migrated and then cut, because plain Claude matched them in the evals: `plan-review` (from
+`plan-reinforcer`), `cleanup` (from `post-plan-cleanup`) and `investigate` (from `investigate-linear-issue`).
+What they added moved into the organizer and the `researcher`; see [Evals](#evals).
 
 ## Install
 
@@ -273,8 +275,7 @@ claude plugin marketplace add ~/workspace/claude-skill-folder
      and for size L waits for your go-ahead. Ask "where are we?" at any time.
    - **A problem outside the current task:** `file-issue` drafts a follow-up, checks for duplicates and asks
      before creating it.
-   - **Single skills on request:** "review this plan", "clean up what we touched", "harden these tests",
-     "investigate ACT-123", "write a handoff".
+   - **Single skills on request:** "harden these tests", "write a handoff".
 
 To file issues in one list at the end of a task instead of one by one, set `confirm: batch` in the
 profile.
@@ -303,9 +304,9 @@ them. An organizer and its employees write state constantly, so the crew uses a 
 | Field | Set by | Used by |
 |---|---|---|
 | `stack` | detected | every skill, as context |
-| `verify` | detected | the organizer's verify step, `cleanup` |
+| `verify` | detected | the organizer's verify step |
 | `tests` | detected | `test-harden`, engineer briefs |
-| `conventions` | detected | `plan-review`, `cleanup`, `test-harden`, every employee brief |
+| `conventions` | detected | the organizer's size-L plan check, `test-harden`, every employee brief |
 | `issue_tracker` (`tool`, `team`, `labels`, `confirm`) | you, from detected candidates | `file-issue` |
 | `organizer` (`proactive` / `manual`) | you | `work` |
 | `models` (`mechanical`, `standard`, `critical`) | you | the organizer's staffing |
@@ -342,8 +343,8 @@ Every run is a real model call on your account. A full run of both suites costs 
 |---|---|---|
 | `file-issue` | `claude plugin eval . --tag trigger no-trigger --allow-tools Write` | 3 trigger, 3 no-trigger, with baseline |
 | `file-issue` | `claude plugin eval . --tag mock-tracker --ablation none --scaffold` | 3 mocked-Linear cases, one arm |
-| `triple-a-crew` | `claude plugin eval . --tag migrated onboard no-trigger --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` | 5 migrated-skill cases, 2 onboard, 2 no-trigger, with baseline |
-| `triple-a-crew` | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` | 4 organizer cases, one arm |
+| `triple-a-crew` | `claude plugin eval . --tag migrated onboard no-trigger --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` | 2 migrated-skill cases, 2 onboard, 3 no-trigger, with baseline |
+| `triple-a-crew` | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` | 5 organizer cases, one arm |
 
 Add `--runs 1 --ablation none --case <name>` to iterate on one case cheaply. Add `--keep-temp` to keep each
 run's sandbox, including `out/trace.jsonl` with every tool call.
@@ -368,19 +369,13 @@ ones that test the no-tracker path.
   - **Large request:** opens a work item (brief with edge cases, plan, board, index, `.gitignore`) and asks
     for the go-ahead before any engineer starts.
   - **Small request:** stays out.
+  - **Read-only investigation** ("investigate ACT-512 before we fix anything", with a mocked Linear): stays
+    out, creates no work item and edits nothing, but still reads the issue's comments.
   - **"Where are we?":** answers from the open item's board without starting work.
   - **Medium fix, end to end:** fixes the quoting in both writers, runs the verify command, and staffs a
     reviewer on opus that writes its status file.
 - Migrated skills, one fixture each:
-  - `plan-review` catches five rule breaks, four of them in `CONTRIBUTING.md` and two ADRs that the profile
-    lists as conventions; cites each rule's file; returns its fixed plan structure; writes no code.
-  - `cleanup` removes debug logs, dead code and a log-and-rethrow from the changed file, keeps JSDoc, a
-    why-comment and a real retry, leaves an untouched file with debug logs alone, and runs both verify
-    commands from the profile (one of them is not in `package.json`).
   - `test-harden` adds risky cursor cases in `node:test`, not another framework.
-  - `investigate` reads ACT-512 and its comments from a mocked Linear (the baseline gets the same mock),
-    weighs two code paths that both give 19% off with a confidence and a way to confirm each, and edits
-    nothing. Only the comments say which path was reported.
   - `handoff` writes and finalizes to `.crew/handoffs/`.
 
 **Latest results:** 2026-10-16, Claude Code 2.1.295, default model.
@@ -405,42 +400,37 @@ ones that test the no-tracker path.
 | `triple-a-crew` | `no-fire-setup-question` | 1.00 | 1.00 | 0.00 | 2 |
 | `triple-a-crew` | `writes-handoff-to-crew` | 0.97 | 0.25 | +0.72 | 6 |
 | `triple-a-crew` | `test-harden-adds-edge-cases` | 1.00 | 0.83 | +0.17 | 3 |
-| `triple-a-crew` | `plan-review-cites-project-rules` | 0.75 | 0.75 | 0.00 | 2 |
-| `triple-a-crew` | `cleanup-stays-in-scope-and-verifies` | 1.00 | 1.00 | 0.00 | 2 |
-| `triple-a-crew` | `investigate-reads-tracker-ranks-causes` | 1.00 | 0.83 | +0.17 | 2 |
 
 How to read it:
 
 - **No-trigger cases** score 1.00 in both arms by design: they check that the skill stays out of the way.
 - **Refresh** has Δ 0: without the plugin, Claude also updates an existing profile correctly. The case
   guards against regressions rather than showing what the plugin adds.
-- **`plan-review`, `cleanup` and `investigate` add little or nothing over plain Claude.** Their first
-  cases gave plain Claude everything it needed (rules in `CLAUDE.md`, a scoped request, a pasted report)
-  and scored Δ 0. The sharpened cases target only what each skill claims to add, and plain Claude still
-  matched them on substance:
-  - `plan-review` (Δ 0.00): the baseline read `CONTRIBUTING.md` and both ADRs without being told to,
-    caught all five breaks and cited each file. The 0.75 in both arms is the structure grader: the skill's
-    own format (constraints with sources, steps with dependencies) appeared in full in 1 of 4 runs with the
-    plugin and never without. An earlier, stricter version of that grader gave the same scores.
-  - `cleanup` (Δ 0.00): the baseline stayed in the changed file (Claude Code puts the git status in its
-    system prompt), found `.crew/profile.md`, and ran both verify commands. One baseline run used Claude
-    Code's built-in `simplify` skill.
-  - `investigate` (Δ +0.17): the baseline read the issue and its comments from the same mocked Linear,
-    used the comments to put the gift-card path first, and also caught the member-pricing bug. The whole
-    gain is the report shape: an explicit confidence and a way to confirm for each cause.
-- **Recommendation: cut all three as standalone skills** (see "Earn the place" below). Not done in this
-  change; until then, the cases guard against regressions.
-  - `plan-review`: fold into the organizer's size-L step. Check each task against the profile's
-    `conventions` files and record every rule that changes the plan, with its file, in `decisions.md`. The
-    skill's output format does not match `plan.md` anyway.
-  - `cleanup`: one line in the organizer's verify step (remove debug logs, commented-out code and
-    log-and-rethrow try-catch from the changed files), or Claude Code's built-in `simplify`.
-  - `investigate`: move the report format (ranked causes, each with a confidence and a way to confirm)
-    into the `researcher` agent, which already returns it, and delete the skill.
+- **`plan-review`, `cleanup` and `investigate` were cut** (2026-10-16 results, cut on 2026-10-19). Their
+  first cases gave plain Claude everything it needed (rules in `CLAUDE.md`, a scoped request, a pasted
+  report) and scored Δ 0. Sharpened cases that targeted only what each skill claimed to add still showed
+  plain Claude matching them on substance:
+  - `plan-review` (0.75 in both arms, Δ 0.00): the baseline read `CONTRIBUTING.md` and two ADRs without
+    being told to, caught all five rule breaks and cited each file. Only the skill's own output format was
+    missing, and it appeared in full in just 1 of 4 runs with the plugin.
+  - `cleanup` (1.00 in both arms, Δ 0.00): the baseline stayed in the changed file (Claude Code puts the git
+    status in its system prompt), found `.crew/profile.md`, and ran both verify commands. One baseline run
+    used Claude Code's built-in `simplify` skill.
+  - `investigate` (1.00 vs 0.83, Δ +0.17): the baseline read the issue and its comments from the same
+    mocked Linear, ranked the right path first, and caught a second bug. The whole gain was the report
+    shape: a confidence and a way to confirm for each cause.
+
+  What they added moved into the organizer: for size L it checks each task against the profile's
+  `conventions` files and records every rule that changes the plan, with its file, in `decisions.md`; its
+  verify step strips debug logs, commented-out code and log-and-rethrow try-catch from the lines it changed.
+  The `researcher` agent now returns a bug's likely causes ranked, each with a confidence and a way to
+  confirm. The organizer's description no longer claims read-only requests such as "investigate ACT-123" or
+  "review this plan"; plain Claude handles those.
 - **`test-harden` and `handoff`** first lost to the baseline or skipped steps: they didn't run the new
   tests, and skipped `finalize`. Both steps are now stated as required. The numbers shown are the runs
   after that fix, against the earlier baseline.
-- **Organizer cases** run one arm, except `stays-out-of-small-request`, where the baseline is meaningful.
+- **Organizer cases** run one arm, except the no-trigger cases `stays-out-of-small-request` and
+  `stays-out-of-read-only-investigation`, where the baseline is meaningful.
   `medium-fix-end-to-end` counts its last run only: the first didn't start the organizer (a two-file fix
   reads as size S, so the case now starts it explicitly), and the second failed a grader that could never
   pass on a slash command.
@@ -448,9 +438,12 @@ How to read it:
   the skill sometimes only offered to file; the draft went to the sandbox's home directory, a git
   repository, instead of the working directory; and the judge saw only the final message, where the answer
   was referenced but not repeated. The skill text and the graders now handle all three.
-- The no-trigger cases ran with the current description. Changes made after them touch only the skill
-  body, which loads once the skill has fired, so they cannot change whether it fires. The tracker cases
-  were rerun twice after those changes.
+- The `file-issue` no-trigger cases ran with its current description. Changes made after them touch only
+  the skill body, which loads once the skill has fired, so they cannot change whether it fires. The tracker
+  cases were rerun twice after those changes.
+- **The organizer's description changed on 2026-10-19** (read-only requests stay out), after the results
+  above, and `stays-out-of-read-only-investigation` is new. Rerun the organizer suite before trusting its
+  numbers.
 
 ## Repository layout
 
@@ -474,9 +467,9 @@ How to read it:
 │       ├── skills/
 │       │   ├── work/                   the organizer: SKILL.md, formats, staffing, protocol
 │       │   ├── onboard/                SKILL.md, profile-format.md (the profile contract)
-│       │   ├── plan-review/  cleanup/  test-harden/ (+ examples.md)  investigate/
+│       │   ├── test-harden/            SKILL.md, examples.md
 │       │   └── handoff/                SKILL.md, handoff.mjs (facts from git and the transcript)
-│       └── evals/                      12 cases; each fixture.sh scaffolds a sample repo
+│       └── evals/                      10 cases; each fixture.sh scaffolds a sample repo
 └── README.md
 ```
 
@@ -485,7 +478,7 @@ How to read it:
 | Version | Scope |
 |---|---|
 | **v0** (done) | Marketplace, `file-issue` with tracker reference files and evals, `onboard` with the profile format and evals |
-| **v1** (done) | The organizer (`work`): sizing, the `.crew/work/` folder, the status protocol, and three employees: researcher, engineer, reviewer. The actioner-new skills migrated as generic skills: `plan-review`, `cleanup`, `test-harden`, `investigate`, `handoff` |
+| **v1** (done) | The organizer (`work`): sizing, the `.crew/work/` folder, the status protocol, and three employees: researcher, engineer, reviewer. The actioner-new skills migrated as generic skills: `plan-review`, `cleanup`, `test-harden`, `investigate`, `handoff`. `plan-review`, `cleanup` and `investigate` were cut afterwards and folded into the organizer and the researcher (see [Evals](#evals)) |
 | **Next** | Move actioner-new onto the plugin (its own profile and rules, retire the old agents); remaining employees (architect, test engineer, verifier, scribe); `retro`; hooks; agent-teams mode; a Cursor check |
 | **Publish** | License, versions and git tags, make the repository public, test the plugin zip in Claude chat |
 
@@ -500,7 +493,7 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
   baseline that is stronger than it looks. Plain Claude Code also loads `CLAUDE.md`, sees the git status in
   its system prompt, reads every file of a small fixture, uses the same mocked MCP servers, and has built-in
   skills such as `simplify`. A case shows what a skill adds only if the fixture holds back what plain Claude
-  gets anyway. `plan-review`, `cleanup` and `investigate` failed this test; see the eval notes.
+  gets anyway. `plan-review`, `cleanup` and `investigate` failed this test and were cut; see the eval notes.
 - **Portable frontmatter.** Tier-1 skills use only `name` and `description`; other fields are Claude Code
   extensions that other hosts may ignore. Put the key use case first and keep the description under 1,024
   characters. If the skill should run without being asked, say so ("use proactively, without waiting to be
@@ -524,6 +517,7 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
 |---|---|
 | Plugin does not load; `plugin_errors` shows `dependency-unsatisfied` | A declared dependency is not installed. Remove `dependencies`, or install the dependency first |
 | Permission prompt on every write under `.claude/` | `.claude/` is protected in Claude Code. Write crew state to `.crew/` |
+| Eval stops after about a second with `partialReason: auth_failed` and $0 cost | The standalone `claude` CLI is not logged in (`claude auth status` shows `loggedIn: false`). A Claude desktop-app session authenticates through the app, not the CLI, so evals started from it fail. Run them from a terminal after `claude auth login` |
 | Eval: `a plugins entry names the case directory ... or a directory covering them` | Do not list the plugin under test in a case's `plugins:`. Fixture plugins must sit inside the case directory |
 | Eval: `outside the containment root` | A case can only load plugins inside the plugin under test, so a sibling plugin cannot be loaded |
 | Eval: tracker tools show up in a no-tracker case | Suite-wide `evals/mocks/` applies to every case. Move the mocks into the cases that need them |

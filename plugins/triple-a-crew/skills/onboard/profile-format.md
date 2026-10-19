@@ -33,7 +33,7 @@ models: {}
 | `stack` | list of strings | detected | every skill, as context |
 | `verify` | ordered list of shell commands, run from the root | detected | the verifier and the verify phase |
 | `tests` | list of globs relative to the root | detected | the test engineer |
-| `conventions` | list of paths relative to the root | detected | plan review and every employee brief |
+| `conventions` | list of paths relative to the root | detected | the organizer's size-L plan check, `test-harden` and every employee brief |
 | `issue_tracker.tool` | `linear`, `github`, `jira`, `gitlab`, `asana`, `clickup`, `notion`, `local`, or another tracker's name | user, from detected candidates | `file-issue` |
 | `issue_tracker.team` | Linear team, GitHub `owner/repo`, Jira project key, GitLab `group/project`, Asana project, ClickUp list, Notion database | user, from detected candidates | `file-issue` |
 | `issue_tracker.labels` | list of existing label names added to every issue | user | `file-issue` |
