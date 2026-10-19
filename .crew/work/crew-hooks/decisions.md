@@ -49,3 +49,5 @@
   1.00 with the plugin, 0.80 without (the name-the-item grader failed without the hook; the four no-tool
   graders pass in both arms); organizer suite with hooks loaded 5/5 at 1.00. Cost $1.63. Not rerun after the
   R fixes, to keep cost down.
+- **2026-10-19 Closed.** Merged in PR #9. `retro.md` written at close; the user accepted every proposal: L3
+  accepted and applied. The other lessons are filed (#14) or kept.

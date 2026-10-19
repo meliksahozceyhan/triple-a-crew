@@ -559,6 +559,8 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
   its system prompt, reads every file of a small fixture, uses the same mocked MCP servers, and has built-in
   skills such as `simplify`. A case shows what a skill adds only if the fixture holds back what plain Claude
   gets anyway. `plan-review`, `cleanup` and `investigate` failed this test and were cut; see the eval notes.
+  Run the baseline arm on the case's fixture before building the skill: plain Claude's trace shows what is
+  left to add. `retro` was built in full (four tasks, a review) before its baseline matched it.
 - **Portable frontmatter.** Tier-1 skills use only `name` and `description`; other fields are Claude Code
   extensions that other hosts may ignore. Put the key use case first and keep the description under 1,024
   characters. If the skill should run without being asked, say so ("use proactively, without waiting to be
@@ -566,6 +568,9 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
 - **Short `SKILL.md`.** Aim for about 150 lines; move details into reference files that load on demand.
 - **No state under `.claude/`.** Use `.crew/`.
 - **Never invent values.** IDs, labels, team names and commands come from tools or files, or from the user.
+- **Probe what the docs leave open.** When a skill depends on a Claude Code mechanic the docs don't settle,
+  run a throwaway plugin on haiku in a scratch folder (it costs cents) and record the result with its date in
+  DESIGN's Verified mechanics. `crew-hooks` (hook payloads) and `employees-v2` (`skills:` names) both did.
 - **Ask before publishing.** Anything that writes to a shared system (issues, comments, messages) confirms
   first unless the profile says otherwise. Local files need no confirmation.
 - **Spell out the exceptions to location rules.** "Use the git root" sent drafts to the home directory
@@ -574,7 +579,8 @@ and runs work in parallel only on disjoint file sets. Details are in [docs/DESIG
 - **Ship evals with the skill:** at least one case that should trigger it, one that should not, a near miss
   for each trigger phrase you add, and one case per key rule. Keep mocks per case. When the answer to the
   user's question may come before the skill runs, judge the whole transcript (`focus: trace`), not only the
-  last message.
+  last message. A trace judge can miss facts near the end of a long run (about 330 KB in `employees-v2`);
+  when the final reply carries the facts, judge the final reply.
 
 ## Troubleshooting
 

@@ -68,3 +68,5 @@
   `findings.md`; the example uses `<repository from plugin.json>` instead of a literal URL; a `not filed`
   Status for an accepted draft whose repository was unreachable; the plugin README line rewrapped. Not
   rerun: the case's graders do not depend on these lines.
+- **2026-10-19 Closed.** Merged in PR #11. `retro.md` written at close; the user accepted every proposal: L3
+  accepted and applied, L5 filed as #19. The other lessons are filed (#14, #16, #17) or kept.
