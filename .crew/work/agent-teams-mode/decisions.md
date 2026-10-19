@@ -114,3 +114,12 @@
   tree, the organizer's `cd` became later teammates' starting folder, a `\u` escape in a message arrived raw,
   placeholder timestamps in status files, and test-engineer briefs with no regressions to catch. Details in
   `team/T8-organizer.md`.
+- **2026-10-19 T8 gaps 1 and 2 fixed here; 3 and 4 go to issues (user's choice).** `teams.md`: the organizer
+  never `cd`s (a teammate starts in the lead's folder) and names characters or code points in messages, never
+  `\u` escapes. `agents/test-engineer.md`: mutation checks break a copy outside the repository, never the code
+  in place (this also applies in subagent mode, so `test-engineer-keeps-failing-test` is rerun). Gaps 3
+  (placeholder `updated` times) and 4 (test-engineer briefs list no regressions to catch) are general, so they
+  become issues. Rejected: fixing all four here (touches every agent file and the briefing; needs the full
+  suite).
+- **2026-10-19 `test-engineer-keeps-failing-test` after the mutation-copy rule: 1.00, $0.96** (all 5 graders,
+  including test-engineer-edits-tests-only).

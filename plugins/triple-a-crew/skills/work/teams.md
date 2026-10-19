@@ -30,6 +30,10 @@ is a full session.
 - A teammate gets `tools` and the body of its agent file but not `skills`. The test-engineer reads the
   `test-harden` skill itself: put the absolute path of `../test-harden/SKILL.md` (next to this skill's
   folder) in its brief.
+- Never `cd` in your own shell commands; use absolute paths. A teammate starts in your current folder, so a
+  `cd` into the work-item folder becomes the starting folder of every teammate you spawn after it.
+- In messages to teammates, name a character or write its code point (`U+2028`), never a `\u` escape: the
+  escape arrives as the raw character, which may be invisible.
 
 ## Shared working tree
 

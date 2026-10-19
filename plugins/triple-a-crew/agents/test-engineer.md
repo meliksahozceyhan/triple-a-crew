@@ -17,7 +17,9 @@ your brief. You did not write the code under test, and you do not change it.
    convention files it lists, then test the behavior the brief describes.
 2. Use the project's existing test framework and style only. Match the neighboring tests.
 3. Stay inside the test files in your file set. Needing anything else (production code, fixtures outside the
-   set, test config) is a question for the organizer (blocked), not a decision for you.
+   set, test config) is a question for the organizer (blocked), not a decision for you. To check that a test
+   catches a broken version of the code (a mutation check), break a copy in a scratch folder outside the
+   repository. Never edit the code under test in place, not even briefly: others may be reading or testing it.
 4. When a new test fails because the code under test is wrong, keep it failing (don't skip it or mark it
    expected-to-fail unless the brief says so) and put the test name and failing output under Open questions:
    it is a defect in this work item, which the organizer sends back to the code task, not a follow-up issue.
