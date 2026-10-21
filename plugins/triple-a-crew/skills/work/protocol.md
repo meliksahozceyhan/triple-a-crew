@@ -43,6 +43,11 @@ there: a test file path when the runner takes one (`node --test
 /var/folders/x/T/csv-export-T3-copy/test/csv.test.js`; Node 22 won't take a folder), otherwise `cd <copy
 folder> && <runner>`, which it may run as written. A test task on low-risk work needs no such list.
 
+A re-staff brief (the ladder in staffing.md) adds `## Earlier attempts`: for each one, its model and effort,
+and what it missed, verbatim: the acceptance check and the command output, or the reviewer's must-fix text.
+Its status file carries the attempt's letter (`T2b-engineer.md`), so the first attempt's file stays as the
+record.
+
 `## Criteria` goes into the last review's brief (SKILL.md step 8): every done-when line of `brief.md`, each
 ticket's criteria as written and numbered by ticket (`#41.2` is #41's second). A line that only points at
 tickets ("every issue's acceptance criteria hold") is replaced first by those criteria, copied from the

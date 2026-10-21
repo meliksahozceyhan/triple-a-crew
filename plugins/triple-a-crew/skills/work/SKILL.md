@@ -90,27 +90,27 @@ coverage and every deferral) and get the go-ahead before any engineer starts; re
 ## 6. Staff and brief
 
 - Choose role and tier with [staffing.md](staffing.md). A `models:` entry in the profile overrides a tier.
-- Spawn with the Agent tool: `subagent_type: "triple-a-crew:<role>"`, `model: <alias>`, and a brief written
-  to [protocol.md](protocol.md). Add `isolation: "worktree"` only for engineers running in parallel.
-  Independent tasks go out in one message; dependent ones wait.
+- Spawn with the Agent tool: `subagent_type: "triple-a-crew:<role>"`, `model` and `effort` from staffing.md,
+  and a brief written to [protocol.md](protocol.md). Add `isolation: "worktree"` only for engineers running
+  in parallel. Independent tasks go out in one message; dependent ones wait.
 - Give the call no `name`: with agent teams enabled, a named call becomes a teammate. For size L, if `printenv
   CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` prints `1`, read [teams.md](teams.md) before staffing and follow it.
 - Each brief names the employee's status file by absolute path in the main checkout:
   `<root>/.crew/work/<id>/team/<task>-<role>.md`, even when the employee works in a worktree.
-- Update `board.md` with task, role, model and state.
+- Update `board.md` with task, role, model, effort and state.
 - If the Agent tool or these agents are unavailable, do the tasks yourself in the same order, same files.
 
 ## 7. Track and unblock
 
 When an employee finishes:
 
-- Read its status file and final report. Copy findings to `findings.md` and decisions to `decisions.md`.
-  Update the board.
+- Read its status file and report. Findings go in `findings.md`, decisions in `decisions.md`; update the board.
 - **Blocked:** if the question is yours to answer, answer it and resume that employee with `SendMessage`
   (it keeps its context). If it is the user's call, ask the user, then resume.
-- **Failed, or misses its acceptance check:** send it back once with what is missing. After a second miss,
-  staff it again one tier up, with both failures in the brief. A test-engineer's test that exposes a bug in the
-  code is not a miss: send the defect to the code task.
+- **Failed, or misses its acceptance check:** climb the ladder in staffing.md, one rung per miss: send it back
+  once with what is missing; re-staff at the same tier with effort one step up; re-staff one tier up; ask the
+  user. Each re-staff is `<task><letter>-<role>`, with its own status file and every earlier failure in its
+  brief. A test-engineer's test that exposes a bug in the code is not a miss: send the defect to the code task.
 - You decide when a task is done, never the employee.
 
 ## 8. Verify and review
@@ -123,7 +123,7 @@ When an employee finishes:
   for M when the profile lists more than one, staff the verifier (mechanical tier); its brief lists the
   commands, each ready to run from the root (protocol.md), a timeout and whether one rerun is allowed.
   Otherwise, or if the verifier is unavailable, run them yourself. A failure goes back to the task that caused
-  it, and so does a failing test that a test-engineer reports under Open questions.
+  it as that task's miss (step 7); a test-engineer's failing test is a defect for the code task, not a miss.
 - Staff a reviewer on the final diff (size L: one per task, then one on the whole diff), never one that wrote
   the work. The last review checks every done-when line with evidence (protocol.md); a line without evidence
   is a must-fix or a deferral the user accepts. Resolve every must-fix before closing. After fixes to a review

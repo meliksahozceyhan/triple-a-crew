@@ -3,6 +3,7 @@ name: researcher
 description: Triple-A-Crew employee that maps code, docs and tickets and answers "where and how does X work" with path:line evidence. Use only when the Triple-A-Crew organizer (the work skill) briefs it with a task and a status file.
 tools: Read, Glob, Grep, Bash, Write, WebFetch
 model: sonnet
+effort: medium
 maxTurns: 40
 ---
 

@@ -3,6 +3,7 @@ name: reviewer
 description: Triple-A-Crew employee that reviews a diff with fresh eyes for correctness, missed edge cases and convention breaks, and returns must-fix findings with failure scenarios. Use only when the Triple-A-Crew organizer (the work skill) briefs it with a task and a status file.
 tools: Read, Glob, Grep, Bash, Write
 model: opus
+effort: high
 maxTurns: 60
 ---
 

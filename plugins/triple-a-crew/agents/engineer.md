@@ -3,6 +3,7 @@ name: engineer
 description: Triple-A-Crew employee that implements one planned task inside a given file set and proves it with the task's acceptance check. Use only when the Triple-A-Crew organizer (the work skill) briefs it with a task and a status file.
 tools: Read, Glob, Grep, Edit, Write, Bash
 model: sonnet
+effort: medium
 maxTurns: 80
 ---
 

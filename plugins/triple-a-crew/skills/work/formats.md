@@ -87,14 +87,19 @@ Size L only: the "Done-when coverage" table goes at the end of `plan.md`, with o
 
 **Phase:** implement · **Updated:** 2026-10-16T14:05:00Z
 
-| Task | Role | Model | State | Status file |
-|---|---|---|---|---|
-| T1 | researcher | sonnet | done | team/T1-researcher.md |
-| T2 | engineer | sonnet | in-progress | team/T2-engineer.md |
-| T3 | reviewer | opus | todo | |
+| Task | Role | Model | Effort | State | Status file |
+|---|---|---|---|---|---|
+| T1 | researcher | sonnet | medium | done | team/T1-researcher.md |
+| T2 | engineer | sonnet | medium | missed twice: sent back, still failing | team/T2-engineer.md |
+| T2b | engineer | sonnet | high | in-progress | team/T2b-engineer.md |
+| T3 | reviewer | opus | high | todo | |
 
-**Next:** wait for T2, then staff T3.
+**Next:** wait for T2b, then staff T3.
 ```
+
+One row per attempt: a re-staffed task keeps its id with the next letter (`T2b`, then `T2c`) and its own
+status file, so the ladder's rung (staffing.md) can be read back after `/clear`. Model and effort are what
+ran; when a user setting overrode the model, the State cell also names what was asked for.
 
 ## decisions.md
 
@@ -124,7 +129,7 @@ and an abandoned one ("just do it") gets neither. Every point names its source f
 **Closed:** 2026-10-19
 
 ## What happened
-- T1 missed its acceptance check twice and moved up to opus (board.md)
+- T1 missed its acceptance check twice; T1b (effort high) missed too, so T1c moved up to opus (board.md)
 - The reviewer's must-fix: `since` compared local midnight with UTC (team/T3-reviewer.md)
 
 ## Lessons
