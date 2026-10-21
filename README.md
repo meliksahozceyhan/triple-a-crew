@@ -698,7 +698,10 @@ runs work in parallel only on disjoint file sets. Details are in [docs/DESIGN.md
   names itself, such as `.crew/work/<id>/decisions.md`, through its Write and Edit calls in the trace. Test a
   regex grader on rows from a real trace, not only on rows you built: Edit inputs start with `"replace_all"`,
   not `"file_path"`. Also try the near miss the grader must reject: `whole-diff-review` passed a reviewer
-  briefed on the README fix alone, until it also required another ticket's id.
+  briefed on the README fix alone, until it also required another ticket's id. A regex on an Agent row also
+  sees the call's `description`, so a keyword there passes a grader meant for the brief. Build the near miss
+  from the real passing row with the wanted text removed, not by adding the text to some other row:
+  `failures-in-brief` first matched on the description alone.
 
 ## Troubleshooting
 
@@ -720,6 +723,7 @@ runs work in parallel only on disjoint file sets. Details are in [docs/DESIGN.md
 | Eval: "skill fired" fails although the skill clearly ran | The prompt used a slash command, which loads the skill without a `Skill` tool call. Grade the outcome instead |
 | Eval: `results directory ... already existed` | Two runs started in the same second. Give each one its own `--output-dir` |
 | `--tag` or `--allow-tools` swallow the target | They take lists. Put the target first: `claude plugin eval . --tag a b` |
+| Eval: `prompt.md: invalid YAML frontmatter: YAML Parse error` | The `description:` is a plain scalar and contains a colon followed by a space, which YAML reads as a mapping. Reword it, or quote the whole value |
 | Eval: `git` fails with `xcrun_db ... Operation not permitted` and `xcode-select: Failed` | On macOS the eval sandbox blocks the cache file Apple's git shim writes, so every `git` command fails. Claude still gets the git status snapshot in its system prompt. Don't make a case depend on `git diff` output |
 | Eval: a `tool_used: Bash` grader passes but the command never ran | `tool_used` counts attempts, including calls denied in don't-ask mode. A compound command such as `node --test; echo $?` does not match `Bash(node *)` and is denied. Check the trace (`--keep-temp`) when it matters |
 
