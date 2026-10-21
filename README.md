@@ -170,9 +170,10 @@ Starts on its own for multi-step requests, or with `/triple-a-crew:work [start <
    in `decisions.md`, maps every done-when line of the brief to a task or a recorded deferral, and asks for
    your go-ahead before any engineer starts.
 5. **Staffs employees.** Model choice follows a rule table: `mechanical` work goes to haiku, `standard`
-   to sonnet, `critical` to opus.
+   to sonnet, `critical` to opus, each with a default effort level.
    - Parallel tasks run only on disjoint file sets.
-   - A task escalates one tier after two misses.
+   - A task that misses its check climbs a ladder: sent back once, then effort up at the same tier, then one
+     tier up, then the organizer asks you. Every attempt is a row on the board.
    - Whoever writes a change never reviews it, and for size L a test-engineer adds the independent tests.
 6. **Tracks progress through status files.** A blocked employee is resumed with the answer and keeps its
    context. You decide anything that is your call.
@@ -437,7 +438,7 @@ Every run is a real model call on your account. A full run of both suites costs 
 | `file-issue` | `claude plugin eval . --tag trigger no-trigger --allow-tools Write` | 3 trigger, 3 no-trigger, with baseline |
 | `file-issue` | `claude plugin eval . --tag mock-tracker --ablation none --scaffold` | 3 mocked-Linear cases, one arm |
 | `triple-a-crew` | `claude plugin eval . --tag migrated onboard no-trigger --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` | 2 migrated-skill cases, 2 onboard, 3 no-trigger, with baseline |
-| `triple-a-crew` | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)" "Bash(date *)"` | 9 organizer cases, one arm |
+| `triple-a-crew` | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)" "Bash(date *)"` | 10 organizer cases, one arm |
 | `triple-a-crew` | `claude plugin eval . --tag hooks --scaffold` | 1 hooks case, with baseline |
 
 Add `--runs 1 --ablation none --case <name>` to iterate on one case cheaply. Add `--keep-temp` to keep each
@@ -481,6 +482,10 @@ ones that test the no-tracker path.
     in both issues holds", as #24's did. The organizer gets each issue's criteria, staffs one more reviewer on
     the whole diff with all of them, names #42's missing README criterion, and doesn't close #42 unless the
     README gets fixed; #41 still closes.
+  - **Effort before tier** (`work next` on a size-M item whose engineer has missed its check twice): climbs
+    the ladder one rung, not two: re-staffs the task at the same tier with effort raised (sonnet, high) as
+    `T1b` with its own status file, carries both failures in the brief, records the attempt on the board, and
+    ends with the line-break test passing. The text before the ladder jumped to opus here.
 - Hooks: with one open item in `.crew/work/index.md`, Claude names it without using any tool, because the
   `SessionStart` hook put it in its context. The baseline cannot know.
 - Migrated skills, one fixture each:
@@ -511,6 +516,7 @@ ones that test the no-tracker path.
 | `triple-a-crew` | `medium-fix-end-to-end` | 1.00 | one arm | | 1 + 2 + 1 |
 | `triple-a-crew` | `plans-against-project-conventions` | 1.00 | one arm | | 1 |
 | `triple-a-crew` | `flags-unmet-ticket-criterion` | 1.00 | one arm | | 1 |
+| `triple-a-crew` | `escalates-effort-before-tier` | 1.00 | one arm | | 1 |
 | `triple-a-crew` | `creates-profile-from-repo` | 1.00 | 0.00 | +1.00 | 2 |
 | `triple-a-crew` | `refreshes-profile-keeps-user-values` | 1.00 | 1.00 | 0.00 | 2 |
 | `triple-a-crew` | `no-fire-setup-question` | 1.00 | 1.00 | 0.00 | 2 |
@@ -582,6 +588,12 @@ How to read it:
 - **`session-start-mentions-open-item`** scores 0.80 without the plugin only because its four "no tool used"
   graders pass in both arms. The grader that matters, naming the open item, passed with the hook and failed
   without it.
+- **`escalates-effort-before-tier`** (2026-10-21) carries the ladder's second rung. On the organizer text
+  before the ladder it scored 0.67 ($0.89): that text re-staffed the twice-missed task one tier up, an opus
+  engineer with no `effort`, so exactly the two ladder graders failed, while it already named `T1b`, pasted
+  the failing output into the brief and wrote a `T1b` board row. On the new text it scored 1.00 ($0.85): a
+  sonnet engineer at `effort: high`, then a reviewer at opus/high. The tier-up rung and "ask the user" have
+  no case, because a fixture can't make an opus engineer fail on purpose; the reviewer checked that text.
 - **`flags-unmet-ticket-criterion`** (2026-10-19, issue #30) guards the criteria check; it doesn't prove a
   gain. On the organizer text before #30 it also scored 1.00, twice: once with each ticket's criteria in the
   brief, and once with them only in the mocked issues. Both times the organizer found #42's missing README
@@ -616,7 +628,7 @@ How to read it:
 │       │   ├── onboard/                SKILL.md, profile-format.md (the profile contract)
 │       │   ├── test-harden/            SKILL.md, examples.md
 │       │   └── handoff/                SKILL.md, handoff.mjs (facts from git and the transcript)
-│       └── evals/                      15 cases; each fixture.sh scaffolds a sample repo
+│       └── evals/                      16 cases; each fixture.sh scaffolds a sample repo
 └── README.md
 ```
 
@@ -631,8 +643,9 @@ How to read it:
 | **Publish** (planned, `publish-v1`) | License, versions and git tags, an exposure audit, make the repository public, test the `file-issue` zip in Claude chat |
 
 The organizer's model choice is a rule table: `mechanical` work goes to haiku, `standard` to sonnet,
-`critical` to opus. It escalates one tier after two failed attempts, never lets an agent review its own work,
-and runs work in parallel only on disjoint file sets. Details are in [docs/DESIGN.md](docs/DESIGN.md).
+`critical` to opus, each with a default effort. A task that misses its check climbs a ladder (sent back
+once, then effort up, then one tier up, then it asks you). It never lets an agent review its own work, and
+runs work in parallel only on disjoint file sets. Details are in [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Conventions for new skills
 

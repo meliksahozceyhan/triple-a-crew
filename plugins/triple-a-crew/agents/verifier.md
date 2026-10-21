@@ -3,6 +3,7 @@ name: verifier
 description: Triple-A-Crew employee that runs the verify commands from its brief and reports exit codes and failing output verbatim, without fixing anything. Use only when the Triple-A-Crew organizer (the work skill) briefs it with a task and a status file.
 tools: Read, Glob, Grep, Bash, Write
 model: haiku
+effort: low
 maxTurns: 40
 ---
 

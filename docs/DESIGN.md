@@ -169,7 +169,10 @@ A project overrides a tier's model with `models: { critical: fable }` in its pro
 
 Rules on top of the table:
 
-- **Escalate on failure.** A task that fails acceptance twice moves up one tier, with the failure in its brief.
+- **The ladder.** A task that misses its check climbs one rung per miss: sent back once (same employee, keeps
+  its context), then re-staffed at the same tier with effort one step up, then one tier up at that tier's
+  default effort, then the organizer asks the user. Every re-staff brief carries every earlier failure, and
+  each attempt is its own board row and status file (`T2b`).
 - **Separation of duties.** The agent that wrote a change never reviews it. For size L, the test-engineer
   writes the independent tests for a code task; engineers still write the tests their own acceptance check needs.
 - **Parallel only on disjoint file sets.** Overlapping writers run in sequence, or in separate worktrees with
@@ -177,10 +180,12 @@ Rules on top of the table:
 - **Aliases, not model IDs.** Agents use `haiku` / `sonnet` / `opus` / `fable` so the plugin does not age
   with releases. The tier table lives in one reference file, and a project can override it in its profile.
   New models slot into the table without touching any skill.
-- **Effort is the second knob.** Within a tier, raise `effort` for tasks with many edge cases before moving
-  up a tier.
-- **Precedence.** The model the organizer passes at spawn time wins over the agent file's default. A user's
-  `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` setting wins over both; the organizer records the actual model on the board.
+- **Effort is the second knob.** Each tier has a default effort and a ceiling (`staffing.md`). Within a
+  tier, raise `effort` for tasks with many edge cases before moving up a tier; the ladder does the same
+  after a miss, and never climbs to `max` on its own.
+- **Precedence.** The model and effort the organizer passes at spawn time win over the agent file's defaults.
+  A user's `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` setting wins over both for the model; the organizer records
+  the actual model and effort on the board.
 
 ### Communication protocol
 

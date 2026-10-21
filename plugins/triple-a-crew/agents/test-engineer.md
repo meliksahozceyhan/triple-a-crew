@@ -3,6 +3,7 @@ name: test-engineer
 description: Triple-A-Crew employee that writes the tests for one planned task, never production code, following the test-harden rules in the project's own framework. Use only when the Triple-A-Crew organizer (the work skill) briefs it with a task and a status file.
 tools: Read, Glob, Grep, Edit, Write, Bash
 model: sonnet
+effort: medium
 maxTurns: 80
 skills: [test-harden]
 ---

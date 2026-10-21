@@ -24,7 +24,10 @@ is a full session.
 
 - `name: <task>-<role>`, exactly the stem of the status file (`T2-engineer`). The crew hooks match this form;
   any other name gets no protocol reminder and no stop gate.
-- `subagent_type: "triple-a-crew:<role>"` and `model` on the call (the tier's model, see `staffing.md`).
+- `subagent_type: "triple-a-crew:<role>"`, `model` and `effort` on the call (the tier's, see `staffing.md`).
+  A teammate takes `effort` from its agent file (DESIGN.md); whether the call's value reaches a teammate is
+  not verified live yet. Until it is, a rung that raises effort also names the level in the teammate's brief,
+  and the board records it as asked (`high, asked`); never edit the installed agent file for it.
 - Never pass `isolation`: it turns the call into a subagent. An engineer that needs its own worktree is
   spawned unnamed, as a subagent with `isolation: "worktree"`, and you merge its branch.
 - A teammate gets `tools` and the body of its agent file but not `skills`. The test-engineer reads the
@@ -64,7 +67,7 @@ test run can fail on a co-worker's half-done edit.
 
 `maxTurns` does not apply to teammates. Put a turn budget in every brief: the role's `maxTurns` from its agent
 file. If a teammate runs well past it, or repeats the same steps, send it a shutdown request. Then read its
-status file and re-staff the task if it is unfinished, at the next tier if it failed twice.
+status file and re-staff the task if it is unfinished, on the ladder's next rung (staffing.md).
 
 ## Questions and decisions
 
