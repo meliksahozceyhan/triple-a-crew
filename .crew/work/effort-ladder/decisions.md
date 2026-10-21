@@ -80,3 +80,7 @@
   Evals for this item: $4.04 in all (baseline $0.89, the three T6 runs $3.15), against the plan's $3.70.
   README nit 8 added with the results note. Every done-when line of `brief.md` now has evidence (T5's and
   T8's tables, T6's scores); the PR waits for the user's OK to push.
+- **2026-10-21 Closed.** PR #35 merged at 07:43Z (checked with `gh pr view`). `retro.md` has five lessons;
+  four proposals (two README edits, a profile note, a comment on #32) wait for the user; one stays in the
+  retro. The user accepted all four and the deletion of the three merged local branches; L1-L3 are applied
+  on branch `close-effort-ladder`, L4 is a comment on #32.
