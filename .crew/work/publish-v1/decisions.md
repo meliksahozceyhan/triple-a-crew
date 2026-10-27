@@ -66,3 +66,10 @@
   note names `claude plugin marketplace update` before `claude plugin update`. These are prose edits in files
   no verify command reads, so verify was not run a third time. The change is committed on `publish-v1`;
   the push, the two commit messages (R4) and the six PR bodies (T7) go to the user.
+- **2026-10-27 The user's answers:** push and open the PR; **R4 accepted as history** (the two commit
+  messages that name the previous project stay; a rewrite was rejected at T2); **edit the six PR bodies**
+  (#1, #2, #3, #4, #6, #8, and #3's title) to drop the old project name and `ACT-` keys, with `gh pr edit`.
+- **2026-10-27 Pushed; PR #41 open against `main`.** The six PR bodies and #3's title were edited (eleven
+  passages: T7's ten plus a second `ACT-512` in #6's verification line); the originals are kept in the
+  session scratchpad, and GitHub keeps each body's edit history. The commit `6be2e5f` is the first authored
+  with the noreply address.
