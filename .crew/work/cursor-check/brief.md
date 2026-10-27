@@ -8,8 +8,9 @@ the README's "*Cursor support is not verified yet" into a precise, tested statem
 changes that make tier-1 skills work there.
 
 ## Why
-The user works in both Claude Code and Cursor (actioner-new keeps its agents in `.cursor/agents` with a
-symlink from `.claude/agents`). DESIGN D2 promises tier-1 skills for Cursor, but "whether Cursor reads
+The user works in both Claude Code and Cursor (the author's previous project keeps its agents in
+`.cursor/agents` with a symlink from `.claude/agents`). DESIGN D2 promises tier-1 skills for Cursor, but
+"whether Cursor reads
 `SKILL.md` from `.claude/skills` or a plugin" is listed as unconfirmed.
 
 ## Done when
@@ -21,7 +22,7 @@ symlink from `.claude/agents`). DESIGN D2 promises tier-1 skills for Cursor, but
 ## Constraints
 - Conventions (profile): README "Conventions for new skills" (portable frontmatter: `name` and
   `description` only for tier-1 skills).
-- Don't modify actioner-new without asking; never read its `.env*` files.
+- Don't modify the author's previous project without asking; never read its `.env*` files.
 - The manual Cursor test is the user's (Claude cannot drive Cursor reliably); keep it under 15 minutes.
 
 ## Edge cases

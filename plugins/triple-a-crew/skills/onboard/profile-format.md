@@ -15,7 +15,7 @@ tests: ["packages/**/test/**/*.test.ts", "apps/**/*.test.ts"]
 conventions: [CLAUDE.md, .claude/rules/, .cursor/rules/]
 issue_tracker:
   tool: linear
-  team: ACT
+  team: SHOP
   labels: [follow-up]
   confirm: always
 organizer: proactive

@@ -1,5 +1,5 @@
 ---
-description: The project profile pins Linear team ACT with confirm never, so the issue should be created directly with the profile's label. Needs --scaffold. Run with --ablation none.
+description: The project profile pins Linear team SHOP with confirm never, so the issue should be created directly with the profile's label. Needs --scaffold. Run with --ablation none.
 tags: [mock-tracker, profile]
 max_turns: 20
 allowed_tools: [Read, Glob, Grep, Skill]

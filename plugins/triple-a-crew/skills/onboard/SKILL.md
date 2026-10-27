@@ -61,7 +61,7 @@ files with a glob search.
    descriptions as well as names.
 2. **Git remote:** `git remote get-url origin`, or read `.git/config` if you cannot run commands. GitHub gives
    `tool: github` with `team: owner/repo`; GitLab gives `tool: gitlab` with the project path.
-3. **Hints:** issue keys such as `ACT-123` in branch names or recent commit messages (`git branch -a`,
+3. **Hints:** issue keys such as `SHOP-123` in branch names or recent commit messages (`git branch -a`,
    `git log --oneline -50`) point to Linear or Jira with that key as the team or project. `.github/ISSUE_TEMPLATE/`
    points to GitHub Issues. Pull request templates often name the tracker.
 

@@ -39,7 +39,7 @@ work/*/handoff.md
 ```markdown
 # <title>
 
-**Size:** L · **Ticket:** ACT-1062 (or none) · **Opened:** 2026-10-16
+**Size:** L · **Ticket:** SHOP-1062 (or none) · **Opened:** 2026-10-16
 
 ## What
 ## Why
@@ -115,7 +115,7 @@ ran; when a user setting overrode the model, the State cell also names what was 
 ```markdown
 # Findings
 
-- 2026-10-16 · `listOrders` ignores `limit` (src/routes/orders.js:12) · found by T1 researcher · filed as ACT-1071
+- 2026-10-16 · `listOrders` ignores `limit` (src/routes/orders.js:12) · found by T1 researcher · filed as SHOP-1071
 ```
 
 ## retro.md

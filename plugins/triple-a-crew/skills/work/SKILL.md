@@ -1,6 +1,6 @@
 ---
 name: work
-description: Triple-A-Crew organizer. Runs multi-step work like a team lead - sizes the request, opens a work item in .crew/work/, stress-tests edge cases, plans tasks, staffs employee subagents (researcher, engineer, test engineer, verifier, reviewer) on the right model, tracks their status, answers their questions, verifies the result and files follow-ups. Use proactively, without waiting to be asked, for requests to build, change or fix something across several files or areas, including fixes that need investigation first and tickets to implement. Also use when the user wants to continue, check or advance open work ("pick up the CSV export", "where are we on X", "what's next"). Not for questions, explanations, one-spot edits, requests only to investigate or review with no change asked for ("investigate ACT-123", "review this plan"), a cleanup pass over recent changes, or requests a single crew skill handles on its own (hardening tests, writing a handoff).
+description: Triple-A-Crew organizer. Runs multi-step work like a team lead - sizes the request, opens a work item in .crew/work/, stress-tests edge cases, plans tasks, staffs employee subagents (researcher, engineer, test engineer, verifier, reviewer) on the right model, tracks their status, answers their questions, verifies the result and files follow-ups. Use proactively, without waiting to be asked, for requests to build, change or fix something across several files or areas, including fixes that need investigation first and tickets to implement. Also use when the user wants to continue, check or advance open work ("pick up the CSV export", "where are we on X", "what's next"). Not for questions, explanations, one-spot edits, requests only to investigate or review with no change asked for ("investigate SHOP-123", "review this plan"), a cleanup pass over recent changes, or requests a single crew skill handles on its own (hardening tests, writing a handoff).
 argument-hint: "[start <request> | next | status]"
 ---
 
@@ -52,7 +52,7 @@ says "just do it", mark the item abandoned in the index and continue as a normal
 
 ## 3. Open the work item
 
-- **Id:** an optional ticket key plus a 2-5 word slug, lowercase and hyphenated: `act-1062-entitlements`.
+- **Id:** an optional ticket key plus a 2-5 word slug, lowercase and hyphenated: `shop-1062-entitlements`.
 - Create `<root>/.crew/work/<id>/` with `brief.md` and `board.md`, and add the item to `index.md`.
 - Create `<root>/.crew/.gitignore` with the lines from formats.md, or append the ones an existing file lacks.
 - **Brief:** what, why, done-when (acceptance criteria; each ticket's as written, one per line, derived ones

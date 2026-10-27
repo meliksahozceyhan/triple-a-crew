@@ -1,5 +1,7 @@
 {
   "name": "file-issue",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
   "displayName": "File Issue",
   "description": "Turns problems found outside the current task into complete follow-up issues in whatever tracker you use: Linear, GitHub Issues, Jira, GitLab, Asana, ClickUp, Notion and others, detected from your connected tools. Checks for duplicates and asks before creating.",
   "author": {

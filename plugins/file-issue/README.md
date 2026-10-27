@@ -27,7 +27,7 @@ Pin a tracker and its defaults in `.crew/profile.md` at the repository root:
 ---
 issue_tracker:
   tool: linear          # linear | github | jira | gitlab | asana | clickup | notion | local | another tracker's name
-  team: ACT             # Linear team, GitHub owner/repo, Jira project key, GitLab group/project, ...
+  team: SHOP            # Linear team, GitHub owner/repo, Jira project key, GitLab group/project, ...
   labels: [follow-up]
   confirm: always       # always (default) | batch | never
 ---
@@ -46,7 +46,7 @@ The suite lives in [evals/](evals/) and runs with `claude plugin eval`. Every ru
 | `explicit-request-no-tracker` | Fires on "log a follow-up"; the draft follows the template | `--allow-tools Write` |
 | `no-fire-in-scope-fix` | Stays out when the problem is the task itself | |
 | `no-fire-tracker-question` | Stays out of a question about trackers | |
-| `no-fire-already-tracked` | Stays out when the user says the problem is already tracked (ACT-88); writes no draft | `--allow-tools Write` |
+| `no-fire-already-tracked` | Stays out when the user says the problem is already tracked (SHOP-88); writes no draft | `--allow-tools Write` |
 | `linear-confirms-before-creating` | With a mocked Linear: searches for duplicates, drafts, asks before creating | |
 | `linear-duplicate-offers-comment` | With a mocked Linear duplicate: offers a comment, creates nothing | |
 | `profile-confirm-never-creates` | Profile with `confirm: never`: creates in the profile's team with its label | `--scaffold` |
