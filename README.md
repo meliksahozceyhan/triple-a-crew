@@ -8,9 +8,9 @@ is an organizer that runs work like a team lead: it understands the problem, sta
 on the right models, tracks their state, answers their questions, and files follow-up issues for anything
 out of scope.
 
-> **Status: v1, private.** Two plugins: `file-issue`, and `triple-a-crew` with the organizer, three
-> employees, `onboard`, and two workflow skills migrated from actioner-new (`test-harden`, `handoff`). The
-> full design is in [docs/DESIGN.md](docs/DESIGN.md).
+> **Status: v1.0.0.** Two plugins: `file-issue`, and `triple-a-crew` with the organizer, its employees,
+> `onboard`, and two workflow skills migrated from the author's previous project (`test-harden`, `handoff`).
+> The full design is in [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Contents
 
@@ -45,15 +45,16 @@ or a protocol.
 │  hooks: open-items summary, employee protocol, status-file gate     │
 ├─ Tier 2: organization (Claude Code only) ───────────────────────────┤
 │  work (organizer) · 5 employees · handoff                           │
-├─ Tier 1: portable skills (Claude Code, Claude chat, Cursor*) ───────┤
+├─ Tier 1: portable skills (Claude Code, Claude chat*, Cursor**) ─────┤
 │  file-issue · onboard · test-harden                                 │
 └─────────────────────────────────────────────────────────────────────┘
    project layer (not in this repo): .crew/profile.md, CLAUDE.md, rules
 ```
 
 - **Tier 1** skills are a plain `SKILL.md` with reference files. They need no hooks, subagents or work
-  folder, so they also load in Claude chat (upload the plugin as a zip under Customize > Plugins).
-  \*Cursor support is not verified yet.
+  folder. \*Claude chat: only `file-issue` is promised there, until tested (upload the plugin as a zip under
+  Customize > Plugins). `onboard` and `test-harden` load in chat but need a filesystem and a shell to work,
+  so use them in Claude Code. \*\*Cursor support is not verified yet.
 - **Tier 2** uses Claude Code features: subagents, model selection, worktrees.
 - **Tier 3** hooks only make things faster or more visible; nothing breaks without them.
 
@@ -114,7 +115,7 @@ Tracker tools are identified from their **descriptions** as well as their names,
 prefixes are often opaque IDs.
 
 **Example.** You mention in passing that `listOrders` ignores `limit` and times out in prod, then ask a
-question about pagination. Claude answers the question, then shows a Linear draft for team Core (ACT):
+question about pagination. Claude answers the question, then shows a Linear draft for team Core (SHOP):
 "Orders endpoint ignores the limit parameter", with labels Bug and follow-up and priority High. It notes
 that a search found no duplicates and asks whether to create it.
 
@@ -285,8 +286,8 @@ tasks. While that session is still open (the team config is deleted when it ends
 
 ### The workflow skills
 
-These came from skills that lived in actioner-new with Actioner's stack rules built in. They now read each
-project's rules from its profile and convention files instead.
+These came from skills that lived in the author's previous project with that project's stack rules built in.
+They now read each project's rules from its profile and convention files instead.
 
 | Skill | Use it for | Came from |
 |---|---|---|
@@ -299,8 +300,8 @@ What they added moved into the organizer and the `researcher`; see [Evals](#eval
 
 ## Install
 
-The repository is private for now, so git on your machine must be able to clone it. An SSH key or
-`gh auth login` with git credentials set up is enough.
+Add the marketplace from the public repository. If you have no GitHub SSH key, set
+`CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1` first so git clones over HTTPS.
 
 Add the marketplace:
 
@@ -327,8 +328,8 @@ Inside a Claude Code session (2.1.275 or later), one command adds the marketplac
 The plugins do not depend on each other, so install both: the organizer uses `file-issue` for follow-ups
 when it is there, and lists findings for you when it is not.
 
-**Updating.** Auto-update is off by default for marketplaces that are not Anthropic's. The plugins set no
-`version` while they are being iterated on, so every commit counts as a new version. Pull the latest with:
+**Updating.** Auto-update is off by default for marketplaces that are not Anthropic's. Releases are tagged
+`<plugin>--v<version>` (for example `triple-a-crew--v1.0.0`). Pull the latest with:
 
 ```bash
 claude plugin marketplace update triple-a-crew
@@ -336,14 +337,16 @@ claude plugin marketplace update triple-a-crew
 
 ```bash
 claude plugin update file-issue@triple-a-crew
+claude plugin update triple-a-crew@triple-a-crew
 ```
 
 A running session keeps the old version until you run `/reload-plugins`.
 
-**From a local checkout** (edits apply after `/reload-plugins`, no update step needed):
+**From a local checkout** (the development path; edits apply after `/reload-plugins`, no update step
+needed): clone the repository, then add the folder as a marketplace.
 
 ```bash
-claude plugin marketplace add ~/workspace/claude-skill-folder
+claude plugin marketplace add ./triple-a-crew
 ```
 
 ## Quick start in a project
@@ -401,13 +404,16 @@ Load the plugins in place for one session:
 claude --plugin-dir ./plugins/file-issue --plugin-dir ./plugins/triple-a-crew
 ```
 
+Bump `version` in the plugin's `plugin.json` in every change to `plugins/<name>/` that users should get, and
+tag it with `claude plugin tag --push` from the plugin folder. Users install whatever is on `main`, and
+git-sourced plugins are cached per version, so a fix merged without a bump never reaches someone who runs the
+update commands above.
+
 Run `/reload-plugins` after editing a skill. Validate the manifests before committing:
 
 ```bash
 claude plugin validate .
 ```
-
-The only expected warnings are the missing `version` fields, left out on purpose while iterating.
 
 Test the hooks without a model call:
 
@@ -466,7 +472,7 @@ ones that test the no-tracker path.
   - **Large request:** opens a work item (brief with edge cases, plan, board, index, `.gitignore`) and asks
     for the go-ahead before any engineer starts.
   - **Small request:** stays out.
-  - **Read-only investigation** ("investigate ACT-512 before we fix anything", with a mocked Linear): stays
+  - **Read-only investigation** ("investigate SHOP-512 before we fix anything", with a mocked Linear): stays
     out, creates no work item and edits nothing, but still reads the issue's comments.
   - **"Where are we?":** answers from the open item's board without starting work.
   - **Verify with the verifier** (`work next` on a size-L item at phase verify): strips only the debug log
@@ -558,7 +564,7 @@ How to read it:
   `conventions` files and records every rule that changes the plan, with its file, in `decisions.md`; its
   verify step strips debug logs, commented-out code and log-and-rethrow try-catch from the lines it changed.
   The `researcher` agent now returns a bug's likely causes ranked, each with a confidence and a way to
-  confirm. The organizer's description no longer claims read-only requests such as "investigate ACT-123" or
+  confirm. The organizer's description no longer claims read-only requests such as "investigate SHOP-123" or
   "review this plan"; plain Claude handles those.
 - **`test-harden` and `handoff`** first lost to the baseline or skipped steps: they didn't run the new
   tests, and skipped `finalize`. Both steps are now stated as required. The numbers shown are the runs
@@ -637,10 +643,11 @@ How to read it:
 | Version | Scope |
 |---|---|
 | **v0** (done) | Marketplace, `file-issue` with tracker reference files and evals, `onboard` with the profile format and evals |
-| **v1** (done) | The organizer (`work`): sizing, the `.crew/work/` folder, the status protocol, and three employees: researcher, engineer, reviewer. The actioner-new skills migrated as generic skills: `plan-review`, `cleanup`, `test-harden`, `investigate`, `handoff`. `plan-review`, `cleanup` and `investigate` were cut afterwards and folded into the organizer and the researcher (see [Evals](#evals)) |
+| **v1** (done) | The organizer (`work`): sizing, the `.crew/work/` folder, the status protocol, and three employees: researcher, engineer, reviewer. The skills from the author's previous project migrated as generic skills: `plan-review`, `cleanup`, `test-harden`, `investigate`, `handoff`. `plan-review`, `cleanup` and `investigate` were cut afterwards and folded into the organizer and the researcher (see [Evals](#evals)) |
 | **v2** (done) | The hooks: open-items summary, protocol reminder, status-file gate (`crew-hooks`). `verifier` and `test-engineer`, with the architect folded into the researcher and no scribe (`employees-v2`). A short retro in the organizer's close step, after a standalone `retro` skill was cut for no gain (`retro-skill`) |
-| **Next** (planned) | An opt-in agent-teams mode (`agent-teams-mode`, in progress) and a Cursor check (`cursor-check`), each with a live test you run. Each plan is in `.crew/work/<id>/plan.md`. Separately: move actioner-new onto the plugin |
-| **Publish** (planned, `publish-v1`) | License, versions and git tags, an exposure audit, make the repository public, test the `file-issue` zip in Claude chat |
+| **Agent teams** (done) | An opt-in agent-teams mode (`agent-teams-mode`, PR #23) |
+| **Next** (planned) | The Cursor check (`cursor-check`, paused), with a live test you run, and the open crew issues. Each plan is in `.crew/work/<id>/plan.md` |
+| **Publish** (`publish-v1`) | v1.0.0: license, versions and git tags, an exposure audit, make the repository public, test the `file-issue` zip in Claude chat |
 
 The organizer's model choice is a rule table: `mechanical` work goes to haiku, `standard` to sonnet,
 `critical` to opus, each with a default effort. A task that misses its check climbs a ladder (sent back
@@ -729,4 +736,5 @@ runs work in parallel only on disjoint file sets. Details are in [docs/DESIGN.md
 
 ## License
 
-Private for now. A license will be chosen before the repository is made public.
+Apache-2.0; see `LICENSE`. Each plugin folder carries its own copy, so a plugin zip or directory listing is
+licensed on its own.

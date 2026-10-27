@@ -10,8 +10,8 @@ Linear's MCP server (`mcp.linear.app`) exposes tools such as `list_issues`, `get
 
 ## Where issues go
 
-A **team** is required. Take it from the profile (`team`, a name or key such as `ACT`), otherwise list teams
-and ask if there is more than one. The team key is the prefix of issue identifiers (`ACT-123`).
+A **team** is required. Take it from the profile (`team`, a name or key such as `SHOP`), otherwise list teams
+and ask if there is more than one. The team key is the prefix of issue identifiers (`SHOP-123`).
 
 ## Create
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Writes a project profile that pins Linear team ACT and turns confirmation off.
+# Writes a project profile that pins Linear team SHOP and turns confirmation off.
 set -euo pipefail
 # Refuse to run outside a fresh eval sandbox: this script writes files and runs git in the current folder.
 if [ -n "$(ls -A . 2>/dev/null)" ]; then
@@ -11,7 +11,7 @@ cat > .crew/profile.md <<'PROFILE'
 ---
 issue_tracker:
   tool: linear
-  team: ACT
+  team: SHOP
   labels: [follow-up]
   confirm: never
 ---

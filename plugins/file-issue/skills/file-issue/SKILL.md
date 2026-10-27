@@ -143,7 +143,7 @@ Create the issue with the tracker's tool or CLI. Then:
 ```yaml
 issue_tracker:
   tool: linear          # linear | github | jira | gitlab | asana | clickup | notion | local | another tracker's name
-  team: ACT             # Linear team, GitHub owner/repo, Jira project key, GitLab group/project, Asana project, ClickUp list
+  team: SHOP            # Linear team, GitHub owner/repo, Jira project key, GitLab group/project, Asana project, ClickUp list
   labels: [follow-up]   # added to every issue
   confirm: always       # always | batch | never
 ```

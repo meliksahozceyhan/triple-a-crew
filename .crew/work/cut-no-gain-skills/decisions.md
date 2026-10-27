@@ -15,7 +15,7 @@
 - **2026-10-19 Keep historical mentions of the cut skills** in the README eval notes and the DESIGN migration
   table and build order; remove them from tables that describe what the plugin ships today.
 - **2026-10-19 Read-only requests are not organizer work, even with a ticket key.** The T5 review found that
-  "investigate ACT-512 before we fix anything" matched the old start conditions ("investigation before
+  "investigate SHOP-512 before we fix anything" matched the old start conditions ("investigation before
   implementation", "reference a ticket") and, once `investigate` was gone, nothing stopped the organizer from
   sizing it M and editing code. The description now names build/change/fix requests, step 2 steps aside on
   investigate/explain/review-only requests, and the cut `investigate` fixture became the no-trigger case

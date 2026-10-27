@@ -1,4 +1,4 @@
 ---
 type: regex
-pattern: 'ACT-501'
+pattern: 'SHOP-501'
 ---

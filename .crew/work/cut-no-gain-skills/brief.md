@@ -41,11 +41,11 @@ matches costs description space and trigger ambiguity for nothing (README "Earn 
 | Case | In scope? | Covered by |
 |---|---|---|
 | The organizer's description sends "investigate a bug" / "review a plan" / "clean up" to skills that no longer exist | yes | T1: description reworded; step 2 steps aside on read-only requests; case `stays-out-of-read-only-investigation` |
-| "Investigate and fix ACT-123" (investigation before implementation) still starts the organizer | yes | T1: description keeps that trigger |
+| "Investigate and fix SHOP-123" (investigation before implementation) still starts the organizer | yes | T1: description keeps that trigger |
 | The verify-step cleanup removes something that matters (JSDoc, a why-comment, a retry) | yes | T1: the line names what to keep |
 | The researcher forces the bug-report format onto a non-bug mapping task | yes | T1: format applies only when the brief is a bug |
 | The `migrated` eval tag still selects the remaining cases (test-harden, handoff) | yes | T3 docs; T4 grep |
 | Eval results table and notes lose the history of why the skills were cut | yes | T3: results rows replaced by a short note |
-| Someone types `/triple-a-crew:plan-review` after updating | no, private plugin with one user | PR text |
-| actioner-new still has `plan-reinforcer`, `post-plan-cleanup`, `investigate-linear-issue` agents | no | W3 of the handoff |
+| Someone types `/triple-a-crew:plan-review` after updating | no, the plugin had one user at the time | PR text |
+| The author's previous project still has `plan-reinforcer`, `post-plan-cleanup`, `investigate-linear-issue` agents | no | W3 of the handoff |
 | Leftover worktree `.claude/worktrees/infallible-saha-9ec6db` holds the old skills | no | W4 of the handoff |

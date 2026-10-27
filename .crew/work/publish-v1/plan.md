@@ -18,3 +18,14 @@ roadmap items, so v1.0.0 ships what they add.
 | T9 | You make the repository public; then `claude plugin tag --push` in each plugin folder; install from a clean config with the README steps | - | install works; tags `file-issue--v1.0.0`, `triple-a-crew--v1.0.0` exist | user + organizer | - | T8 |
 | T10 | One zip per plugin without `evals/`; you upload `file-issue` in Claude chat and report what loads; README chat table updated | README.md | chat result recorded | user + engineer | mechanical | T9 |
 | T11 | GitHub: description, topics, private vulnerability reporting (needed by file-issue's security advice), `SECURITY.md` | SECURITY.md | settings on (you click them) | user + engineer | mechanical | T9 |
+
+## Changes on 2026-10-27 (from T2, see decisions.md)
+| Task | Change |
+|---|---|
+| T3 | Split: **T3a** README, DESIGN, `.crew/profile.md`, work-item wording, README License section (engineer, standard); **T3b** rename `ACT-` keys to `SHOP-` across `plugins/**`, mocks and graders in lockstep (engineer, mechanical). Acceptance for T3a: `git grep -i actioner -- README.md docs/DESIGN.md .crew/profile.md` and a grep for this machine's home path give no hits. For T3b: `git grep "ACT-" -- plugins` gives no hits and the `SHOP-` count equals the old `ACT-` count |
+| T4 | Only the three LICENSE files (Apache-2.0, verbatim); the README section is T3a's |
+| T5 | Runs beside T3a/T3b/T4: its file set is the two `plugin.json` files |
+| T6 | Dropped: the history is kept |
+| T7 | PRs #1-#36 |
+| T11 | Protect `main` (PRs only, no force-push or deletion) and private vulnerability reporting, both after T9; no directory submission |
+| T12 (new) | Run once, after T3b: `stays-out-of-read-only-investigation`, `no-fire-already-tracked`, `linear-duplicate-offers-comment`, `linear-confirms-before-creating`, `profile-confirm-never-creates`; all 1.00, cost reported (about $2) |

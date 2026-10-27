@@ -1,5 +1,7 @@
 {
   "name": "triple-a-crew",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
   "displayName": "Triple-A-Crew",
   "description": "Workflow organizer for Claude Code. The work skill sizes a request, opens a work item in .crew/work/, stress-tests edge cases, plans, staffs researcher, engineer and reviewer subagents on model tiers, verifies and files follow-ups. Also ships onboard (writes the project's .crew/profile.md), test-harden and handoff.",
   "author": {
