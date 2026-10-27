@@ -105,3 +105,6 @@
   two profile notes and one follow-up issue proposed; one lesson becomes the README footnote in this close PR;
   two stay in the retro. The close branch `close-publish-v1` carries `SECURITY.md`, the README footnote and
   roadmap row, and these records.
+- **2026-10-27 The user's answers at close:** the L1 and L3 profile notes applied; the follow-up issue about
+  `file-issue`'s Linear-only evals **declined** after seeing the draft (no duplicates were found; the draft is
+  kept in the session scratchpad and summarized in findings.md). Push and PR approved.

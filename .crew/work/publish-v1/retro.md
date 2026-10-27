@@ -30,9 +30,9 @@
 ## Lessons
 | # | Lesson | Evidence | Repeat of | Goes to | Status |
 |---|---|---|---|---|---|
-| L1 | An identifier rename needs a word-boundary grep for the bare token over the whole tree, and one owner; a prefixed grep plus a scope split at `plugins/` missed 13 files between them | findings.md; team/T8-reviewer.md R1, R2 | effort-ladder L2 (grep for the words a change hinges on) | `.crew/profile.md` note | proposed |
+| L1 | An identifier rename needs a word-boundary grep for the bare token over the whole tree, and one owner; a prefixed grep plus a scope split at `plugins/` missed 13 files between them | findings.md; team/T8-reviewer.md R1, R2 | effort-ladder L2 (grep for the words a change hinges on) | `.crew/profile.md` note | accepted |
 | L2 | An install example used the author's folder name; a stranger's clone is `./triple-a-crew`. The README convention "Run every command example" already covers it and wasn't followed | team/T8-reviewer.md R3 | README "Run every command example" | `retro.md` only (the convention exists) | kept |
-| L3 | `claude plugin tag --push` pushes with git's own credentials; here, create the tag with the command and push the ref with the gh helper | decisions.md "T9" | | `.crew/profile.md` note | proposed |
+| L3 | `claude plugin tag --push` pushes with git's own credentials; here, create the tag with the command and push the ref with the gh helper | decisions.md "T9" | | `.crew/profile.md` note | accepted |
 | L4 | In Claude chat a plugin zip is a per-conversation skill, not an install; the `file-issue` flow runs there in full through connectors | decisions.md "T10" | | README tier footnote (this close PR) | accepted |
 | L5 | Branch protection and private vulnerability reporting need the repository public on the free plan; order T11 after T9 | decisions.md "T2" | | `retro.md` only | kept |
 | L6 | A researcher's full report in its final message only is lost to a later session; the plan saved this item | team/T1-researcher.md | https://github.com/meliksahozceyhan/triple-a-crew/issues/37 | `retro.md` only (#37 is open) | kept |
@@ -46,3 +46,4 @@
   helper line above."
 - **Follow-up from findings.md (step 9, through `file-issue`):** "file-issue's evals mock only Linear; the
   GitHub, Jira, GitLab, Asana, ClickUp and Notion tracker paths have no case", in this repository's tracker.
+  Status: declined by the user on 2026-10-27 after seeing the draft; recorded in findings.md, not tracked.

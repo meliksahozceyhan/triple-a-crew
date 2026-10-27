@@ -33,7 +33,12 @@ models: {}
   `plugins/*/agents/` or `plugins/*/skills/`, run `/reload-plugins` before staffing employees, or they follow
   the old text (fix-open-issues: reviewers hit the old 40-turn limit, employees wrote invented timestamps).
 - If your git has no HTTPS credential helper, push with
-  `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push`.
+  `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push`. `claude plugin tag --push`
+  pushes with git's own credentials, so create a release tag with `claude plugin tag <plugin folder>` and
+  push `refs/tags/<tag>` with that same helper line.
+- When renaming an identifier, grep the whole tree for the bare token with word boundaries
+  (`git grep -n -w -i TOKEN`), not only its prefixed form, and give the rename one owner across `plugins/`,
+  README and DESIGN (publish-v1: `ACT-` had 17 hits, the bare `ACT` 13 more).
 - A rule here is often stated in several places: `SKILL.md`, `protocol.md` and an agent file (follow-ups-25-28:
   the verifier's folder rule). When one changes, grep the others for the same rule before review. When adding
   a rule, grep the other files for the words it hinges on (`effort-ladder`: `miss`, `recheck`), not only for

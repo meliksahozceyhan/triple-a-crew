@@ -17,3 +17,5 @@
   only Linear, so the GitHub, Jira, GitLab, Asana, ClickUp and Notion tracker paths have no case. True: the
   tracker reference files exist, the cases don't. Outside this item; a candidate issue for the plugin
   repository at close. (T10, the user's paste)
+  Update 2026-10-27: drafted through `file-issue` (title "file-issue evals cover only the Linear tracker
+  path"; no duplicates among open or closed issues); the user chose not to file it. Not tracked.
