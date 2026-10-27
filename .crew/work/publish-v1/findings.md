@@ -13,3 +13,7 @@
 - 2026-10-27 · PR bodies #1, #2, #3, #4, #6 and #8 carry ten passages that name the previous project or an
   `ACT-` key (no credentials, emails or paths anywhere; every comment array is empty). Editing them is a
   GitHub write: the user decides at T11, with `gh pr edit <n> --body`. (team/T7-researcher.md)
+- 2026-10-27 · Claude chat, reviewing the uploaded `file-issue` zip unasked, noted that the plugin's evals mock
+  only Linear, so the GitHub, Jira, GitLab, Asana, ClickUp and Notion tracker paths have no case. True: the
+  tracker reference files exist, the cases don't. Outside this item; a candidate issue for the plugin
+  repository at close. (T10, the user's paste)
