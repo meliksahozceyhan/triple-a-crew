@@ -73,3 +73,38 @@
   passages: T7's ten plus a second `ACT-512` in #6's verification line); the originals are kept in the
   session scratchpad, and GitHub keeps each body's edit history. The commit `6be2e5f` is the first authored
   with the noreply address.
+- **2026-10-27 T9.** PR #41 merged at 17:10Z (`02cac9b`); the user made the repository public (checked:
+  `gh repo view` says PUBLIC). Tags `triple-a-crew--v1.0.0` and `file-issue--v1.0.0` created with
+  `claude plugin tag` at `main`'s HEAD and pushed with the gh credential helper (the command's own `--push`
+  would have hit this machine's missing HTTPS helper). Install from an empty `CLAUDE_CONFIG_DIR` with the
+  README's three commands: marketplace added (SSH clone), both plugins installed at 1.0.0 and enabled. A
+  second empty config with `CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1` cloned over HTTPS and installed `file-issue`
+  the same way, so the README's line for users without an SSH key holds. The two test configs live in the
+  session scratchpad and touched no user settings. T10 zips built without `evals/`: `file-issue-1.0.0.zip`
+  (18 files, 22 KB) and `triple-a-crew-1.0.0.zip` (71 KB).
+- **2026-10-27 T11, with the user's go-ahead on all three:** branch protection on `main` (pull requests
+  required, zero required approvals, force-pushes and deletion blocked, enforced for admins); private
+  vulnerability reporting on; description and five topics set. `SECURITY.md` is drafted and goes into the
+  close PR with the README chat row, once the user reports the T10 chat test.
+- **2026-10-27 T10, the user's chat test.** Uploading `file-issue-1.0.0.zip` to Claude chat with "Load this
+  plugin": chat read the plugin (two commands, one file), summarized the skill correctly (scope test, tracker
+  order, duplicate check, confirm before creating, no secrets, no public security issues), said it would
+  follow the workflow for the rest of that conversation and that it cannot install a plugin permanently from
+  chat, found Linear among its connectors, and asked for a problem to file. So in chat a zip works as a
+  per-conversation skill, not an install. Not exercised: the proactive trigger on an out-of-scope bug
+  mentioned in passing, and the confirm-before-create step. Chat also reviewed the plugin unasked: keep
+  `confirm: always` as the default given the proactive description, and the evals mock only Linear
+  (findings.md).
+- **2026-10-27 T10, second prompt.** A message about fixing a login timeout that mentioned, in passing, an
+  export endpoint ignoring its page size: chat answered the login question, treated the export problem as out
+  of scope, searched the connected Linear twice for duplicates, drafted a complete issue (title, problem,
+  evidence marked unconfirmed, impact, approach, three acceptance criteria), picked the team from the search
+  results, and stopped: "Should I create this … as written?" Nothing was created. So the skill's whole flow
+  works in chat: trigger, duplicate check, draft, confirm. T10 done; the README footnote gets this result.
+- **2026-10-27 Closed.** Every done-when line of `brief.md` holds (ticked there). `retro.md` has six lessons:
+  two profile notes and one follow-up issue proposed; one lesson becomes the README footnote in this close PR;
+  two stay in the retro. The close branch `close-publish-v1` carries `SECURITY.md`, the README footnote and
+  roadmap row, and these records.
+- **2026-10-27 The user's answers at close:** the L1 and L3 profile notes applied; the follow-up issue about
+  `file-issue`'s Linear-only evals **declined** after seeing the draft (no duplicates were found; the draft is
+  kept in the session scratchpad and summarized in findings.md). Push and PR approved.

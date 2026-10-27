@@ -52,9 +52,11 @@ or a protocol.
 ```
 
 - **Tier 1** skills are a plain `SKILL.md` with reference files. They need no hooks, subagents or work
-  folder. \*Claude chat: only `file-issue` is promised there, until tested (upload the plugin as a zip under
-  Customize > Plugins). `onboard` and `test-harden` load in chat but need a filesystem and a shell to work,
-  so use them in Claude Code. \*\*Cursor support is not verified yet.
+  folder. \*Claude chat (tested 2026-10-27 with the `file-issue` zip): a plugin zip uploaded under Customize >
+  Plugins is read and followed for that one conversation, not installed. The skill fired on a bug mentioned
+  in passing, searched the connected Linear for duplicates, drafted the issue, marked it unconfirmed and asked
+  before creating. `onboard` and `test-harden` load in chat but need a filesystem and a shell to work, so use
+  them in Claude Code. \*\*Cursor support is not verified yet.
 - **Tier 2** uses Claude Code features: subagents, model selection, worktrees.
 - **Tier 3** hooks only make things faster or more visible; nothing breaks without them.
 
@@ -647,7 +649,7 @@ How to read it:
 | **v2** (done) | The hooks: open-items summary, protocol reminder, status-file gate (`crew-hooks`). `verifier` and `test-engineer`, with the architect folded into the researcher and no scribe (`employees-v2`). A short retro in the organizer's close step, after a standalone `retro` skill was cut for no gain (`retro-skill`) |
 | **Agent teams** (done) | An opt-in agent-teams mode (`agent-teams-mode`, PR #23) |
 | **Next** (planned) | The Cursor check (`cursor-check`, paused), with a live test you run, and the open crew issues. Each plan is in `.crew/work/<id>/plan.md` |
-| **Publish** (`publish-v1`) | v1.0.0: license, versions and git tags, an exposure audit, make the repository public, test the `file-issue` zip in Claude chat |
+| **Publish** (done) | v1.0.0 on 2026-10-27 (`publish-v1`, PR #41): Apache-2.0, versions and tags, an exposure audit, the repository public, the `file-issue` zip tested in Claude chat |
 
 The organizer's model choice is a rule table: `mechanical` work goes to haiku, `standard` to sonnet,
 `critical` to opus, each with a default effort. A task that misses its check climbs a ladder (sent back

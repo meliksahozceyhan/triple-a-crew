@@ -12,11 +12,11 @@ DESIGN Goals: "Publishable: nothing personal or Actioner-specific in the plugin;
 author does not use daily." `file-issue` was built to be published first (D6).
 
 ## Done when
-- [ ] A license file and the README License section.
-- [ ] `version` set in both `plugin.json` files, and a tag per release.
-- [ ] An exposure audit of the tree and the git history, with every hit fixed or accepted by the user.
-- [ ] The repository is public (the user's action) and installs from a clean machine with the README steps.
-- [ ] A `file-issue` zip tested in Claude chat, with the result in the README.
+- [x] A license file and the README License section.
+- [x] `version` set in both `plugin.json` files, and a tag per release.
+- [x] An exposure audit of the tree and the git history, with every hit fixed or accepted by the user.
+- [x] The repository is public (the user's action) and installs from a clean machine with the README steps.
+- [x] A `file-issue` zip tested in Claude chat, with the result in the README.
 
 ## Constraints
 - Making the repository public is the user's decision and click; forks and caches make it hard to undo.
