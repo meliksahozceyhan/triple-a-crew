@@ -122,7 +122,8 @@ final flow, whatever the number of tasks. A researcher draws the current flow, w
 node; at size M you may draw it yourself from code you have read, with the same `path:line` on every node.
 You draw the final flow and mark each new or changed node. A change that alters no flow (docs, config, a
 rename) has no current or final flow; it still has its task graph when it has three or more tasks. A plan
-with no diagram has no `## Flow` section. About 12 nodes per diagram at most; split a larger flow.
+with no diagram has no `## Flow` section. About 12 nodes per diagram at most; split a larger flow. For size
+L, paste the diagrams into the approval message as the same Mermaid blocks; do not retell them in prose.
 
 `## Lessons that apply` names each open lesson in `lessons.md` that this plan could repeat, with the task or
 brief line that guards against it. Leave the section out when none applies.
