@@ -46,5 +46,14 @@
 - **2026-11-13 Not changed after T9:** quoted chains pass by design (N2), and three plain commands are refused
   once and run on the resend (N3: a comment line above a command, a heredoc with an odd number of quotes, a
   brief that lists a pipe inside a Markdown table). The guard is a reminder with a valve, not a wall.
+- **2026-11-13 T9b recheck: changes requested, one must-fix.** (R1) The rewritten valve read, rewrote and
+  renamed one state file with no lock, so two overlapping hook runs could lose a refusal. Each refusal is
+  now its own empty marker file, created to remember and removed on the resend, so there is nothing to
+  rewrite and no cap of 20. Nits fixed: a length limit before the no-jq reader, `LC_ALL=C` for the control
+  character filter, one overstated comment. Left on purpose and documented: (R2) a refused command that is
+  never resent stays remembered until pruned, so the same command later runs once without a refusal; (R4)
+  an unquoted `&` in shell arithmetic is refused once. Not probed: whether Claude Code overlaps the hook runs
+  of two Bash calls; the fix is right either way. The fix is size S (one script and its tests), so per step 8
+  it is made and verify is rerun, with no third reviewer.
 - **2026-11-13 The definition hook prints no permission decision, on purpose.** A decision of `allow` would
   approve every Agent call in the user's session; the probe showed the note is delivered without one.

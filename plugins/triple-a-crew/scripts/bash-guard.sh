@@ -12,6 +12,11 @@ use_jq=0
 if [ "${HOOKS_NO_JQ:-}" != "1" ] && command -v jq >/dev/null 2>&1; then
   use_jq=1
 fi
+# The no-jq reader walks the input one character at a time, for the main session too (it has to reach the
+# end to find no agent_type): input this long is a pasted file, not a call worth guarding.
+if [ "$use_jq" = 0 ] && [ "${#input}" -gt 100000 ]; then
+  exit 0
+fi
 
 # No-jq reader: prints the string value of the first key in $keys (or, with all=1, of every such key, one
 # per line). Exit 3 means an escape it cannot decode (\u, \b, \f) or a broken string: the caller is unsure.
@@ -97,7 +102,6 @@ agent_id=$(printf '%s' "$agent_id" | tr -c 'A-Za-z0-9_-' '_')
 # Without an agent id there is no state for the resend valve below, so a refusal could trap: allow.
 [ -n "$agent_id" ] || exit 0
 state_dir=${CLAUDE_PLUGIN_DATA:-${TMPDIR:-/tmp}}
-state="$state_dir/triple-a-crew-bash-$agent_id"
 
 # The brief is line 1 of the subagent's own transcript.
 transcript_path=$(top_field transcript_path) || transcript_path=
@@ -219,13 +223,15 @@ found=$(printf '%s\n' "$analysis" | sed -n 1p)
 doc=$(printf '%s\n' "$analysis" | sed -n 2p)
 [ -n "$found" ] || exit 0
 
-# The resend valve, so this hook never traps an employee: every refused command of an agent is kept by
-# checksum (one line each, the newest 20), and the same command sent again runs and drops only its own
-# line. Allowed calls leave the file alone, so other calls in between do not erase the memory.
+# The resend valve, so this hook never traps an employee: every refused command is remembered as an empty
+# marker file named after the agent and the command's checksum and length, and the same command sent again
+# runs and removes its marker. One file per refusal means no read-modify-write, so hook runs of parallel
+# Bash calls cannot lose each other's refusals; allowed calls leave the markers alone.
 sum=$(printf '%s' "$cmd" | cksum 2>/dev/null) || exit 0
-if [ -f "$state" ] && grep -Fxq -- "$sum" "$state" 2>/dev/null; then
-  grep -Fxv -- "$sum" "$state" >"$state.new" 2>/dev/null
-  mv -f "$state.new" "$state" 2>/dev/null
+marker="$state_dir/triple-a-crew-bash-$agent_id-$(printf '%s' "$sum" | tr ' ' '-')"
+if [ -e "$marker" ]; then
+  # If another run took the marker first, rm has nothing to do and the command runs all the same.
+  rm -f "$marker" 2>/dev/null
   exit 0
 fi
 
@@ -250,9 +256,8 @@ fi
 
 # Remember the refusal. If that is impossible the resend valve cannot work, so allow instead.
 mkdir -p "$state_dir" 2>/dev/null
-( { [ ! -f "$state" ] || cat "$state"; printf '%s\n' "$sum"; } | tail -n 20 >"$state.new" ) 2>/dev/null || exit 0
-mv -f "$state.new" "$state" 2>/dev/null || exit 0
-# State older than a week belongs to finished work.
+( : >"$marker" ) 2>/dev/null || exit 0
+# Markers older than a week belong to finished work.
 find "$state_dir" -maxdepth 1 -type f -name 'triple-a-crew-*' -mtime +7 -exec rm -f {} + 2>/dev/null || true
 
 {

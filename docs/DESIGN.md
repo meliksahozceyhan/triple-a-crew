@@ -273,11 +273,14 @@ by a spike on Claude Code 2.1.299 (work item `crew-hooks`), and those of the `Pr
   with a message on stderr refuses the call, and the employee carries on. Three exceptions keep it from
   trapping anyone. A command the brief lists, as written, runs: the guard reads the brief from line 1 of the
   employee's own transcript. When the brief cannot be read, the documented form `cd "<folder>" && <command>`
-  runs. And a refused command sent again unchanged runs: the guard keeps the checksum of each refused command
-  per `agent_id`, the 20 newest, and a resend drops only its own line, so it works also when several commands
-  were refused in one turn or other calls came in between. One repeat is enough to make the rule seen, so
-  there is no cap of three as in the stop hook. Without `jq` it still guards, and allows only what it cannot
-  read reliably.
+  runs. And a refused command sent again unchanged runs: each refusal is an empty marker file of its own,
+  named after the `agent_id`, the command's checksum and its length, and a resend removes its marker and runs.
+  There is no read-modify-write of a shared file, so the resend works also when several commands were refused
+  in one turn, when the hook runs overlap, and when other calls came in between. One repeat is enough to make
+  the rule seen, so there is no cap of three as in the stop hook. A limit follows: a refused command that is
+  never sent again stays remembered until the marker is pruned (7 days), so the same command sent later runs
+  once without a refusal. The guard is a reminder, not a wall. Without `jq` it still guards, and allows only
+  what it cannot read reliably.
 - The **definition check** (`PreToolUse` on `Agent`) warns the organizer when an employee's agent file changed
   after the session loaded it, because the employee would run on the old definition. The tool that starts a
   subagent is `Agent`, with the agent type in `tool_input.subagent_type`, and its hook fires before
@@ -290,9 +293,9 @@ by a spike on Claude Code 2.1.299 (work item `crew-hooks`), and those of the `Pr
   says that the employee runs on the old definition unless `/reload-plugins` has run since the change, and it
   is shown once per change: the hook records the new checksum, role by role, before it prints the note. It
   covers agent files only: the organizer's reference files are read on demand.
-- The guard and the check keep small files in `${CLAUDE_PLUGIN_DATA}`: `triple-a-crew-bash-<agent_id>` (up to
-  20 checksums) and `triple-a-crew-defs-<session_id>`, next to the stop hook's counters. Files older than 7
-  days are deleted.
+- The guard and the check keep small files in `${CLAUDE_PLUGIN_DATA}`: an empty marker per refused command,
+  `triple-a-crew-bash-<agent_id>-<checksum>-<length>`, and `triple-a-crew-defs-<session_id>`, next to the
+  stop hook's counters. Files older than 7 days are deleted.
 
 **Two channel modes.**
 

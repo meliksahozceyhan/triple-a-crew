@@ -37,8 +37,9 @@ now=$(cksum <"$file" 2>/dev/null | awk '{ print $1 }' || true)
 [ -n "$now" ] || exit 0
 [ "$now" != "$recorded" ] || exit 0
 
-# Record the new checksum so this change is reported once. Only this role's line changes, and the state
-# is read again here, so a parallel call for another role keeps its own update.
+# Record the new checksum so this change is reported once. Only this role's line changes and the stamp is
+# never emptied (the temporary copy is moved over it in one step). Two calls at the same moment can both
+# read the old stamp, so one role's note may then show twice.
 (
   tmp="$state.$$"
   if awk -v r="$role" -v s="$now" '$1 == r { $2 = s } { print }' "$state" >"$tmp"; then

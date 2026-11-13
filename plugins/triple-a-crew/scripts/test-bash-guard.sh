@@ -53,6 +53,18 @@ run() {
   err=$(cat "$tmp/err")
 }
 
+# bg <mode> <input file> <exit code file>: starts a guard run in the background (use wait afterwards)
+bg() {
+  (
+    if [ "$1" = nojq ]; then
+      env HOOKS_NO_JQ=1 "$shell" "$here/bash-guard.sh" <"$2" >/dev/null 2>&1
+    else
+      env "$shell" "$here/bash-guard.sh" <"$2" >/dev/null 2>&1
+    fi
+    echo $? >"$3"
+  ) &
+}
+
 # expect_silent <name> <mode>
 expect_silent() {
   if [ "$rc" != 0 ]; then bad "$1" "$2" "exit $rc: $err"
@@ -240,14 +252,38 @@ Run: a | b
   check $m $emp 'x | w' v6 'pipe' "valve: C refused"
   check $m $emp 'x | listed' v6 silent "valve: a brief-listed command in between is allowed"
   check $m $emp 'x | w' v6 silent "valve: C runs after a brief-listed command in between"
-  # the state keeps the newest 20 refusals: of 22 distinct commands the two oldest are forgotten
+  # one empty marker file per refusal, removed by the resend
+  check $m $emp 'x | m1' v7 'pipe' "valve: refusal 1 of 3"
+  check $m $emp 'x | m2' v7 'pipe' "valve: refusal 2 of 3"
+  check $m $emp 'x | m3' v7 'pipe' "valve: refusal 3 of 3"
+  made=$(find "$CLAUDE_PLUGIN_DATA" -maxdepth 1 -type f -name 'triple-a-crew-bash-v7-*' -size 0 | wc -l | tr -d ' ')
+  [ "$made" = 3 ] && pass "valve: three refusals leave three empty marker files" $m || bad "valve: marker files" $m "$made files"
+  check $m $emp 'x | m2' v7 silent "valve: the middle refusal runs on a resend"
+  left=$(find "$CLAUDE_PLUGIN_DATA" -maxdepth 1 -type f -name 'triple-a-crew-bash-v7-*' | wc -l | tr -d ' ')
+  [ "$left" = 2 ] && pass "valve: the resend removed only its own marker" $m || bad "valve: marker removal" $m "$left files left"
+  check $m $emp 'x | m1' v7 silent "valve: the first refusal still runs"
+  check $m $emp 'x | m3' v7 silent "valve: the last refusal still runs"
+  # many refusals are all kept
   i=1
-  while [ $i -le 22 ]; do guard_in $emp "x | cap$i" v7; run $m; i=$((i + 1)); done
-  lines=$(wc -l <"$CLAUDE_PLUGIN_DATA/triple-a-crew-bash-v7" | tr -d ' ')
-  [ "$lines" = 20 ] && pass "valve: the state file holds at most 20 lines" $m || bad "valve: state file size" $m "$lines lines"
-  check $m $emp 'x | cap22' v7 silent "valve: the newest refusal still runs"
-  check $m $emp 'x | cap3' v7 silent "valve: the 20th newest refusal still runs"
-  check $m $emp 'x | cap1' v7 'pipe' "valve: the oldest refusal was dropped, so it is refused again"
+  while [ $i -le 30 ]; do guard_in $emp "x | many$i" v8; run $m; i=$((i + 1)); done
+  check $m $emp 'x | many1' v8 silent "valve: the oldest of 30 refusals still runs"
+  check $m $emp 'x | many30' v8 silent "valve: the newest of 30 refusals still runs"
+
+  # two hook runs of one agent at the same moment: both refusals are remembered, both resends run
+  p=1
+  while [ $p -le 8 ]; do
+    guard_in $emp "x | pa$p" "par$p"; cp "$tmp/in.json" "$tmp/in-a.json"
+    guard_in $emp "x | pb$p" "par$p"; cp "$tmp/in.json" "$tmp/in-b.json"
+    rm -f "$tmp/rc-a" "$tmp/rc-b"
+    bg $m "$tmp/in-a.json" "$tmp/rc-a"
+    bg $m "$tmp/in-b.json" "$tmp/rc-b"
+    wait
+    if [ "$(cat "$tmp/rc-a")" = 2 ] && [ "$(cat "$tmp/rc-b")" = 2 ]; then pass "parallel $p: both refused" $m
+    else bad "parallel $p: both refused" $m "exit $(cat "$tmp/rc-a") and $(cat "$tmp/rc-b")"; fi
+    check $m $emp "x | pa$p" "par$p" silent "parallel $p: first command resent runs"
+    check $m $emp "x | pb$p" "par$p" silent "parallel $p: second command resent runs"
+    p=$((p + 1))
+  done
 
   # prune of old state
   old="$CLAUDE_PLUGIN_DATA/triple-a-crew-bash-ancient"
@@ -265,6 +301,17 @@ Run: a | b
   check $m $emp "echo $(pad 19989) && ls" lg1 '&&' "a 20000-character chain is still refused"
   check $m $emp "echo $(pad 19990) && ls" lg2 silent "a 20001-character chain is allowed unseen"
   check $m $emp "$(pad 100000)" lg3 silent "a 100000-character plain command is allowed"
+
+  # without jq, input longer than 100000 characters is allowed unread (jq reads it and still refuses)
+  printf '{"agent_type":"%s","agent_id":"bi1","tool_input":{"description":"%s","command":"a && b"}}' \
+    "$emp" "$(pad 100100)" >"$tmp/in.json"; run $m
+  if [ "$m" = nojq ]; then expect_silent "no-jq: input over 100000 characters is allowed unread" $m
+  else expect_refused "jq: input over 100000 characters is still read" $m '&&'; fi
+  printf '{"agent_type":"%s","agent_id":"bi2","tool_input":{"description":"%s","command":"a && b"}}' \
+    "$emp" "$(pad 50000)" >"$tmp/in.json"; run $m
+  expect_refused "input of 50000 characters is still read" $m '&&'
+  printf '{"session_id":"%s","tool_input":{"command":"a && b"}}' "$(pad 150000)" >"$tmp/in.json"; run $m
+  expect_silent "main session with a 150000-character input is silent" $m
 
   # the guard's role list must cover every role in the SubagentStart matcher of hooks.json
   if [ -z "$roles" ]; then

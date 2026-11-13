@@ -16,6 +16,10 @@
 - 2026-11-13 · Hook state files fall back to `${TMPDIR:-/tmp}` when `CLAUDE_PLUGIN_DATA` is unset. On a shared
   Linux machine another local user could plant a symlink under a state file's name. The stop hook already
   did this; three more scripts now do · found by T9 reviewer · crew feedback, waits for the close step
+- 2026-11-13 · The 7-day prune matches every `triple-a-crew-*` state file by modification time, including the
+  definition stamp of a session that is still open. A session open for more than 7 days without a resume
+  loses its stamp, and the definition check is then silent · found by T9b reviewer · crew feedback, waits for
+  the close step
 - 2026-11-13 · The guard's brief check is a substring match: a brief that lists `x | q2` also allows `x | q`
   · found by T4 engineer · accepted (the guard is a reminder, not a wall)
 - 2026-11-13 · The probe left an empty folder `~/.claude/plugins/data/hookprobe-inline`, created by Claude

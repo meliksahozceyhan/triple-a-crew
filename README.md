@@ -251,10 +251,10 @@ never refused. Text inside quotes is not looked at, so a quoted `"$(a | b)"` pas
 `echo $(git log | head -1)` is refused for its pipe. A lone `&` with a space on each side counts as a chain,
 and a command longer than 20,000 characters is allowed without being analysed. It lets a command through
 when the brief lists it as written, when it is the documented form `cd "<folder>" && <command>` and the brief
-cannot be read, and when it is a refused command sent again unchanged. It remembers each employee's 20 newest
-refusals, so the resend runs also when several commands were refused in one turn or other calls came in
-between, and the guard can never trap an employee. Without `jq` it still guards, and allows only what it
-cannot read reliably.
+cannot be read, and when it is a refused command sent again unchanged. It keeps each refusal as a file of its
+own, so the resend runs also when several commands were refused in one turn, when the hook runs overlap, or
+when other calls came in between, and the guard can never trap an employee. Without `jq` it still guards, and
+allows only what it cannot read reliably.
 
 **The definition check** compares each agent file with the checksum recorded at session start. When the
 organizer starts an employee whose file changed since, the note names the file and `/reload-plugins`: unless a
@@ -262,9 +262,10 @@ reload has run since the change, the employee runs on the old definition. Claude
 `/reload-plugins`, so the hook cannot see a reload and shows the note once per change. It covers agent files,
 not skills.
 
-**State.** The two new hooks keep small files in `${CLAUDE_PLUGIN_DATA}`: `triple-a-crew-bash-<agent_id>` (the
-checksums of the employee's 20 newest refused commands) and `triple-a-crew-defs-<session_id>` (the agent file
-checksums), next to the stop hook's own. Files older than 7 days are deleted.
+**State.** The two new hooks keep small files in `${CLAUDE_PLUGIN_DATA}`: an empty marker per refused command,
+`triple-a-crew-bash-<agent_id>-<checksum>-<length>` (a resend removes it), and
+`triple-a-crew-defs-<session_id>` (the agent file checksums), next to the stop hook's own. Files older than
+7 days are deleted.
 
 The scripts are POSIX `sh` and use `jq` when it is installed. Test them without a model call:
 

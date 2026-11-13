@@ -45,8 +45,8 @@ The organizer picks the model per task from three tiers (`mechanical`: haiku, `s
   `time`, or is `echo $?`. Text inside quotes is not looked at: a quoted `"$(a | b)"` passes, an unquoted
   `echo $(git log | head -1)` is refused for its pipe. A command over 20,000 characters is allowed unseen.
   It allows a command the brief lists as written, the form `cd "<folder>" && <command>` when the brief cannot
-  be read, and a refused command sent again unchanged (it remembers an employee's 20 newest refusals, so
-  this also holds after other calls), so it never traps an employee. A crew employee is an agent of type
+  be read, and a refused command sent again unchanged (each refusal is a marker file of its own, so this also
+  holds after other calls), so it never traps an employee. A crew employee is an agent of type
   `triple-a-crew:<role>`, or one named like a teammate (`T2-engineer`) whose brief can be read and names a
   status file; the main session and other agents are never refused.
 - `PreToolUse` on `Agent` is the definition check. When the organizer starts an employee whose agent file
@@ -56,8 +56,9 @@ The organizer picks the model per task from three tiers (`mechanical`: haiku, `s
 
 The employee hooks match only `triple-a-crew:*` agents and agent-team teammates named `T<n>-<role>`
 (team mode, `skills/work/teams.md`). `SessionStart` prints nothing in projects without `.crew/`. The guard and
-the check keep small files in `${CLAUDE_PLUGIN_DATA}` (`triple-a-crew-bash-<agent_id>`,
-`triple-a-crew-defs-<session_id>`), next to the stop hook's own, pruned after 7 days. Hooks are tier 3:
+the check keep small files in `${CLAUDE_PLUGIN_DATA}` (a marker per refused command,
+`triple-a-crew-bash-<agent_id>-<checksum>-<length>`, and `triple-a-crew-defs-<session_id>`), next to the
+stop hook's own, pruned after 7 days. Hooks are tier 3:
 nothing breaks with them turned off. Test them with `sh scripts/test-hooks.sh`, which also runs
 `test-bash-guard.sh` and `test-definitions-check.sh`.
 
