@@ -615,6 +615,81 @@ How to read it:
   the report. #24's miss happened at a scale (eleven tickets, reviews split by area) that a cheap fixture
   doesn't reproduce.
 
+### Which cases to rerun, and what they cost
+
+Run only the cases a change touches, one run each: `--runs 1 --ablation none --case <name>`, as above. Then
+record the cost the report prints, with the date, in the work item's `decisions.md` and in the second table.
+Some costs exist only for a whole suite: five organizer cases at one run each cost $1.69 on 2026-10-19
+(`.crew/work/cut-no-gain-skills/decisions.md`). Those cases show "unknown" below; the suite figure is not
+divided.
+
+| When this changes | Rerun these cases |
+|---|---|
+| `triple-a-crew` `skills/work/SKILL.md` (the organizer) | `starts-work-item-on-large-request`, `stays-out-of-small-request`, `stays-out-of-read-only-investigation`, `reports-status-of-open-item`, `plans-against-project-conventions`, `medium-fix-end-to-end`, `verify-staffs-verifier`, `test-engineer-keeps-failing-test`, `flags-unmet-ticket-criterion`, `escalates-effort-before-tier` |
+| `skills/work/formats.md` (work item files) | `starts-work-item-on-large-request`, `reports-status-of-open-item`, `plans-against-project-conventions`, `medium-fix-end-to-end`, `escalates-effort-before-tier` |
+| `skills/work/protocol.md` (briefs, status files) | `test-engineer-keeps-failing-test`, `medium-fix-end-to-end`, `verify-staffs-verifier`, `flags-unmet-ticket-criterion`, `escalates-effort-before-tier` |
+| `skills/work/staffing.md` (roles, tiers, effort ladder) | `verify-staffs-verifier`, `test-engineer-keeps-failing-test`, `medium-fix-end-to-end`, `flags-unmet-ticket-criterion`, `escalates-effort-before-tier` |
+| `skills/work/teams.md` (team mode) | None: no case sets `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`. |
+| `agents/engineer.md` | `escalates-effort-before-tier`, `medium-fix-end-to-end` |
+| `agents/reviewer.md` | `medium-fix-end-to-end`, `flags-unmet-ticket-criterion`, `escalates-effort-before-tier` |
+| `agents/test-engineer.md` | `test-engineer-keeps-failing-test` |
+| `agents/verifier.md` | `verify-staffs-verifier` |
+| `agents/researcher.md` | None: no case staffs the researcher. |
+| `hooks/hooks.json`, `scripts/session-start.sh` | `session-start-mentions-open-item` |
+| `scripts/subagent-start.sh`, `scripts/subagent-stop.sh` | None grade them. Run `sh plugins/triple-a-crew/scripts/test-hooks.sh`; the cases that staff employees load them. |
+| `skills/onboard/` (`SKILL.md`, `profile-format.md`) | `creates-profile-from-repo`, `refreshes-profile-keeps-user-values`, `no-fire-setup-question` |
+| `skills/test-harden/` | `test-harden-adds-edge-cases`, `test-engineer-keeps-failing-test` |
+| `skills/handoff/` | `writes-handoff-to-crew` |
+| `file-issue` `skills/file-issue/SKILL.md` | All nine `file-issue` cases |
+| `skills/file-issue/template.md`, `trackers/generic.md` | `implicit-out-of-scope-finding`, `implicit-finding-in-side-note`, `explicit-request-no-tracker` |
+| `skills/file-issue/trackers/linear.md` | `linear-confirms-before-creating`, `linear-duplicate-offers-comment`, `profile-confirm-never-creates` |
+| `skills/file-issue/trackers/` for GitHub, GitLab, Jira, Notion, ClickUp, Asana | None: no case connects those trackers. |
+
+| Case | Plugin | Last cost per run | When | Source |
+|---|---|---|---|---|
+| `starts-work-item-on-large-request` | `triple-a-crew` | $0.41 | 2026-10-19 | `.crew/work/issue-30-criteria-check/decisions.md` |
+| `stays-out-of-small-request` | `triple-a-crew` | unknown | | |
+| `stays-out-of-read-only-investigation` | `triple-a-crew` | $0.15 | 2026-10-27 | `.crew/work/publish-v1/decisions.md` |
+| `session-start-mentions-open-item` | `triple-a-crew` | unknown | | |
+| `reports-status-of-open-item` | `triple-a-crew` | unknown | | |
+| `plans-against-project-conventions` | `triple-a-crew` | unknown | | |
+| `medium-fix-end-to-end` | `triple-a-crew` | $1.25 | 2026-10-21 | `.crew/work/effort-ladder/decisions.md` |
+| `verify-staffs-verifier` | `triple-a-crew` | $1.05 | 2026-10-21 | `.crew/work/effort-ladder/decisions.md` |
+| `test-engineer-keeps-failing-test` | `triple-a-crew` | $1.19 | 2026-10-19 | `.crew/work/review-24-fixes/decisions.md` |
+| `flags-unmet-ticket-criterion` | `triple-a-crew` | $0.91 | 2026-10-19 | `.crew/work/issue-30-criteria-check/decisions.md` |
+| `escalates-effort-before-tier` | `triple-a-crew` | $0.85 | 2026-10-21 | `.crew/work/effort-ladder/decisions.md` |
+| `creates-profile-from-repo` | `triple-a-crew` | unknown | | |
+| `refreshes-profile-keeps-user-values` | `triple-a-crew` | unknown | | |
+| `no-fire-setup-question` | `triple-a-crew` | unknown | | |
+| `writes-handoff-to-crew` | `triple-a-crew` | unknown | | |
+| `test-harden-adds-edge-cases` | `triple-a-crew` | unknown | | |
+| `implicit-out-of-scope-finding` | `file-issue` | unknown | | |
+| `implicit-finding-in-side-note` | `file-issue` | unknown | | |
+| `explicit-request-no-tracker` | `file-issue` | unknown | | |
+| `no-fire-in-scope-fix` | `file-issue` | unknown | | |
+| `no-fire-tracker-question` | `file-issue` | unknown | | |
+| `no-fire-already-tracked` | `file-issue` | $0.06 | 2026-10-27 | `.crew/work/publish-v1/decisions.md` |
+| `linear-confirms-before-creating` | `file-issue` | $0.16 | 2026-10-27 | `.crew/work/publish-v1/decisions.md` |
+| `linear-duplicate-offers-comment` | `file-issue` | $0.14 | 2026-10-27 | `.crew/work/publish-v1/decisions.md` |
+| `profile-confirm-never-creates` | `file-issue` | $0.16 | 2026-10-27 | `.crew/work/publish-v1/decisions.md` |
+
+Cases run more than once show the latest figure above. The recorded range, from the same decisions files:
+
+- `starts-work-item-on-large-request`: $0.39 to $0.41 (`.crew/work/review-24-fixes/decisions.md`).
+- `medium-fix-end-to-end`: $0.80 to $1.25 (`.crew/work/issue-30-criteria-check/decisions.md`,
+  `follow-ups-25-28`, `retro-skill` and `review-24-fixes`).
+- `verify-staffs-verifier`: $0.67 to $1.43 (`.crew/work/employees-v2/findings.md`, `fix-open-issues`).
+- `test-engineer-keeps-failing-test`: $0.96 to $1.19 (`.crew/work/agent-teams-mode/decisions.md`,
+  `fix-open-issues`).
+- `flags-unmet-ticket-criterion`: $0.70 to $0.91 (`.crew/work/issue-30-criteria-check/decisions.md`; the
+  $0.70 runs were on the text before #30).
+- `escalates-effort-before-tier`: $0.85 to $0.89 (`.crew/work/effort-ladder/decisions.md`; $0.89 was on the
+  text before the ladder).
+- `profile-confirm-never-creates`: $0.16 to $0.17 (`.crew/work/fix-open-issues/decisions.md`).
+
+The figures are per run on the model in use on the date shown, and they go stale as the plugin text and
+the model change, so the date matters.
+
 ## Repository layout
 
 ```
