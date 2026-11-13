@@ -127,6 +127,26 @@ case "$state" in
   *) forget_done; block "Your status file $path has state: '$state', which is not final. Finish the task in your brief, then set the frontmatter state to done (or blocked, with your question under Questions) and update the updated field. $minimal" ;;
 esac
 
+# The updated time must be a real clock reading: complete, well formed and not in the future.
+updated=$(awk '
+  NR == 1 && $0 !~ /^---/ { exit }
+  NR > 1 && /^---/ { exit }
+  /^updated:/ { sub(/^updated:[ \t]*/, ""); sub(/[ \t]*#.*/, ""); sub(/[ \t\r]+$/, ""); print; exit }
+' "$path" 2>/dev/null || true)
+updated=$(printf '%s' "$updated" | sed "s/^[\"']//; s/[\"']\$//")
+date_hint="Run date -u +%Y-%m-%dT%H:%M:%SZ and write its output into the updated field; never write a time from memory."
+if [ -z "$updated" ]; then
+  block "Your status file $path has no updated: value in its frontmatter. $date_hint"
+fi
+case "$updated" in
+  [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]Z) ;;
+  *) block "Your status file $path has updated: '$updated', which is not a full UTC time like 2026-01-31T14:05:00Z (a date alone or a local offset is refused). $date_hint" ;;
+esac
+now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+if awk -v a="$updated" -v b="$now" 'BEGIN { exit !(a > b) }'; then
+  block "Your status file $path has updated: '$updated', which is in the future (the clock says $now). $date_hint"
+fi
+
 # A finished employee answering a follow-up needs no new report.
 if [ -n "$marker" ] && [ -f "$marker" ]; then
   allow

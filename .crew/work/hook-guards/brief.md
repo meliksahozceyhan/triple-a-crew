@@ -26,8 +26,8 @@ and each came back. A repeat needs a mechanism (`SKILL.md` step 10).
 - [ ] B.3 Commands from the main session, and from agents that are not crew employees, are never refused.
 - [ ] B.4 The hook test covers: a chain is refused, a plain command passes, `&&` inside a quoted argument
       passes.
-- [ ] C.1 When an agent or skill file of the plugin changed after the session started, the organizer is told
-      when it staffs an employee, and the message names `/reload-plugins`.
+- [ ] C.1 When an agent file of the plugin changed after the session started, the organizer is told when it
+      staffs that employee, and the message names `/reload-plugins`.
 - [ ] C.2 No message when nothing changed; the hook test covers both cases.
 - [ ] D.1 (derived) `sh plugins/triple-a-crew/scripts/test-hooks.sh` passes under `sh` and `dash`, and
       `claude plugin validate .` passes.
