@@ -9,8 +9,9 @@ Each checkable grader (`regex` on the trace or the final message, and `tool_used
 - `.fail.jsonl`: the near miss the grader must fail: the same rows with the wanted text removed. For a
   `not_contains` grader it is a real row that contains the forbidden text.
 
-A grader needs both files or neither, each with at least one row, and both with the same number of rows. A
-grader with neither is reported as "no rows". A rows file whose grader does not exist (a renamed case or
+A grader needs both files or neither, each with at least one row. Every row must be a JSON object with a
+string `type`, so `{}` is rejected. The two files may hold different numbers of rows (with a `max`, one row
+passes and two real rows are the near miss). A grader with neither is reported as "no rows". A rows file whose grader does not exist (a renamed case or
 grader) fails the run, and so does a run that finds no grader files.
 
 ## Making them
@@ -28,7 +29,7 @@ grader) fails the run, and so does a run that finds no grader files.
 - Rows of a `target: trace` regex are joined with a line break. The harness's real joining is not documented
   and no real multi-row grader has confirmed it yet. The choice is the constant `TRACE_JOIN` in the script.
 - The final message of a regex grader with no `target` is taken from the last row: its `result`, else its
-  assistant text. If the last row is neither, the run fails with "no final message". This is a guess until a
+  text when the row's `type` is `assistant`. If the last row is neither, the run fails with "no final message". This is a guess until a
   real trace confirms it.
 - `llm` graders, `file_exists` graders and regex graders that read a workspace file (`target: { source: file }`)
   are never checked. They are listed as out of reach.

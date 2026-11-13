@@ -131,10 +131,14 @@ function readRows(file) {
   const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
   lines.forEach((line, i) => {
     if (line.trim() === "") return;
+    let obj;
     try {
-      JSON.parse(line);
+      obj = JSON.parse(line);
     } catch (e) {
       throw new Error(`${file}:${i + 1}: not valid JSON (${e.message})`);
+    }
+    if (!obj || typeof obj !== "object" || Array.isArray(obj) || typeof obj.type !== "string") {
+      throw new Error(`${file}:${i + 1}: a row must be a JSON object with a string "type"`);
     }
     rows.push(line);
   });
@@ -144,16 +148,18 @@ function readRows(file) {
 
 // ------------------------------------------------------------------ verdicts
 
-// The final message: the last row's `result`, else its assistant text. A last row that is
-// neither is an error: the rows have no final message.
+// The final message: the last row's `result`, else the text of the last row when its type is
+// `assistant`. Any other last row is an error: the rows have no final message.
 function finalMessage(rows) {
   const obj = rows.length ? JSON.parse(rows[rows.length - 1]) : {};
   if (typeof obj.result === "string") return obj.result;
-  const content = obj.message?.content ?? obj.content;
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    const texts = content.filter((b) => b && b.type === "text" && typeof b.text === "string").map((b) => b.text);
-    if (texts.length) return texts.join("\n");
+  if (obj.type === "assistant") {
+    const content = obj.message?.content ?? obj.content;
+    if (typeof content === "string") return content;
+    if (Array.isArray(content)) {
+      const texts = content.filter((b) => b && b.type === "text" && typeof b.text === "string").map((b) => b.text);
+      if (texts.length) return texts.join("\n");
+    }
   }
   throw new Error("the rows have no final message (the last row is not a result or assistant text row)");
 }
@@ -253,9 +259,6 @@ function run(root) {
     try {
       passRows = readRows(files.pass);
       failRows = readRows(files.fail);
-      if (passRows.length !== failRows.length) {
-        throw new Error(`${passRows.length} pass rows but ${failRows.length} fail rows; the fail file is the pass rows with the wanted text removed, so the counts must match`);
-      }
       if (verdict(g, passRows) !== "pass") wrong.push(".pass.jsonl rows do not pass the grader");
       if (verdict(g, failRows) !== "fail") wrong.push(".fail.jsonl rows pass the grader (near miss accepted)");
     } catch (e) {
@@ -298,23 +301,26 @@ function run(root) {
 
 // -------------------------------------------------------------- harvest mode
 
-// Replacements, in order: the home folder, then the same folder in the dashed form Claude uses
-// for project folder names (/Users/jo/work becomes -Users-jo-work), where only the user name goes.
-function homeReplacements() {
-  const home = os.homedir();
-  const user = path.basename(home);
-  const dashed = home.split("/").join("-");
-  const list = [
-    [home, "$HOME"],
-    [JSON.stringify(home).slice(1, -1), "$HOME"],
-    [dashed, dashed.slice(0, dashed.length - user.length) + "$USER"],
-  ];
-  return list.filter(([from]) => from.length > 1 && user.length > 0);
-}
+const dash = (s) => s.replace(/[^A-Za-z0-9]/g, "-");
 
-function scrubHome(line) {
+// Replaces the home folder with $HOME, and the same folder in the dashed form Claude uses for
+// project folder names (/Users/jo.x/work becomes -Users-jo-x-work) with $USER in place of the user
+// name. The dashed form is only scrubbed for a home of at least two segments, and only when the
+// name ends at a dash or the end of the token (so /Users/jo leaves -Users-john alone).
+function scrubHome(line, home = os.homedir()) {
   let s = line;
-  for (const [from, to] of homeReplacements()) s = s.split(from).join(to);
+  if (home.length > 1) {
+    s = s.split(home).join("$HOME");
+    const escaped = JSON.stringify(home).slice(1, -1);
+    if (escaped !== home) s = s.split(escaped).join("$HOME");
+  }
+  const segments = home.split("/").filter(Boolean);
+  if (segments.length >= 2) {
+    const dashedHome = dash(home);
+    const dashedUser = dash(segments[segments.length - 1]);
+    const re = new RegExp(dashedHome.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![A-Za-z0-9])", "g");
+    s = s.replace(re, () => dashedHome.slice(0, dashedHome.length - dashedUser.length) + "$USER");
+  }
   return s;
 }
 
@@ -446,7 +452,7 @@ function selftest() {
   const assert = (cond, msg) => {
     if (!cond) throw new Error(`self-test failed: ${msg}`);
   };
-  const row = (obj) => JSON.stringify(obj);
+  const row = (obj) => JSON.stringify({ type: "note", ...obj });
   const call = (name, input, parent = null) =>
     row({ type: "assistant", parent_tool_use_id: parent, message: { content: [{ type: "tool_use", name, input }] } });
   const final = (text) => row({ type: "result", result: text });
@@ -553,7 +559,7 @@ function selftest() {
     r = run(unparsable);
     assert(r.code === 1 && /cannot parse/.test(r.out), `unparseable grader must exit 1:\n${r.out}`);
 
-    // Rows files with no rows, or with different row counts, are errors.
+    // Rows files with no rows are errors.
     const empty = tree("empty");
     grader(empty, "p/c/g", "type: regex\ntarget: trace\nmatch: not_contains\npattern: 'a'");
     rows(empty, "p/c/g", "pass", []);
@@ -564,10 +570,24 @@ function selftest() {
     rows(empty, "p/c/g", "fail", []);
     r = run(empty);
     assert(r.code === 1 && /fail\.jsonl: holds no rows/.test(r.out), `empty fail file must exit 1:\n${r.out}`);
-    rows(empty, "p/c/g", "pass", [row({ text: "b" }), row({ text: "c" })]);
-    rows(empty, "p/c/g", "fail", [row({ text: "a" })]);
-    r = run(empty);
-    assert(r.code === 1 && /counts must match/.test(r.out), `different row counts must exit 1:\n${r.out}`);
+
+    // Row counts may differ: with a max, one row passes and two rows are the near miss.
+    const capped = tree("capped");
+    grader(capped, "p/c/g", "type: tool_used\ntool: Write\nmax: 1");
+    rows(capped, "p/c/g", "pass", [call("Write", { file_path: "a" })]);
+    rows(capped, "p/c/g", "fail", [call("Write", { file_path: "a" }), call("Write", { file_path: "b" })]);
+    r = run(capped);
+    assert(r.code === 0, `different row counts are allowed:\n${r.out}`);
+
+    // Every row must be an object with a string type, in both files.
+    const shaped = tree("shaped");
+    grader(shaped, "p/c/g", "type: regex\ntarget: trace\nmatch: not_contains\npattern: 'a'");
+    rows(shaped, "p/c/g", "pass", [row({ text: "b" })]);
+    for (const bad of ["{}", '"text"', "[1]", '{"text":"a"}']) {
+      rows(shaped, "p/c/g", "fail", [bad]);
+      r = run(shaped);
+      assert(r.code === 1 && /string "type"/.test(r.out), `row ${bad} must be rejected:\n${r.out}`);
+    }
 
     // No grader files at all is a failure, not a pass.
     r = run(tree("nothing"));
@@ -580,6 +600,11 @@ function selftest() {
     rows(noFinal, "p/c/g", "fail", [row({ type: "system", text: "y" })]);
     r = run(noFinal);
     assert(r.code === 1 && /no final message/.test(r.out), `rows without a final message must exit 1:\n${r.out}`);
+    const sysText = (t) => row({ type: "system", message: { content: [{ type: "text", text: t }] } });
+    rows(noFinal, "p/c/g", "pass", [sysText("x")]);
+    rows(noFinal, "p/c/g", "fail", [sysText("y")]);
+    r = run(noFinal);
+    assert(r.code === 1 && /no final message/.test(r.out), `text of a non-assistant row is not a final message:\n${r.out}`);
 
     // Only objects with type tool_use count as tool calls.
     const typed = tree("typed");
@@ -604,7 +629,7 @@ function selftest() {
         row({ text: "noise" }),
         call("Write", {
           file_path: `${home}/proj/brief.md`,
-          scratch: `/private/tmp/claude-501/${home.split("/").join("-")}-workspace-x`,
+          scratch: `/private/tmp/x/${dash(home)}-workspace-x`,
         }),
         row({ text: "alpha" }),
         row({ text: "middle" }),
@@ -617,10 +642,21 @@ function selftest() {
     r = harvest(hv, trace, "p/c", false);
     assert(r.code === 0, `harvest should exit 0:\n${r.out}`);
     const pass = (n) => fs.readFileSync(path.join(hv, ROWS_DIR, "p", "c", `${n}.pass.jsonl`), "utf8");
-    assert(!pass("wrote").includes(home) && pass("wrote").includes("$HOME/proj/brief.md"), "home path must become $HOME");
-    const user = path.basename(home);
-    assert(!pass("wrote").includes(user), "the user name must not survive, not even in the dashed form");
-    assert(pass("wrote").includes("/-Users-$USER-workspace-x"), "the dashed home form must keep its shape with $USER");
+    const input = JSON.parse(pass("wrote").trim()).message.content[0].input;
+    assert(input.file_path === "$HOME/proj/brief.md", `home path must become $HOME, got ${input.file_path}`);
+    const dashedHome = dash(home);
+    const dashedUser = dash(path.basename(home));
+    const twoSegments = home.split("/").filter(Boolean).length >= 2;
+    const expected = twoSegments ? dashedHome.slice(0, dashedHome.length - dashedUser.length) + "$USER" : dashedHome;
+    assert(input.scratch === `/private/tmp/x/${expected}-workspace-x`, `dashed home must keep its shape, got ${input.scratch}`);
+
+    // The dashed scrub, on fixed homes: punctuation, one-segment homes, name boundaries.
+    const s = (line, h) => scrubHome(line, h);
+    assert(s("/x/-Users-jo-smith-w", "/Users/jo.smith") === "/x/-Users-$USER-w", "dots in the user name are dashed");
+    assert(s("--root /root/a", "/root") === "--root $HOME/a", "a one-segment home keeps --root");
+    assert(s("-Users-john-a", "/Users/jo") === "-Users-john-a", "a longer name is not rewritten");
+    assert(s('-Users-jo-a "-Users-jo"', "/Users/jo") === '-Users-$USER-a "-Users-$USER"', "name ends at a dash or at the end");
+    assert(s("/home/claude/x claude-501 -home-claude-w", "/home/claude") === "$HOME/x claude-501 -home-$USER-w", "other homes work");
     assert(pass("wrote").trim().split("\n").length === 1, "tool_used harvest keeps only the matching row");
     assert(pass("said").trim().split("\n").length === 3, "regex harvest keeps the rows the match spans");
     assert(pass("lookahead").trim().split("\n").length === 2, "regex harvest grows to satisfy a lookahead");
@@ -688,6 +724,6 @@ function main(argv) {
   return r.code;
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url))) {
   process.exitCode = main(process.argv.slice(2));
 }

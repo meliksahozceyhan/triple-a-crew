@@ -32,3 +32,11 @@
   script's own repository and no graders is an error; harvest also replaces the user name in dashed paths;
   the README states what cannot be reproduced; the cost table records this item's own run. T2 made the script
   fixes (rung 1 of the ladder: sent back once); the organizer fixed its own rows and docs.
+- **2026-11-13 T7b recheck: changes requested again, two new must-fix, both small.** (N1) A self-test added
+  by the fix hard-coded a macOS home path and would fail on Linux. (N2) Called through a link, such as
+  `/tmp` on macOS, the script printed nothing and exited 0; the organizer confirmed it with one run. Also:
+  the dashed-path scrub, the equal-row-count rule (it does not fit a grader with `max`), and the near miss
+  for `edge-cases-in-brief`, which now keeps the heading and drops only the table. The grader accepts
+  "Edge Cases" and "line break" too. Its known limits stay: an empty section followed by a later section
+  with one of the words passes, and a table in entirely other words fails. The fixes are size S (two files,
+  no unknowns), so per step 8 they are made and verify is rerun, with no third reviewer.
