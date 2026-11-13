@@ -29,7 +29,12 @@
   `board.md`, and it names the files to read first. The `handoff` skill's session handoff points to it.
   Rejected: dropping `handoff.md` in favour of the session handoff (the session handoff is per session and
   ignores itself in git; the item's state belongs with the item).
-- **2026-11-13 F: decided after P1; the text is written in T6.** The rule as written does not work: the status
-  file cannot be in the main checkout. What does work: the employee takes in the item's branch first, commits
-  at the end, and the organizer merges `worktree-agent-<id>`. Open until the hook side is settled: where the
-  status file lives for such an employee.
+- **2026-11-13 F: the worktree rule is removed, not fixed.** P1 showed it does not work as written: a
+  worktree-isolated employee is refused when it writes its status file in the main checkout, so the status
+  protocol and the stop hook both fail for it. Fixing it needs a hook that finds a status file inside the
+  worktree, a merge step for the organizer and a copy step for status files: three new mechanisms for a rule
+  that 13 work items never needed. Overlapping writers go in sequence; that is the whole rule now. The probe's
+  facts go into DESIGN "Verified mechanics" (F.1), so a later item can bring worktrees back on evidence.
+  Rejected: keeping the rule with a fix (see above); keeping it as written (it is wrong). What this item did
+  instead: the organizer made one worktree per work item, and parallel engineers edited disjoint files in it
+  by absolute path, which kept the main checkout, and the running plugin, untouched.

@@ -31,9 +31,10 @@ Arguments: `$ARGUMENTS`. `status` → step 1 only. `next` → resume the most re
 ## 1. Resume before starting
 
 Read `<root>/.crew/work/index.md`. If the request matches an open item (same feature, ticket or files),
-resume it: read its `board.md` and continue from its phase. Never open a second item for the same work.
-For `status`, or a question about where things stand ("where are we on X?"), report the phase, what is done
-and the next step, then stop and let the user decide. Only continue the work when they ask you to.
+resume it: read its `handoff.md` if it has one, then its `board.md`, and continue from its phase. Never open
+a second item for the same work. For `status`, or a question about where things stand ("where are we on
+X?"), report the phase, what is done and the next step, then stop and let the user decide. Only continue the
+work when they ask you to.
 
 ## 2. Size the request
 
@@ -74,29 +75,32 @@ dependencies.
 - A task is something one employee can finish and check alone.
 - Investigation comes first when the cause or the design is unclear. For a design, the first task can be a
   design question for a researcher at critical tier; its recommendation goes to `decisions.md`.
-- Run tasks in parallel only when their file sets do not overlap. Overlapping writers go in sequence, or each
-  in its own worktree with you merging the results.
+- Run tasks in parallel only when their file sets do not overlap. Overlapping writers go in sequence.
 - Every change gets a review by someone who did not write it.
 - Record each real decision in `decisions.md`, with the reason and the alternatives you rejected.
+- Read `<root>/.crew/lessons.md` if it exists. Under `## Lessons that apply`, name each open lesson this plan
+  could repeat and what guards against it (formats.md).
+- Plans of size M and L with 3+ tasks show a `## Flow` task graph; a change to how something runs adds the
+  current flow (from a researcher) and the final flow; nothing else does. About 12 nodes each (formats.md).
 
 **Size L:** read the profile's `conventions` files (without a profile: `CLAUDE.md`, `AGENTS.md`,
 `CONTRIBUTING.md`, `.claude/rules/`, `.cursor/rules/` and ADR folders, where they exist) and check every task
 against them. Record each rule that changes the plan in `decisions.md` with the file it comes from, e.g.
 "Queries live in `src/db/` (docs/adr/0003.md): T2 moves the query out of the route." Add a "Done-when
 coverage" table to `plan.md` (formats.md): each done-when line of `brief.md` with the task that meets it or
-its deferral in `decisions.md`. Show the plan (tasks, who does what on which model, the risky edge cases, the
-coverage and every deferral) and get the go-ahead before any engineer starts; researchers may run before.
+its deferral in `decisions.md`. Show the plan (tasks, who does what on which model, the diagrams, risky edge
+cases, coverage, every deferral) and get the go-ahead before any engineer starts; researchers may run before.
 
 ## 6. Staff and brief
 
 - Choose role and tier with [staffing.md](staffing.md). A `models:` entry in the profile overrides a tier.
 - Spawn with the Agent tool: `subagent_type: "triple-a-crew:<role>"`, `model` and `effort` from staffing.md,
-  and a brief written to [protocol.md](protocol.md). Add `isolation: "worktree"` only for engineers running
-  in parallel. Independent tasks go out in one message; dependent ones wait.
+  and a brief written to [protocol.md](protocol.md). Independent tasks go out in one message; the rest wait.
 - Give the call no `name`: with agent teams enabled, a named call becomes a teammate. For size L, if `printenv
   CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` prints `1`, read [teams.md](teams.md) before staffing and follow it.
-- Each brief names the employee's status file by absolute path in the main checkout:
-  `<root>/.crew/work/<id>/team/<task>-<role>.md`, even when the employee works in a worktree.
+- Each brief names the status file by absolute path: `<root>/.crew/work/<id>/team/<task>-<role>.md`.
+- A researcher's brief asks for its full report under `## Report`, and for the current flow when the plan
+  shows one. A reviewer's brief ends with `## Budget` (protocol.md).
 - Update `board.md` with task, role, model, effort and state.
 - If the Agent tool or these agents are unavailable, do the tasks yourself in the same order, same files.
 
@@ -107,10 +111,9 @@ When an employee finishes:
 - Read its status file and report. Findings go in `findings.md`, decisions in `decisions.md`; update the board.
 - **Blocked:** if the question is yours to answer, answer it and resume that employee with `SendMessage`
   (it keeps its context). If it is the user's call, ask the user, then resume.
-- **Failed, or misses its acceptance check:** climb the ladder in staffing.md, one rung per miss: send it back
-  once with what is missing; re-staff at the same tier with effort one step up; re-staff one tier up; ask the
-  user. Each re-staff is `<task><letter>-<role>`, with its own status file and every earlier failure in its
-  brief. A test-engineer's test that exposes a bug in the code is not a miss: send the defect to the code task.
+- **Failed, or misses its acceptance check:** climb the ladder in staffing.md, one rung per miss (send back,
+  effort up, tier up, ask the user). A test-engineer's test that exposes a bug in the code is not a miss:
+  send the defect to the code task.
 - You decide when a task is done, never the employee.
 
 ## 8. Verify and review
@@ -122,14 +125,14 @@ When an employee finishes:
 - Run the profile's `verify` commands (or the checks the plan names) on the combined result. For size L, and
   for M when the profile lists more than one, staff the verifier (mechanical tier); its brief lists the
   commands, each ready to run from the root (protocol.md), a timeout and whether one rerun is allowed.
-  Otherwise, or if the verifier is unavailable, run them yourself. A failure goes back to the task that caused
-  it as that task's miss (step 7); a test-engineer's failing test is a defect for the code task, not a miss.
+  Otherwise, or with no verifier, run them yourself. A failure is a miss of the task that caused it (step 7).
 - Staff a reviewer on the final diff (size L: one per task, then one on the whole diff), never one that wrote
-  the work. The last review checks every done-when line with evidence (protocol.md); a line without evidence
-  is a must-fix or a deferral the user accepts. Resolve every must-fix before closing. After fixes to a review
-  that asked for changes, a fresh reviewer rechecks the fix diff as a new task with its own status file,
-  briefed with the earlier findings. If it asks again and the fix is size S (step 2), make it and rerun
-  verify; if bigger, ask the user whether to staff a third reviewer.
+  the work. The last review checks every done-when line with evidence, and the code against the plan's final
+  flow when it has one (protocol.md); a line without evidence is a must-fix or a deferral the user accepts.
+  Resolve every must-fix before closing. After fixes to a review that asked for changes, a fresh reviewer
+  rechecks the fix diff as a new task with its own status file, briefed with the earlier findings. If it asks
+  again and the fix is size S (step 2), make it and rerun verify; if bigger, ask the user whether to staff a
+  third reviewer.
 
 ## 9. Follow-ups
 
@@ -140,21 +143,18 @@ waits for step 10. Otherwise list them for the user in your final report.
 ## 10. Close
 
 - For size M and L, write this item's `retro.md` first (formats.md): compare the plan with what happened,
-  from `board.md`, `findings.md` and every `team/` status file, and mark lessons that another item's
-  `retro.md` already has; a repeat needs a durable fix, not another retro-only lesson. Update an existing
-  `retro.md` rather than replace it.
-- Each lesson goes to one place, with its exact text and destination in `retro.md`: a profile note or
-  convention-file edit for this project; crew feedback about the organizer, an employee or a hook, as an
-  issue draft for the `repository` in `../../.claude-plugin/plugin.json` from this skill's folder (never the
-  project's tracker unless the user says so), describing crew behavior only, with no project code, paths or
-  names; or `retro.md` only. If that repository is missing or unreachable, keep the draft and say so.
-- Put the proposals in your final report and apply none of them until the user answers; then apply what they
-  accept (file a crew draft in that repository as written, not through `file-issue`) and set each Status.
+  from `board.md`, `findings.md` and every `team/` status file. Add each lesson to `<root>/.crew/lessons.md`,
+  or raise the hits of the row it repeats; a lesson that reaches two hits while open gets a mechanism, never
+  `retro.md` only. Update an existing `retro.md` rather than replace it.
+- Each lesson goes to one place, with its exact text and destination in `retro.md` (formats.md, "Goes to").
+  Put the proposals in your final report; apply only what the user accepts, then set each Status.
+- Draft the pull request text from the record (formats.md, "PR text") into your report; open it only when the
+  user asks. Call it merged only after checking its state with the tracker's tool, else "not checked".
 - Set the board's phase to `done`, move the item to Closed in `index.md`, and complete `decisions.md`.
 - If the work stops before it is done (the user pauses, the context is running out), write `handoff.md`
-  instead of a retro: what is done, what is next, open questions.
+  instead of a retro (formats.md): what is done, what is next, open questions, and what to read first.
 - Report to the user: what changed (files), how it was verified (commands and results), who did what (role
   and model), follow-ups, anything left, and each ticket as `Closes #N`, or `Refs #N` with a criterion open.
 
-Board phases: `intake → plan → approval → implement → verify → review → done`. Skipping one is fine; write
-the reason in `decisions.md`.
+Board phases: `intake → plan → approval → implement → verify → review → ship → done`. Skipping one is fine;
+write the reason in `decisions.md`.

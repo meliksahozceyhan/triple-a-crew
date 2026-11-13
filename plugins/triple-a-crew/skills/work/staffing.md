@@ -56,8 +56,7 @@ are `low → medium → high → xhigh`; the ladder below stops at a tier's ceil
   for a code task (edge cases beyond its own acceptance check) go to the test-engineer, not the engineer who
   wrote the code; engineers still add the tests their own acceptance check needs. A test task depends on the
   code task it tests.
-- **Parallel only on disjoint file sets.** Overlapping writers run in sequence, or in separate worktrees
-  (`isolation: "worktree"`) with you merging.
+- **Parallel only on disjoint file sets.** Overlapping writers run in sequence.
 - **Effort before tier.** For a task with many edge cases, a stronger brief with explicit cases often beats a
   bigger model, and the ladder raises effort before the model for the same reason. Move up a tier when the
   reasoning itself is hard.

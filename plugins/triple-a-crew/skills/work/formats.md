@@ -202,6 +202,14 @@ The "Repeat of" column holds a ledger id from `lessons.md` (`L1`), not an item n
 lesson. The `#` column numbers the lessons of this retro only. A repeat's "Goes to" is never `retro.md` only
 (see `lessons.md` below for why).
 
+**Goes to.** Each lesson goes to one place, with its exact text under "Proposed text": a profile note or a
+convention-file edit for this project; crew feedback about the organizer, an employee or a hook, as an issue
+draft for the `repository` in `../../.claude-plugin/plugin.json` from this skill's folder (never the project's
+tracker unless the user says so), describing crew behavior only, with no project code, paths or names; or
+`retro.md` only. If that repository is missing or unreachable, keep the draft and say so. Apply none of the
+proposals until the user answers. Then apply what they accept, and file an accepted crew draft in that
+repository as written, not through `file-issue`.
+
 ## lessons.md
 
 ```markdown

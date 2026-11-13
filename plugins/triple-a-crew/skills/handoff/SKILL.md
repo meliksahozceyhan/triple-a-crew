@@ -146,7 +146,7 @@ work items. It also names the items other agents own. Paste it into the Agent pr
 agent type, including ones without Bash. Add anything session-specific below it.
 
 - Run items concurrently only when they are marked `Parallel-safe: yes` and don't touch the same files.
-  Otherwise run them one after another, or give each agent `isolation: "worktree"`.
+  Otherwise run them one after another.
 - The brief asks each subagent to report files changed, verification, leftovers and new lessons.
   Merge those into your own handoff before you write the next one.
 
