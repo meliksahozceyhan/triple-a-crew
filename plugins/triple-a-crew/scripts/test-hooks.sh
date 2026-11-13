@@ -187,8 +187,8 @@ transcript() {
     printf '{"isSidechain":true,"type":"user","message":{"role":"user","content":"# T1: x\\n\\n## Goal\\nx"}}\n' >"$tmp/$1.jsonl"
   fi
 }
-statusfile() { # <path> <state-line>
-  printf -- '---\ntask: T1\nrole: engineer\nmodel: sonnet\n%s\nupdated: 2026-10-19\n---\n## Progress\n' "$2" >"$1"
+statusfile() { # <path> <state-line> [updated value, default a full past time]
+  printf -- '---\ntask: T1\nrole: engineer\nmodel: sonnet\n%s\nupdated: %s\n---\n## Progress\n' "$2" "${3:-2026-10-19T10:00:00Z}" >"$1"
 }
 stop_in() { # <transcript-name> <message> [agent-id]
   printf '{"hook_event_name":"SubagentStop","agent_id":"%s","agent_transcript_path":"%s","last_assistant_message":"%s","stop_hook_active":false}' "${3:-}" "$tmp/$1.jsonl" "$2" >"$tmp/in.json"
@@ -349,6 +349,41 @@ for m in $modes; do
   expect_silent "subagent-stop: single-quoted state" $m
   printf '# no frontmatter\n' >"$sf"; run $m subagent-stop.sh "$tmp/in.json"
   expect_block "subagent-stop: no frontmatter gets a clear reason" $m "has no state: line in a frontmatter block (--- lines at the top)"
+
+  # the updated time is checked against the clock
+  dcmd='date -u +%Y-%m-%dT%H:%M:%SZ'
+  statusfile "$sf" "state: done" "2099-01-01T00:00:00Z"; run $m subagent-stop.sh "$tmp/in.json"
+  expect_block "subagent-stop: future updated blocks, names the date command" $m "$dcmd"
+  case "$out" in *"in the future"*"2099-01-01T00:00:00Z"* | *"2099-01-01T00:00:00Z"*"in the future"*) pass "subagent-stop: future updated reason shows value and problem" $m ;; *) bad "subagent-stop: future reason" $m "$out" ;; esac
+  statusfile "$sf" "state: done" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; run $m subagent-stop.sh "$tmp/in.json"
+  expect_silent "subagent-stop: updated from the clock is silent" $m
+  printf -- '---\ntask: T1\nstate: done\n---\n## Progress\nupdated: 2026-10-19T10:00:00Z\n' >"$sf"; run $m subagent-stop.sh "$tmp/in.json"
+  expect_block "subagent-stop: no updated line blocks (body line does not count)" $m "no updated:"
+  expect_block "subagent-stop: no updated line names the date command" $m "$dcmd"
+  printf -- '---\ntask: T1\nstate: done\nupdated:\n---\n' >"$sf"; run $m subagent-stop.sh "$tmp/in.json"
+  expect_block "subagent-stop: empty updated blocks" $m "no updated:"
+  statusfile "$sf" "state: done" "2026-10-19"; run $m subagent-stop.sh "$tmp/in.json"
+  expect_block "subagent-stop: date alone blocks" $m "not a full UTC time"
+  statusfile "$sf" "state: done" "2026-10-19T10:00:00Z$(printf '\t')x"; run $m subagent-stop.sh "$tmp/in.json"
+  expect_block "subagent-stop: tab in updated blocks with valid JSON" $m "not a full UTC time"
+  statusfile "$sf" "state: done" "2026-10-19T10:00:00+03:00"; run $m subagent-stop.sh "$tmp/in.json"
+  expect_block "subagent-stop: local offset blocks" $m "not a full UTC time"
+  statusfile "$sf" "state: done" "2026-10-19T10:00:00Z"; run $m subagent-stop.sh "$tmp/in.json"
+  expect_silent "subagent-stop: full past time is silent" $m
+  statusfile "$sf" "state: blocked" "2099-01-01T00:00:00Z"; run $m subagent-stop.sh "$tmp/in.json"
+  expect_silent "subagent-stop: blocked with a future time is silent" $m
+  statusfile "$sf" "state: done" '"2026-10-19T10:00:00Z"'; run $m subagent-stop.sh "$tmp/in.json"
+  expect_silent "subagent-stop: quoted updated is silent" $m
+  statusfile "$sf" "state: done" "2026-10-19T10:00:00Z   # from date"; run $m subagent-stop.sh "$tmp/in.json"
+  expect_silent "subagent-stop: updated with trailing comment is silent" $m
+  printf -- '---\r\ntask: T1\r\nstate: done\r\nupdated: 2026-10-19T10:00:00Z\r\n---\r\n' >"$sf"; run $m subagent-stop.sh "$tmp/in.json"
+  expect_silent "subagent-stop: updated with carriage return is silent" $m
+  # the cap of three blocks still lets the employee go
+  statusfile "$sf" "state: done" "2099-01-01T00:00:00Z"; stop_in n1 "$full" "future$m"
+  run $m subagent-stop.sh "$tmp/in.json"; expect_block "subagent-stop: future updated guard block 1" $m "in the future"
+  run $m subagent-stop.sh "$tmp/in.json"; expect_block "subagent-stop: future updated guard block 2" $m "in the future"
+  run $m subagent-stop.sh "$tmp/in.json"; expect_block "subagent-stop: future updated guard block 3" $m "in the future"
+  run $m subagent-stop.sh "$tmp/in.json"; expect_silent "subagent-stop: future updated guard allows the 4th stop" $m
 done
 
 # ---- teammates: matcher and wrapped brief ----
@@ -408,6 +443,13 @@ for m in $modes; do
   printf '{"hook_event_name":"SubagentStop","agent_id":"h%s","agent_type":"","agent_transcript_path":"%s/none.jsonl","last_assistant_message":"x"}' "$m" "$tmp" >"$tmp/in.json"
   run $m subagent-stop.sh "$tmp/in.json"; expect_silent "subagent-stop: helper event with empty agent_type" $m
 done
+
+# The other hooks have test files of their own; each one repeats itself under dash.
+if [ -z "${HOOK_SH:-}" ]; then
+  for t in test-bash-guard.sh test-definitions-check.sh; do
+    sh "$here/$t" || fail=1
+  done
+fi
 
 # Repeat everything under dash (the default /bin/sh on Debian and Ubuntu) when it is installed:
 # it is stricter than macOS sh, for example a failed redirection on a special builtin exits the script.

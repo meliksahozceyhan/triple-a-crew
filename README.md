@@ -42,7 +42,7 @@ or a protocol.
 
 ```
 ┌─ Tier 3: automation (Claude Code only) ─────────────────────────────┐
-│  hooks: open-items summary, employee protocol, status-file gate     │
+│  hooks: summary, protocol, status gate, bash guard, definition check│
 ├─ Tier 2: organization (Claude Code only) ───────────────────────────┤
 │  work (organizer) · 5 employees · handoff                           │
 ├─ Tier 1: portable skills (Claude Code, Claude chat*, Cursor**) ─────┤
@@ -220,8 +220,9 @@ injection and a `NaN` total.
 Every employee keeps a status file (`.crew/work/<id>/team/<task>-<role>.md`) and ends with the same report:
 outcome, changed files, evidence, assumptions, open questions, findings. It takes the file's `updated` time
 from the clock (`date -u`). Employees and the organizer run one plain command per Bash call, with no pipes,
-`;`, `&&` or `cd`, so your permission rules match each command. Employees never spawn agents, never file
-issues and never write under `.claude/`.
+`;`, `&&` or `cd`, so your permission rules match each command; a [hook](#hooks) refuses an employee's
+command that breaks the rule. Employees never spawn agents, never file issues and never write under
+`.claude/`.
 
 The researcher also answers design questions, staffed on opus, with options, trade-offs and a
 recommendation ready for `decisions.md`. There is no separate architect. There is no scribe either: issues go
@@ -229,17 +230,42 @@ through `file-issue`, handoffs through the `handoff` skill, and PR text stays wi
 
 ### Hooks
 
-The plugin ships three hooks that keep the organizer and its employees honest. They match only this plugin's
-agents (`triple-a-crew:*`, or a [team-mode](#team-mode-experimental-opt-in) teammate named `T<n>-<role>`),
-not built-in agents or other plugins' agents, and nothing breaks with hooks turned off. An unrelated
-teammate that happens to have such a name gets the reminder, but no stop gate: its brief has no
-`**Status file:**` line.
+The plugin ships five hooks that keep the organizer and its employees honest. The three that act on employees
+match only this plugin's agents (`triple-a-crew:*`, or a [team-mode](#team-mode-experimental-opt-in) teammate
+named `T<n>-<role>`), not built-in agents or other plugins' agents, and nothing breaks with hooks turned off.
+An unrelated teammate that happens to have such a name gets the reminder, but no stop gate and no command
+guard: its brief has no `**Status file:**` line.
 
 | Hook | Runs when | What it does |
 |---|---|---|
-| `SessionStart` | a session starts, resumes, clears or compacts | Lists the open work items from `.crew/work/index.md` at the project root (the git root, unless that is your home folder; otherwise the session's folder), at most 15. Prints nothing in projects without one |
+| `SessionStart` | a session starts, resumes, clears or compacts | Lists the open work items from `.crew/work/index.md` at the project root (the git root, unless that is your home folder; otherwise the session's folder), at most 15. Prints nothing in projects without one. At `startup` and `resume` it also records a checksum of each agent file, for the definition check |
 | `SubagentStart` | an employee starts | Adds a short reminder of the status-file protocol to the employee's context |
-| `SubagentStop` | an employee tries to finish | Sends it back while its status file is missing or not `done`, `blocked` or `failed`, or while a `done` or `failed` reply lacks a report section. It reads the status-file path from the first line of the brief that starts with `**Status file:**` (in the employee's transcript); if that path doesn't exist and doesn't end in `.md`, it stays silent. It sends the same employee back at most 3 times, and a finished employee answering a follow-up question needs no new report |
+| `SubagentStop` | an employee tries to finish | Sends it back while its status file is missing or not `done`, `blocked` or `failed`, while a `done` or `failed` file has an `updated` time that is missing, not in the form `2026-01-31T14:05:00Z`, or later than the clock (the message gives the `date -u` command; a time in the past is not checked), or while a `done` or `failed` reply lacks a report section. It reads the status-file path from the first line of the brief that starts with `**Status file:**` (in the employee's transcript); if that path doesn't exist and doesn't end in `.md`, it stays silent. It sends the same employee back at most 3 times, and a finished employee answering a follow-up question needs no new report |
+| `PreToolUse` on `Bash` | an employee runs a command | The command guard: refuses a command that chains with `&&`, `\|\|`, `;` or a lone `&`, pipes, redirects, spans lines, uses `cd`, starts with `time`, or is `echo $?` |
+| `PreToolUse` on `Agent` | the organizer starts an employee | The definition check: adds a one-time note to the organizer's context when that employee's agent file changed since the session loaded it. It never refuses the call |
+
+**The command guard** enforces the one-plain-command rule above. It acts only on crew employees, told apart by
+`agent_type`: an agent of type `triple-a-crew:<role>` always, and an agent named like a teammate
+(`T2-engineer`) only when its brief can be read and names a status file. The main session and other agents are
+never refused. Text inside quotes is not looked at, so a quoted `"$(a | b)"` passes, but an unquoted
+`echo $(git log | head -1)` is refused for its pipe. A lone `&` with a space on each side counts as a chain,
+and a command longer than 20,000 characters is allowed without being analysed. It lets a command through
+when the brief lists it as written, when it is the documented form `cd "<folder>" && <command>` and the brief
+cannot be read, and when it is a refused command sent again unchanged. It keeps each refusal as a file of its
+own, so the resend runs also when several commands were refused in one turn, when the hook runs overlap, or
+when other calls came in between, and the guard can never trap an employee. Without `jq` it still guards, and
+allows only what it cannot read reliably.
+
+**The definition check** compares each agent file with the checksum recorded at session start. When the
+organizer starts an employee whose file changed since, the note names the file and `/reload-plugins`: unless a
+reload has run since the change, the employee runs on the old definition. Claude Code fires no event on
+`/reload-plugins`, so the hook cannot see a reload and shows the note once per change. It covers agent files,
+not skills.
+
+**State.** The two new hooks keep small files in `${CLAUDE_PLUGIN_DATA}`: an empty marker per refused command,
+`triple-a-crew-bash-<agent_id>-<checksum>-<length>` (a resend removes it), and
+`triple-a-crew-defs-<session_id>` (the agent file checksums), next to the stop hook's own. Files older than
+7 days are deleted.
 
 The scripts are POSIX `sh` and use `jq` when it is installed. Test them without a model call:
 
@@ -422,7 +448,8 @@ Run `/reload-plugins` after editing a skill. Validate the manifests before commi
 claude plugin validate .
 ```
 
-Test the hooks without a model call:
+Test the hooks without a model call. The runner also runs `test-bash-guard.sh` and
+`test-definitions-check.sh`:
 
 ```bash
 sh plugins/triple-a-crew/scripts/test-hooks.sh
@@ -634,8 +661,8 @@ How to read it:
 │       ├── .claude-plugin/plugin.json
 │       ├── README.md
 │       ├── agents/                     researcher, engineer, test-engineer, verifier, reviewer
-│       ├── hooks/hooks.json            SessionStart, SubagentStart, SubagentStop
-│       ├── scripts/                    the hook scripts (POSIX sh) and test-hooks.sh
+│       ├── hooks/hooks.json            SessionStart, PreToolUse, SubagentStart, SubagentStop
+│       ├── scripts/                    the hook scripts (POSIX sh) and their tests (test-hooks.sh runs all)
 │       ├── skills/
 │       │   ├── work/                   the organizer: SKILL.md, formats, staffing, protocol
 │       │   ├── onboard/                SKILL.md, profile-format.md (the profile contract)
@@ -724,7 +751,8 @@ runs work in parallel only on disjoint file sets. Details are in [docs/DESIGN.md
 | Plugin does not load; `plugin_errors` shows `dependency-unsatisfied` | A declared dependency is not installed. Remove `dependencies`, or install the dependency first |
 | Permission prompt on every write under `.claude/` | `.claude/` is protected in Claude Code. Write crew state to `.crew/` |
 | Eval stops after about a second with `partialReason: auth_failed` and $0 cost | The standalone `claude` CLI is not logged in (`claude auth status` shows `loggedIn: false`). A Claude desktop-app session authenticates through the app, not the CLI, so evals started from it fail. Run them from a terminal after `claude auth login` |
-| An employee keeps being told to fix its status file | The `SubagentStop` hook found the status file named in its brief, and the file is missing, not final, or the reply lacks a report section. The reason it gives says what to fix. The hook gives up after 3 tries for the same employee |
+| An employee keeps being told to fix its status file | The `SubagentStop` hook found the status file named in its brief, and the file is missing, not final, has an `updated` time that is missing, malformed or in the future, or the reply lacks a report section. The reason it gives says what to fix. The hook gives up after 3 tries for the same employee |
+| An employee reports that a command was refused | The command guard refuses a command that chains with `&&`, `\|\|`, `;` or a lone `&`, pipes, redirects, spans lines, uses `cd`, starts with `time`, or is `echo $?`. The employee should run one plain command per call, with absolute paths or the tool's folder flag. If it needs exactly that command, sending it again unchanged runs it, even after other calls in between. A command the brief lists as written is never refused |
 | No open-items summary at session start | The `SessionStart` hook reads `.crew/work/index.md` at the git root (or the session's folder outside a repository, or when the git root is your home folder) and prints only the `## Open` list. Check that the file exists and has items under `## Open`, then run `sh plugins/triple-a-crew/scripts/test-hooks.sh` |
 | Eval: `a plugins entry names the case directory ... or a directory covering them` | Do not list the plugin under test in a case's `plugins:`. Fixture plugins must sit inside the case directory |
 | Eval: `outside the containment root` | A case can only load plugins inside the plugin under test, so a sibling plugin cannot be loaded |
