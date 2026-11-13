@@ -158,6 +158,11 @@ issue_tracker:
 
 Starts on its own for multi-step requests, or with `/triple-a-crew:work [start <request> | next | status]`.
 
+The organizer runs in your main session, so it uses that session's model; the plugin does not set one. It
+plans the work, writes every brief and decides when a task is done, and at size M it does most of the work
+itself. Run sessions that organize work on the strongest model you have (`/model`). Employees are not
+affected: each one runs on the model its tier gives it (step 5).
+
 1. **Sizes the request.**
    - **S** (one spot, no unknowns): it steps aside, and Claude just does the work.
    - **M** (several files, or one unknown): it opens a work item, does most of the work itself, and always
