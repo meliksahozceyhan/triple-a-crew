@@ -37,6 +37,7 @@ answers their questions and files follow-up issues for anything out of scope.
 | D6 | The issue-writing skill is the first deliverable and must stand alone | Highest daily value, and the part most worth publishing. |
 | D7 | The organizer starts on its own for multi-step work | The author should not have to remember a command; a sizing step keeps it out of small requests. |
 | D8 | `file-issue` confirms every issue by default; `batch` is a profile setting | `always` is the safe default for a published skill; the author's own projects can use `batch`. |
+| D9 | The organizer runs on the session's model; the plugin does not set one | A skill's `model:` frontmatter holds only for the rest of the turn that loaded it, and a work item spans many turns. A published plugin should not choose a model, and its price, for the user's main session. The README says to run it on the strongest model the user has. |
 
 ## Architecture
 
@@ -73,7 +74,11 @@ everything. So in chat, only tier 1 exists.
 
 ### Organizer
 
-Runs in the main session, because only the main session can spawn employees and talk to the user.
+Runs in the main session, because only the main session can spawn employees and talk to the user. Its model
+is therefore the session's model, and the plugin does not set one (D9): the organizer plans, writes every
+brief and decides when a task is done, so its mistakes reach every employee. The user picks the strongest
+model they have for that session; employees keep the models the staffing policy gives them. Six recorded
+items ran with an opus organizer and one (`effort-ladder`) with fable; no eval compares organizer models yet.
 
 Responsibilities, in order:
 
@@ -462,7 +467,7 @@ Checked against the Claude Code docs on 2026-10-16.
 | Agents | `model` (aliases incl. `fable`), `effort`, `tools`, `isolation: worktree`, `maxTurns`, `background`, `skills`. Plugin agents ignore `permissionMode`, `hooks`, `mcpServers`, `initialPrompt`. A plugin agent's `skills: [x]` preloads the plugin's own skill only by its bare name; `plugin:x` loads nothing, silently, and eval traces never show the injected text | [subagents](https://code.claude.com/docs/en/sub-agents); probe 2026-10-19 (`employees-v2`) |
 | Nesting | Subagents may spawn subagents up to 3 levels deep by default | [subagents](https://code.claude.com/docs/en/sub-agents) |
 | Hooks | `SessionStart` and `SubagentStart` can add context; `SubagentStop` and `Stop` can block. Scripts use `${CLAUDE_PLUGIN_ROOT}`; persistent plugin data goes in `${CLAUDE_PLUGIN_DATA}`. Plugin hooks live in `hooks/hooks.json` under a top-level `hooks` key and run with `sh -c`. Subagent matchers see plugin agents as `<plugin>:<agent>`. Subagent hook input has no prompt; SubagentStop gets `agent_transcript_path` (line 1 is the brief), `last_assistant_message` and `stop_hook_active`. In the spike a subagent ended after 9 consecutive blocks (the hook keeps its own cap of 3). Eval runs load plugin hooks. For an agent-team teammate both subagent hooks fire with the teammate's name as `agent_type`; line 1 of its transcript is the brief inside a `<teammate-message>` tag | [hooks](https://code.claude.com/docs/en/hooks); spike 2026-10-19 (`crew-hooks` T2); live test 2026-10-19 (`agent-teams-mode` T3) |
-| Skills | Bundled reference files load on demand; scripts via `${CLAUDE_SKILL_DIR}`; `context: fork` runs a skill in a chosen agent | [skills](https://code.claude.com/docs/en/skills) |
+| Skills | Bundled reference files load on demand; scripts via `${CLAUDE_SKILL_DIR}`; `context: fork` runs a skill in a chosen agent. `model` and `effort` in a skill's frontmatter apply for the rest of the current turn only; the session's model resumes on the next prompt | [skills](https://code.claude.com/docs/en/skills), read 2026-11-13 |
 | Workflows | Plugins can ship `workflows/*.js`, but a run cannot take user input mid-way, so the organizer's Q&A loop stays in the main session | [workflows](https://code.claude.com/docs/en/workflows) |
 | Evals | `claude plugin eval .` runs `evals/<case>/prompt.md` with graders (`tool_used` to check a skill fired, `llm` rubrics), with and without the plugin, and reports the difference | [plugin evals](https://code.claude.com/docs/en/plugin-evals) |
 | Claude chat | Plugin zip upload loads skills and remote MCP connectors; agents, hooks and local MCP are ignored | [platform support](https://claude.com/docs/plugins/platform-support) |

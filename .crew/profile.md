@@ -11,7 +11,7 @@ issue_tracker:
   team: meliksahozceyhan/triple-a-crew
   confirm: batch
 organizer: proactive
-models: {}
+models: { critical: fable }
 ---
 - A marketplace (`.claude-plugin/marketplace.json`) listing two plugins in `plugins/*`: `file-issue` and
   `triple-a-crew`. They declare no `dependencies` on each other, on purpose (see README Troubleshooting).
@@ -46,3 +46,6 @@ models: {}
 - Before closing a work item or deleting its branch, confirm the PR is merged with
   `gh pr view <n> --repo meliksahozceyhan/triple-a-crew --json state`; the user may say "merged" before GitHub
   has it (review-24-fixes, follow-ups-25-28).
+- Trial since 2026-11-13: `models: { critical: fable }`, so reviewers and design research run on fable instead
+  of opus. On the next size L item, compare its review rounds with the opus runs (the recheck found something
+  new in eight items), and keep or drop the override in that item's retro.
