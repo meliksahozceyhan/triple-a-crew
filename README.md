@@ -42,7 +42,7 @@ or a protocol.
 
 ```
 ┌─ Tier 3: automation (Claude Code only) ─────────────────────────────┐
-│  hooks: open-items summary, employee protocol, status-file gate     │
+│  hooks: summary, protocol, status gate, bash guard, definition check│
 ├─ Tier 2: organization (Claude Code only) ───────────────────────────┤
 │  work (organizer) · 5 employees · handoff                           │
 ├─ Tier 1: portable skills (Claude Code, Claude chat*, Cursor**) ─────┤
@@ -245,8 +245,9 @@ outcome, changed files, evidence, assumptions, open questions, findings. It take
 from the clock (`date -u`). A researcher also writes its full report into its status file under `## Report`,
 after `## Findings`, before it finishes, so the research survives the session; its final message may be
 shorter and names the status file. Employees and the organizer run one plain command per Bash call, with no
-pipes, `;`, `&&` or `cd`, so your permission rules match each command. Employees never spawn agents, never
-file issues and never write under `.claude/`.
+pipes, `;`, `&&` or `cd`, so your permission rules match each command; a [hook](#hooks) refuses an employee's
+command that breaks the rule. Employees never spawn agents, never file issues and never write under
+`.claude/`.
 
 The researcher also answers design questions, staffed on opus, with options, trade-offs and a
 recommendation ready for `decisions.md`. There is no separate architect. There is no scribe either: issues go
@@ -254,17 +255,42 @@ through `file-issue`, handoffs through the `handoff` skill, and PR text stays wi
 
 ### Hooks
 
-The plugin ships three hooks that keep the organizer and its employees honest. They match only this plugin's
-agents (`triple-a-crew:*`, or a [team-mode](#team-mode-experimental-opt-in) teammate named `T<n>-<role>`),
-not built-in agents or other plugins' agents, and nothing breaks with hooks turned off. An unrelated
-teammate that happens to have such a name gets the reminder, but no stop gate: its brief has no
-`**Status file:**` line.
+The plugin ships five hooks that keep the organizer and its employees honest. The three that act on employees
+match only this plugin's agents (`triple-a-crew:*`, or a [team-mode](#team-mode-experimental-opt-in) teammate
+named `T<n>-<role>`), not built-in agents or other plugins' agents, and nothing breaks with hooks turned off.
+An unrelated teammate that happens to have such a name gets the reminder, but no stop gate and no command
+guard: its brief has no `**Status file:**` line.
 
 | Hook | Runs when | What it does |
 |---|---|---|
-| `SessionStart` | a session starts, resumes, clears or compacts | Lists the open work items from `.crew/work/index.md` at the project root (the git root, unless that is your home folder; otherwise the session's folder), at most 15. Prints nothing in projects without one |
+| `SessionStart` | a session starts, resumes, clears or compacts | Lists the open work items from `.crew/work/index.md` at the project root (the git root, unless that is your home folder; otherwise the session's folder), at most 15. Prints nothing in projects without one. At `startup` and `resume` it also records a checksum of each agent file, for the definition check |
 | `SubagentStart` | an employee starts | Adds a short reminder of the status-file protocol to the employee's context |
-| `SubagentStop` | an employee tries to finish | Sends it back while its status file is missing or not `done`, `blocked` or `failed`, or while a `done` or `failed` reply lacks a report section. It reads the status-file path from the first line of the brief that starts with `**Status file:**` (in the employee's transcript); if that path doesn't exist and doesn't end in `.md`, it stays silent. It sends the same employee back at most 3 times, and a finished employee answering a follow-up question needs no new report |
+| `SubagentStop` | an employee tries to finish | Sends it back while its status file is missing or not `done`, `blocked` or `failed`, while a `done` or `failed` file has an `updated` time that is missing, not in the form `2026-01-31T14:05:00Z`, or later than the clock (the message gives the `date -u` command; a time in the past is not checked), or while a `done` or `failed` reply lacks a report section. It reads the status-file path from the first line of the brief that starts with `**Status file:**` (in the employee's transcript); if that path doesn't exist and doesn't end in `.md`, it stays silent. It sends the same employee back at most 3 times, and a finished employee answering a follow-up question needs no new report |
+| `PreToolUse` on `Bash` | an employee runs a command | The command guard: refuses a command that chains with `&&`, `\|\|`, `;` or a lone `&`, pipes, redirects, spans lines, uses `cd`, starts with `time`, or is `echo $?` |
+| `PreToolUse` on `Agent` | the organizer starts an employee | The definition check: adds a one-time note to the organizer's context when that employee's agent file changed since the session loaded it. It never refuses the call |
+
+**The command guard** enforces the one-plain-command rule above. It acts only on crew employees, told apart by
+`agent_type`: an agent of type `triple-a-crew:<role>` always, and an agent named like a teammate
+(`T2-engineer`) only when its brief can be read and names a status file. The main session and other agents are
+never refused. Text inside quotes is not looked at, so a quoted `"$(a | b)"` passes, but an unquoted
+`echo $(git log | head -1)` is refused for its pipe. A lone `&` with a space on each side counts as a chain,
+and a command longer than 20,000 characters is allowed without being analysed. It lets a command through
+when the brief lists it as written, when it is the documented form `cd "<folder>" && <command>` and the brief
+cannot be read, and when it is a refused command sent again unchanged. It keeps each refusal as a file of its
+own, so the resend runs also when several commands were refused in one turn, when the hook runs overlap, or
+when other calls came in between, and the guard can never trap an employee. Without `jq` it still guards, and
+allows only what it cannot read reliably.
+
+**The definition check** compares each agent file with the checksum recorded at session start. When the
+organizer starts an employee whose file changed since, the note names the file and `/reload-plugins`: unless a
+reload has run since the change, the employee runs on the old definition. Claude Code fires no event on
+`/reload-plugins`, so the hook cannot see a reload and shows the note once per change. It covers agent files,
+not skills.
+
+**State.** The two new hooks keep small files in `${CLAUDE_PLUGIN_DATA}`: an empty marker per refused command,
+`triple-a-crew-bash-<agent_id>-<checksum>-<length>` (a resend removes it), and
+`triple-a-crew-defs-<session_id>` (the agent file checksums), next to the stop hook's own. Files older than
+7 days are deleted.
 
 The scripts are POSIX `sh` and use `jq` when it is installed. Test them without a model call:
 
@@ -448,11 +474,23 @@ Run `/reload-plugins` after editing a skill. Validate the manifests before commi
 claude plugin validate .
 ```
 
-Test the hooks without a model call:
+Test the hooks without a model call. The runner also runs `test-bash-guard.sh` and
+`test-definitions-check.sh`:
 
 ```bash
 sh plugins/triple-a-crew/scripts/test-hooks.sh
 ```
+
+Test the eval graders without a model call:
+
+```bash
+node scripts/test-graders.mjs
+```
+
+It runs every `regex` and `tool_used` grader that has saved rows in `scripts/grader-rows/` against rows it
+must pass and a near miss it must fail, and lists the graders that have no rows yet. After an eval run with
+`--keep-temp`, `node scripts/test-graders.mjs harvest <trace.jsonl> <plugin>/<case>` saves the passing rows;
+the near miss is made by hand (`scripts/grader-rows/README.md`).
 
 Every eval `fixture.sh` refuses to run unless its folder is empty, because it writes files and runs git
 there. To try one by hand, run `bash <path to fixture.sh>` inside a fresh `mktemp -d` folder. Fixtures are
@@ -544,7 +582,8 @@ ones that test the no-tracker path.
   - `handoff` writes and finalizes to `.crew/handoffs/`.
 
 **Latest results:** 2026-10-16, Claude Code 2.1.295, default model. The organizer rows were rerun on
-2026-10-19 (Claude Code 2.1.299) after the skill cut: one run per case, one arm, $1.69 for the suite.
+2026-10-19 (Claude Code 2.1.299) after the skill cut: one run per case, one arm, $1.69 for the five cases
+that were rerun.
 
 | Plugin | Case | With plugin | Without | Δ | Runs (with) |
 |---|---|---|---|---|---|
@@ -653,6 +692,86 @@ How to read it:
   the report. #24's miss happened at a scale (eleven tickets, reviews split by area) that a cheap fixture
   doesn't reproduce.
 
+### Which cases to rerun, and what they cost
+
+Run only the cases a change touches, one run each: `--runs 1 --ablation none --case <name>`, as above. Then
+record the cost the report prints, with the date, in the work item's `decisions.md` and in the second table.
+Some costs exist only for a whole suite: five organizer cases at one run each cost $1.69 on 2026-10-19
+(`.crew/work/cut-no-gain-skills/decisions.md`). Those cases show "unknown" below; the suite figure is not
+divided.
+
+| When this changes | Rerun these cases |
+|---|---|
+| `triple-a-crew` `skills/work/SKILL.md` (the organizer) | `starts-work-item-on-large-request`, `stays-out-of-small-request`, `stays-out-of-read-only-investigation`, `reports-status-of-open-item`, `plans-against-project-conventions`, `medium-fix-end-to-end`, `verify-staffs-verifier`, `test-engineer-keeps-failing-test`, `flags-unmet-ticket-criterion`, `escalates-effort-before-tier`, `plan-shows-flow-for-runtime-change`, `plan-has-no-flow-for-docs-change`, `plan-names-ledger-lesson` |
+| `skills/work/formats.md` (work item files) | `starts-work-item-on-large-request`, `reports-status-of-open-item`, `plans-against-project-conventions`, `medium-fix-end-to-end`, `escalates-effort-before-tier`, `plan-shows-flow-for-runtime-change`, `plan-has-no-flow-for-docs-change`, `plan-names-ledger-lesson` |
+| `skills/work/protocol.md` (briefs, status files) | `test-engineer-keeps-failing-test`, `medium-fix-end-to-end`, `verify-staffs-verifier`, `flags-unmet-ticket-criterion`, `escalates-effort-before-tier` |
+| `skills/work/staffing.md` (roles, tiers, effort ladder) | `verify-staffs-verifier`, `test-engineer-keeps-failing-test`, `medium-fix-end-to-end`, `flags-unmet-ticket-criterion`, `escalates-effort-before-tier` |
+| `skills/work/teams.md` (team mode) | None: no case sets `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`. |
+| `agents/engineer.md` | `escalates-effort-before-tier`, `medium-fix-end-to-end` |
+| `agents/reviewer.md` | `medium-fix-end-to-end`, `flags-unmet-ticket-criterion`, `escalates-effort-before-tier` |
+| `agents/test-engineer.md` | `test-engineer-keeps-failing-test` |
+| `agents/verifier.md` | `verify-staffs-verifier` |
+| `agents/researcher.md` | None: no case staffs the researcher. |
+| `hooks/hooks.json`, `scripts/session-start.sh` | `session-start-mentions-open-item` |
+| `scripts/subagent-start.sh`, `scripts/subagent-stop.sh` | None grade them. Run `sh plugins/triple-a-crew/scripts/test-hooks.sh`; the cases that staff employees load them. |
+| `skills/onboard/` (`SKILL.md`, `profile-format.md`) | `creates-profile-from-repo`, `refreshes-profile-keeps-user-values`, `no-fire-setup-question` |
+| `skills/test-harden/` | `test-harden-adds-edge-cases`, `test-engineer-keeps-failing-test` |
+| `skills/handoff/` | `writes-handoff-to-crew` |
+| `file-issue` `skills/file-issue/SKILL.md` | All nine `file-issue` cases |
+| `skills/file-issue/template.md`, `trackers/generic.md` | `implicit-out-of-scope-finding`, `implicit-finding-in-side-note`, `explicit-request-no-tracker` |
+| `skills/file-issue/trackers/linear.md` | `linear-confirms-before-creating`, `linear-duplicate-offers-comment`, `profile-confirm-never-creates` |
+| `skills/file-issue/trackers/` for GitHub, GitLab, Jira, Notion, ClickUp, Asana | None: no case connects those trackers. |
+
+| Case | Plugin | Last cost per run | When | Source |
+|---|---|---|---|---|
+| `starts-work-item-on-large-request` | `triple-a-crew` | $0.49 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
+| `stays-out-of-small-request` | `triple-a-crew` | unknown | | |
+| `stays-out-of-read-only-investigation` | `triple-a-crew` | $0.15 | 2026-10-27 | `.crew/work/publish-v1/decisions.md` |
+| `session-start-mentions-open-item` | `triple-a-crew` | unknown | | |
+| `reports-status-of-open-item` | `triple-a-crew` | unknown | | |
+| `plans-against-project-conventions` | `triple-a-crew` | $0.54 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
+| `plan-shows-flow-for-runtime-change` | `triple-a-crew` | $0.52 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
+| `plan-has-no-flow-for-docs-change` | `triple-a-crew` | $0.49 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
+| `plan-names-ledger-lesson` | `triple-a-crew` | $0.61 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
+| `medium-fix-end-to-end` | `triple-a-crew` | $1.46 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
+| `verify-staffs-verifier` | `triple-a-crew` | $1.05 | 2026-10-21 | `.crew/work/effort-ladder/decisions.md` |
+| `test-engineer-keeps-failing-test` | `triple-a-crew` | $1.19 | 2026-10-19 | `.crew/work/review-24-fixes/decisions.md` |
+| `flags-unmet-ticket-criterion` | `triple-a-crew` | $1.08 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
+| `escalates-effort-before-tier` | `triple-a-crew` | $0.88 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
+| `creates-profile-from-repo` | `triple-a-crew` | unknown | | |
+| `refreshes-profile-keeps-user-values` | `triple-a-crew` | unknown | | |
+| `no-fire-setup-question` | `triple-a-crew` | unknown | | |
+| `writes-handoff-to-crew` | `triple-a-crew` | $0.24 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
+| `test-harden-adds-edge-cases` | `triple-a-crew` | unknown | | |
+| `implicit-out-of-scope-finding` | `file-issue` | unknown | | |
+| `implicit-finding-in-side-note` | `file-issue` | unknown | | |
+| `explicit-request-no-tracker` | `file-issue` | unknown | | |
+| `no-fire-in-scope-fix` | `file-issue` | unknown | | |
+| `no-fire-tracker-question` | `file-issue` | unknown | | |
+| `no-fire-already-tracked` | `file-issue` | $0.06 | 2026-10-27 | `.crew/work/publish-v1/decisions.md` |
+| `linear-confirms-before-creating` | `file-issue` | $0.16 | 2026-10-27 | `.crew/work/publish-v1/decisions.md` |
+| `linear-duplicate-offers-comment` | `file-issue` | $0.14 | 2026-10-27 | `.crew/work/publish-v1/decisions.md` |
+| `profile-confirm-never-creates` | `file-issue` | $0.16 | 2026-10-27 | `.crew/work/publish-v1/decisions.md` |
+
+Cases run more than once show the latest figure above. The recorded range, from the same decisions files:
+
+- `starts-work-item-on-large-request`: $0.39 to $0.49 (`.crew/work/review-24-fixes/decisions.md`,
+  `eval-tooling` and `organizer-rules`).
+- `plan-shows-flow-for-runtime-change`: $0.51 to $0.60 (`.crew/work/organizer-rules/decisions.md`).
+- `medium-fix-end-to-end`: $0.80 to $1.46 (`.crew/work/issue-30-criteria-check/decisions.md`,
+  `follow-ups-25-28`, `retro-skill`, `review-24-fixes`, `effort-ladder` and `organizer-rules`).
+- `verify-staffs-verifier`: $0.67 to $1.43 (`.crew/work/employees-v2/findings.md`, `fix-open-issues`).
+- `test-engineer-keeps-failing-test`: $0.96 to $1.19 (`.crew/work/agent-teams-mode/decisions.md`,
+  `fix-open-issues`).
+- `flags-unmet-ticket-criterion`: $0.70 to $1.08 (`.crew/work/issue-30-criteria-check/decisions.md` and
+  `organizer-rules`; the $0.70 runs were on the text before #30).
+- `escalates-effort-before-tier`: $0.85 to $0.89 (`.crew/work/effort-ladder/decisions.md`; $0.89 was on the
+  text before the ladder).
+- `profile-confirm-never-creates`: $0.16 to $0.17 (`.crew/work/fix-open-issues/decisions.md`).
+
+The figures are per run on the model in use on the date shown, and they go stale as the plugin text and
+the model change, so the date matters.
+
 ## Repository layout
 
 ```
@@ -672,14 +791,15 @@ How to read it:
 │       ├── .claude-plugin/plugin.json
 │       ├── README.md
 │       ├── agents/                     researcher, engineer, test-engineer, verifier, reviewer
-│       ├── hooks/hooks.json            SessionStart, SubagentStart, SubagentStop
-│       ├── scripts/                    the hook scripts (POSIX sh) and test-hooks.sh
+│       ├── hooks/hooks.json            SessionStart, PreToolUse, SubagentStart, SubagentStop
+│       ├── scripts/                    the hook scripts (POSIX sh) and their tests (test-hooks.sh runs all)
 │       ├── skills/
 │       │   ├── work/                   the organizer: SKILL.md, formats, staffing, protocol
 │       │   ├── onboard/                SKILL.md, profile-format.md (the profile contract)
 │       │   ├── test-harden/            SKILL.md, examples.md
 │       │   └── handoff/                SKILL.md, handoff.mjs (facts from git and the transcript)
 │       └── evals/                      19 cases; each fixture.sh scaffolds a sample repo
+├── scripts/                            test-graders.mjs and grader-rows/: grader tests with no model call
 └── README.md
 ```
 
@@ -753,7 +873,12 @@ runs work in parallel only on disjoint file sets. Details are in [docs/DESIGN.md
   briefed on the README fix alone, until it also required another ticket's id. A regex on an Agent row also
   sees the call's `description`, so a keyword there passes a grader meant for the brief. Build the near miss
   from the real passing row with the wanted text removed, not by adding the text to some other row:
-  `failures-in-brief` first matched on the description alone.
+  `failures-in-brief` first matched on the description alone. A new `tool_used` grader, or a `regex` grader
+  on the trace or the final message, ships with both rows, in
+  `scripts/grader-rows/<plugin>/<case>/<grader>.pass.jsonl` and `.fail.jsonl`, and
+  `node scripts/test-graders.mjs` checks every grader that has them, with no model call. The first real pair
+  showed why: `edge-cases-in-brief` passed a brief with its edge-case table removed, because the request's
+  own words satisfied the pattern.
 
 ## Troubleshooting
 
@@ -762,7 +887,8 @@ runs work in parallel only on disjoint file sets. Details are in [docs/DESIGN.md
 | Plugin does not load; `plugin_errors` shows `dependency-unsatisfied` | A declared dependency is not installed. Remove `dependencies`, or install the dependency first |
 | Permission prompt on every write under `.claude/` | `.claude/` is protected in Claude Code. Write crew state to `.crew/` |
 | Eval stops after about a second with `partialReason: auth_failed` and $0 cost | The standalone `claude` CLI is not logged in (`claude auth status` shows `loggedIn: false`). A Claude desktop-app session authenticates through the app, not the CLI, so evals started from it fail. Run them from a terminal after `claude auth login` |
-| An employee keeps being told to fix its status file | The `SubagentStop` hook found the status file named in its brief, and the file is missing, not final, or the reply lacks a report section. The reason it gives says what to fix. The hook gives up after 3 tries for the same employee |
+| An employee keeps being told to fix its status file | The `SubagentStop` hook found the status file named in its brief, and the file is missing, not final, has an `updated` time that is missing, malformed or in the future, or the reply lacks a report section. The reason it gives says what to fix. The hook gives up after 3 tries for the same employee |
+| An employee reports that a command was refused | The command guard refuses a command that chains with `&&`, `\|\|`, `;` or a lone `&`, pipes, redirects, spans lines, uses `cd`, starts with `time`, or is `echo $?`. The employee should run one plain command per call, with absolute paths or the tool's folder flag. If it needs exactly that command, sending it again unchanged runs it, even after other calls in between. A command the brief lists as written is never refused |
 | No open-items summary at session start | The `SessionStart` hook reads `.crew/work/index.md` at the git root (or the session's folder outside a repository, or when the git root is your home folder) and prints only the `## Open` list. Check that the file exists and has items under `## Open`, then run `sh plugins/triple-a-crew/scripts/test-hooks.sh` |
 | Eval: `a plugins entry names the case directory ... or a directory covering them` | Do not list the plugin under test in a case's `plugins:`. Fixture plugins must sit inside the case directory |
 | Eval: `outside the containment root` | A case can only load plugins inside the plugin under test, so a sibling plugin cannot be loaded |

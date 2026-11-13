@@ -32,11 +32,35 @@ The organizer picks the model per task from three tiers (`mechanical`: haiku, `s
 
 ## Hooks
 
-`hooks/hooks.json` runs three POSIX `sh` scripts from `scripts/`: `SessionStart` lists open work items from
-`.crew/work/index.md`; `SubagentStart` reminds employees of the status-file protocol; `SubagentStop` sends an
-employee back while its status file or final report is incomplete. They match only `triple-a-crew:*` agents
-and agent-team teammates named `T<n>-<role>` (team mode, `skills/work/teams.md`). `SessionStart` prints
-nothing in projects without `.crew/`. Test them with `sh scripts/test-hooks.sh`.
+`hooks/hooks.json` runs five POSIX `sh` scripts from `scripts/`:
+
+- `SessionStart` lists open work items from `.crew/work/index.md`, and at `startup` and `resume` records a
+  checksum of each agent file.
+- `SubagentStart` reminds employees of the status-file protocol.
+- `SubagentStop` sends an employee back while its status file or final report is incomplete. For a `done` or
+  `failed` file that includes its `updated` time: missing, not in the form `2026-01-31T14:05:00Z`, or later
+  than the clock (the message gives the `date -u` command; a time in the past is not checked).
+- `PreToolUse` on `Bash` is the command guard. It refuses a crew employee's command that chains with `&&`,
+  `||`, `;` or a lone `&` (a space on each side), pipes, redirects, spans lines, uses `cd`, starts with
+  `time`, or is `echo $?`. Text inside quotes is not looked at: a quoted `"$(a | b)"` passes, an unquoted
+  `echo $(git log | head -1)` is refused for its pipe. A command over 20,000 characters is allowed unseen.
+  It allows a command the brief lists as written, the form `cd "<folder>" && <command>` when the brief cannot
+  be read, and a refused command sent again unchanged (each refusal is a marker file of its own, so this also
+  holds after other calls), so it never traps an employee. A crew employee is an agent of type
+  `triple-a-crew:<role>`, or one named like a teammate (`T2-engineer`) whose brief can be read and names a
+  status file; the main session and other agents are never refused.
+- `PreToolUse` on `Agent` is the definition check. When the organizer starts an employee whose agent file
+  changed since the session loaded it, it adds a one-time note to the organizer's context that names the file
+  and `/reload-plugins`: unless a reload has run since the change, the employee runs on the old definition.
+  It never refuses the call, and it covers agent files, not skills.
+
+The employee hooks match only `triple-a-crew:*` agents and agent-team teammates named `T<n>-<role>`
+(team mode, `skills/work/teams.md`). `SessionStart` prints nothing in projects without `.crew/`. The guard and
+the check keep small files in `${CLAUDE_PLUGIN_DATA}` (a marker per refused command,
+`triple-a-crew-bash-<agent_id>-<checksum>-<length>`, and `triple-a-crew-defs-<session_id>`), next to the
+stop hook's own, pruned after 7 days. Hooks are tier 3:
+nothing breaks with them turned off. Test them with `sh scripts/test-hooks.sh`, which also runs
+`test-bash-guard.sh` and `test-definitions-check.sh`.
 
 ## State
 

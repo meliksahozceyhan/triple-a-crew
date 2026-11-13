@@ -88,3 +88,8 @@
   approval message first retold them in prose, then showed them without the final flow's marks.
   `formats.md` now says to copy the diagrams exactly as they are in `plan.md`. A first attempt to run eight
   cases with a list in `--case` matched nothing and cost nothing. All runs used `--no-publish`.
+- **2026-11-13: merged `main` after #52 and #53.** Three text conflicts (two in `README.md`, one in
+  `docs/DESIGN.md`), each resolved by keeping both sides. #53 added the eval cost map to the README and the
+  rule to record each run there, so this item's runs are in it now. The three new cases, split per case from
+  the saved report: `plan-shows-flow-for-runtime-change` $0.52 (its three earlier runs: $0.51, $0.54, $0.60),
+  `plan-has-no-flow-for-docs-change` $0.49, `plan-names-ledger-lesson` $0.61.
