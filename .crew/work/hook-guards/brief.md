@@ -1,6 +1,6 @@
 # Hook guards for three rules employees keep breaking
 
-**Size:** L · **Tickets:** #32, and two issues to be filed (B: chained commands, C: stale definitions) · **Opened:** 2026-11-13
+**Size:** L · **Tickets:** #32, #51 (B: chained commands), #44 (C: stale definitions) · **Opened:** 2026-11-13
 
 ## What
 Enforce three written crew rules in the plugin's hooks:
@@ -35,8 +35,7 @@ and each came back. A repeat needs a mechanism (`SKILL.md` step 10).
       describe the new behavior, with the probe's date.
 - [ ] D.3 (derived) The eval cases that load the hooks still score 1.00, one run each.
 
-The B and C lines are this brief's own until the issues are filed; then the issues' criteria replace them as
-written.
+The B lines are the criteria of #51 and the C lines those of #44, as written (filed 2026-11-13).
 
 ## Constraints
 - Hooks are tier 3: nothing breaks when they are off, and a hook never traps an employee. The stop hook keeps
