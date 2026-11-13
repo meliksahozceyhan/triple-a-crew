@@ -50,10 +50,8 @@ expect_warn() {
   if [ "$rc" != 0 ]; then bad "$1" "$2" "exit $rc"
   elif ! valid_json "$out"; then bad "$1" "$2" "invalid JSON: $out"
   else
-    case "$out" in
-      '{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"'*"agents/$3.md"*"/reload-plugins"*) pass "$1" "$2" ;;
-      *) bad "$1" "$2" "not the warning for $3: $out" ;;
-    esac
+    want="{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"Triple-A-Crew: agents/$3.md changed after this session loaded it. Unless /reload-plugins has run since that change, the employee about to start runs on the old definition: ask the user to run /reload-plugins, then staff again. This note is shown once per change.\"}}"
+    if [ "$out" = "$want" ]; then pass "$1" "$2"; else bad "$1" "$2" "not the warning for $3: $out"; fi
   fi
 }
 
@@ -110,6 +108,20 @@ for m in $modes; do
   start_in "$s" resume; run $m session-start.sh "$tmp/in.json"
   run $m definitions-check.sh "$tmp/in.json"
   expect_silent "check: resume stamps the current files" $m
+
+  # two roles changed, checked one after the other: each is reported once
+  printf 'engineer v5b\n' >"$root/agents/engineer.md"
+  printf 'reviewer v2\n' >"$root/agents/reviewer.md"
+  agent_in "$s" triple-a-crew:engineer; run $m definitions-check.sh "$tmp/in.json"
+  expect_warn "check: two changed roles, first reported" $m engineer
+  agent_in "$s" triple-a-crew:reviewer; run $m definitions-check.sh "$tmp/in.json"
+  expect_warn "check: two changed roles, second reported" $m reviewer
+  agent_in "$s" triple-a-crew:engineer; run $m definitions-check.sh "$tmp/in.json"
+  expect_silent "check: two changed roles, first not repeated" $m
+  agent_in "$s" triple-a-crew:reviewer; run $m definitions-check.sh "$tmp/in.json"
+  expect_silent "check: two changed roles, second not repeated" $m
+  lines=$(wc -l <"$state" | tr -d ' ')
+  [ "$lines" = 2 ] && pass "check: state keeps one line per role" $m || bad "check: state lines" $m "lines=$lines"
 
   # silent cases
   printf 'engineer v6\n' >"$root/agents/engineer.md"

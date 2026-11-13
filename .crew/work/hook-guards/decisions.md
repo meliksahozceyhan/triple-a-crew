@@ -30,3 +30,21 @@
   files are read on demand. The brief's C.1 and the issue draft say "agent file".
 - **2026-11-13 Each new hook has its own test file; the organizer wires `hooks.json` and the runner.** That
   makes T3, T4 and T5 disjoint, so they run in parallel.
+- **2026-11-13 T9 review: changes requested, one must-fix.** (M1) The resend valve remembered one refused
+  command per agent and forgot it on any allowed call, so two refused commands sent together could never both
+  run, although the message said a resend works. The guard now keeps each refused command on its own line,
+  the newest 20, and an allowed call leaves them alone. Should-fix, all fixed: (S1) an agent that is only
+  named like a teammate is guarded only when its brief can be read and names a status file; (S2) team mode
+  was not probed for PreToolUse, and DESIGN says so; (S3) the definition note says "unless /reload-plugins
+  has run since"; (S4) one more probe run showed that the note reaches the organizer in the exact form the
+  script prints, with no permission decision, and the call still runs; (S5) three statements in the docs did
+  not match the scripts. Nits fixed: a lone `&` counts as a chain; a test ties the guard's role list to
+  `hooks.json`; the stamp update touches one role's line; a tab in a status value no longer breaks the stop
+  hook's output; the missing-`updated` test asserts the command text. A command over 20,000 characters is
+  allowed without analysis, which answers the reviewer's question about slow awk. Each script's own engineer
+  made its fixes (rung 1 of the ladder: sent back once).
+- **2026-11-13 Not changed after T9:** quoted chains pass by design (N2), and three plain commands are refused
+  once and run on the resend (N3: a comment line above a command, a heredoc with an odd number of quotes, a
+  brief that lists a pipe inside a Markdown table). The guard is a reminder with a valve, not a wall.
+- **2026-11-13 The definition hook prints no permission decision, on purpose.** A decision of `allow` would
+  approve every Agent call in the user's session; the probe showed the note is delivered without one.

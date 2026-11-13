@@ -257,22 +257,27 @@ by a spike on Claude Code 2.1.299 (work item `crew-hooks`), and those of the `Pr
   so built-in agents and other plugins' agents are left alone, and roles added later under the plugin's
   prefix are covered. The second half exists for team mode: for a teammate, `agent_type` is its name, so the
   organizer names teammates `T<n>-<role>`. A new role must be added to that list (`test-hooks.sh` fails until
-  it is). An unrelated teammate with such a name gets the reminder but no gate, since its brief has no
-  `**Status file:**` line. SubagentStart fires again each time an in-process teammate handles a new message,
-  so a teammate sees the reminder more than once.
+  it is). An unrelated teammate with such a name gets the reminder but no gate and no command guard, since its
+  brief has no `**Status file:**` line. SubagentStart fires again each time an in-process teammate handles a
+  new message, so a teammate sees the reminder more than once.
 - The **command guard** (`PreToolUse` on `Bash`) enforces the shell rule below. A `PreToolUse` input carries
-  `agent_id` and `agent_type` only for a subagent's call, so the guard acts on crew employees alone (the same
-  `agent_type` matcher as above): the main session and other agents are never refused, because a public plugin
-  must not refuse commands in the user's own session. It refuses a command that chains with `&&`, `||` or `;`,
-  pipes, redirects, spans lines, uses `cd`, starts with `time`, or is `echo $?`; text inside quotes does not
-  count, and `$(...)` and backticks are not looked at, since the rule does not name them. Exit code 2 with a
-  message on stderr refuses the call, and the employee carries on. Three exceptions keep it from trapping
-  anyone. A command the brief lists, as written, runs: the guard reads the brief from line 1 of the
+  `agent_id` and `agent_type` only for a subagent's call, so the guard acts on crew employees alone: an agent
+  of type `triple-a-crew:<role>` always, and an agent named like a teammate (`T2-engineer`) only when its
+  brief can be read and has a `**Status file:**` line, because a user's own agent team may use such names. The
+  main session and other agents are never refused, because a public plugin must not refuse commands in the
+  user's own session. It refuses a command that chains with `&&`, `||`, `;` or a lone `&` (a space on each
+  side), pipes, redirects, spans lines, uses `cd`, starts with `time`, or is `echo $?`. Text inside quotes is
+  not looked at, so a quoted `"$(a | b)"` passes, but an unquoted `echo $(git log | head -1)` is refused for
+  its pipe: the rule does not name command substitution, and the guard has no special case for it. A command
+  longer than 20,000 characters is allowed without being analysed (a pasted file or heredoc body). Exit code 2
+  with a message on stderr refuses the call, and the employee carries on. Three exceptions keep it from
+  trapping anyone. A command the brief lists, as written, runs: the guard reads the brief from line 1 of the
   employee's own transcript. When the brief cannot be read, the documented form `cd "<folder>" && <command>`
-  runs. And the same command sent again unchanged straight after a refusal runs, which the guard knows from
-  the checksum of the last refused command it keeps for each `agent_id`; one repeat is enough to make the rule
-  seen, so there is no cap of three as in the stop hook. Without `jq`, or when the input is unclear, it
-  allows.
+  runs. And a refused command sent again unchanged runs: the guard keeps the checksum of each refused command
+  per `agent_id`, the 20 newest, and a resend drops only its own line, so it works also when several commands
+  were refused in one turn or other calls came in between. One repeat is enough to make the rule seen, so
+  there is no cap of three as in the stop hook. Without `jq` it still guards, and allows only what it cannot
+  read reliably.
 - The **definition check** (`PreToolUse` on `Agent`) warns the organizer when an employee's agent file changed
   after the session loaded it, because the employee would run on the old definition. The tool that starts a
   subagent is `Agent`, with the agent type in `tool_input.subagent_type`, and its hook fires before
@@ -280,11 +285,14 @@ by a spike on Claude Code 2.1.299 (work item `crew-hooks`), and those of the `Pr
   reaches the main session, so the check adds the note that way and never refuses the call: no hook event
   fires on `/reload-plugins`, so a refusal could not end after a reload. It compares the agent file's
   checksum, not its modification time (a checkout touches times), with the one `SessionStart` recorded for
-  the `session_id`, which is the same in `SessionStart` and `SubagentStart`. For the same reason it cannot
-  see the reload, it shows the note once per change, by recording the new checksum after the note. It covers
-  agent files only: the organizer's reference files are read on demand.
-- The guard and the check keep small files in `${CLAUDE_PLUGIN_DATA}`: `triple-a-crew-bash-<agent_id>` and
-  `triple-a-crew-defs-<session_id>`, next to the stop hook's counters. Files older than 7 days are deleted.
+  the `session_id` of the `PreToolUse` input; the same `session_id` appears in `SessionStart`, in
+  `SubagentStart` and in the `PreToolUse` inputs of the session. The hook cannot see a reload, so the note
+  says that the employee runs on the old definition unless `/reload-plugins` has run since the change, and it
+  is shown once per change: the hook records the new checksum, role by role, before it prints the note. It
+  covers agent files only: the organizer's reference files are read on demand.
+- The guard and the check keep small files in `${CLAUDE_PLUGIN_DATA}`: `triple-a-crew-bash-<agent_id>` (up to
+  20 checksums) and `triple-a-crew-defs-<session_id>`, next to the stop hook's counters. Files older than 7
+  days are deleted.
 
 **Two channel modes.**
 
@@ -500,7 +508,7 @@ Checked against the Claude Code docs on 2026-10-16.
 | Validation | `claude plugin validate ./plugins/triple-a-crew` | [manifest reference](https://code.claude.com/docs/en/plugins/manifest-reference) |
 | Agents | `model` (aliases incl. `fable`), `effort`, `tools`, `isolation: worktree`, `maxTurns`, `background`, `skills`. Plugin agents ignore `permissionMode`, `hooks`, `mcpServers`, `initialPrompt`. A plugin agent's `skills: [x]` preloads the plugin's own skill only by its bare name; `plugin:x` loads nothing, silently, and eval traces never show the injected text | [subagents](https://code.claude.com/docs/en/sub-agents); probe 2026-10-19 (`employees-v2`) |
 | Nesting | Subagents may spawn subagents up to 3 levels deep by default | [subagents](https://code.claude.com/docs/en/sub-agents) |
-| Hooks | `SessionStart` and `SubagentStart` can add context; `SubagentStop` and `Stop` can block. Scripts use `${CLAUDE_PLUGIN_ROOT}`; persistent plugin data goes in `${CLAUDE_PLUGIN_DATA}`. Plugin hooks live in `hooks/hooks.json` under a top-level `hooks` key and run with `sh -c`. Subagent matchers see plugin agents as `<plugin>:<agent>`. Subagent hook input has no prompt; SubagentStop gets `agent_transcript_path` (line 1 is the brief), `last_assistant_message` and `stop_hook_active`. In the spike a subagent ended after 9 consecutive blocks (the hook keeps its own cap of 3). Eval runs load plugin hooks. For an agent-team teammate both subagent hooks fire with the teammate's name as `agent_type`; line 1 of its transcript is the brief inside a `<teammate-message>` tag. A `PreToolUse` input carries `agent_id` and `agent_type` only for a subagent's call, so a hook can tell it from the main session's. Exit code 2 with stderr, and JSON `permissionDecision: deny`, both refuse the call, and the subagent gets the message and carries on. The tool that starts a subagent is `Agent`, with the agent type in `tool_input.subagent_type`, and its `PreToolUse` fires before `SubagentStart`; `additionalContext` from that hook reaches the main session. `session_id` is the same in `SessionStart` and `SubagentStart`. A subagent's transcript is at `transcript_path` without `.jsonl` plus `/subagents/agent-<agent_id>.jsonl`, and its first line is the brief. No hook event fires on `/reload-plugins` | [hooks](https://code.claude.com/docs/en/hooks); spike 2026-10-19 (`crew-hooks` T2); live test 2026-10-19 (`agent-teams-mode` T3); probe 2026-11-13 (`hook-guards` T2); the `/reload-plugins` fact from docs, read 2026-11-13 |
+| Hooks | `SessionStart` and `SubagentStart` can add context; `SubagentStop` and `Stop` can block. Scripts use `${CLAUDE_PLUGIN_ROOT}`; persistent plugin data goes in `${CLAUDE_PLUGIN_DATA}`. Plugin hooks live in `hooks/hooks.json` under a top-level `hooks` key and run with `sh -c`. Subagent matchers see plugin agents as `<plugin>:<agent>`. Subagent hook input has no prompt; SubagentStop gets `agent_transcript_path` (line 1 is the brief), `last_assistant_message` and `stop_hook_active`. In the spike a subagent ended after 9 consecutive blocks (the hook keeps its own cap of 3). Eval runs load plugin hooks. For an agent-team teammate both subagent hooks fire with the teammate's name as `agent_type`; line 1 of its transcript is the brief inside a `<teammate-message>` tag. A `PreToolUse` input carries `agent_id` and `agent_type` only for a subagent's call, so a hook can tell it from the main session's. Exit code 2 with stderr, and JSON `permissionDecision: deny`, both refuse the call, and the subagent gets the message and carries on. The tool that starts a subagent is `Agent`, with the agent type in `tool_input.subagent_type`, and its `PreToolUse` fires before `SubagentStart`; `additionalContext` from that hook reaches the main session. A `PreToolUse` hook on `Agent` that prints only `hookSpecificOutput.additionalContext`, with no permission decision, still reaches the main session, and the call runs as it would without the hook (probe 2026-11-13, `hook-guards` T2, question 10). The same `session_id` appears in `SessionStart`, in `SubagentStart` and in the `PreToolUse` inputs of the session. A subagent's transcript is at `transcript_path` without `.jsonl` plus `/subagents/agent-<agent_id>.jsonl`, and its first line is the brief. No hook event fires on `/reload-plugins`. Not probed: a teammate's `PreToolUse` input in agent-teams mode, and where its transcript is; until it is, a teammate is guarded only when its brief can be read | [hooks](https://code.claude.com/docs/en/hooks); spike 2026-10-19 (`crew-hooks` T2); live test 2026-10-19 (`agent-teams-mode` T3); probe 2026-11-13 (`hook-guards` T2); the `/reload-plugins` fact from docs, read 2026-11-13 |
 | Skills | Bundled reference files load on demand; scripts via `${CLAUDE_SKILL_DIR}`; `context: fork` runs a skill in a chosen agent. `model` and `effort` in a skill's frontmatter apply for the rest of the current turn only; the session's model resumes on the next prompt | [skills](https://code.claude.com/docs/en/skills), read 2026-11-13 |
 | Workflows | Plugins can ship `workflows/*.js`, but a run cannot take user input mid-way, so the organizer's Q&A loop stays in the main session | [workflows](https://code.claude.com/docs/en/workflows) |
 | Evals | `claude plugin eval .` runs `evals/<case>/prompt.md` with graders (`tool_used` to check a skill fired, `llm` rubrics), with and without the plugin, and reports the difference | [plugin evals](https://code.claude.com/docs/en/plugin-evals) |

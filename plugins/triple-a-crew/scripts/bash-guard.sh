@@ -70,8 +70,17 @@ agent_type=$(top_field agent_type) || exit 0
 case "$agent_type" in
   '') exit 0 ;;
 esac
-printf '%s\n' "$agent_type" |
-  grep -Eq '^(triple-a-crew:[a-z-]+|[Tt][0-9]+[a-z]?-(researcher|engineer|test-engineer|verifier|reviewer))$' 2>/dev/null || exit 0
+# A triple-a-crew:<role> type is a crew employee. A T<n>-<role> name (agent-team teammate) is only a crew
+# employee when its brief says so, checked below; the role list is the one in hooks/hooks.json.
+teammate=0
+if printf '%s\n' "$agent_type" | grep -Eq '^triple-a-crew:[a-z-]+$' 2>/dev/null; then
+  :
+elif printf '%s\n' "$agent_type" |
+  grep -Eq '^[Tt][0-9]+[a-z]?-(researcher|engineer|test-engineer|verifier|reviewer)$' 2>/dev/null; then
+  teammate=1
+else
+  exit 0
+fi
 
 if [ "$use_jq" = 1 ]; then
   cmd=$(printf '%s' "$input" | jq -r '.tool_input.command | select(type == "string")' 2>/dev/null) || exit 0
@@ -79,6 +88,9 @@ else
   cmd=$(printf '%s' "$input" | awk -v keys=command "$jscan" 2>/dev/null) || exit 0
 fi
 [ -n "$cmd" ] || exit 0
+# The analysis walks the command one character at a time; a command this long is a pasted file or a
+# heredoc body, not a chain to catch, so it is allowed unseen.
+[ "${#cmd}" -le 20000 ] || exit 0
 
 agent_id=$(top_field agent_id) || agent_id=
 agent_id=$(printf '%s' "$agent_id" | tr -c 'A-Za-z0-9_-' '_')
@@ -87,10 +99,37 @@ agent_id=$(printf '%s' "$agent_id" | tr -c 'A-Za-z0-9_-' '_')
 state_dir=${CLAUDE_PLUGIN_DATA:-${TMPDIR:-/tmp}}
 state="$state_dir/triple-a-crew-bash-$agent_id"
 
-allow() {
-  rm -f "$state" 2>/dev/null
-  exit 0
+# The brief is line 1 of the subagent's own transcript.
+transcript_path=$(top_field transcript_path) || transcript_path=
+brief=
+[ -z "$transcript_path" ] || brief="${transcript_path%.jsonl}/subagents/agent-$agent_id.jsonl"
+
+brief_text() {
+  [ -n "$brief" ] && [ -f "$brief" ] || return 1
+  first=$(head -n 1 "$brief" 2>/dev/null) || return 1
+  [ -n "$first" ] || return 1
+  if [ "$use_jq" = 1 ]; then
+    printf '%s' "$first" |
+      jq -r '.message.content | if type == "string" then . else (map(.text? // "") | join("\n")) end' 2>/dev/null
+  else
+    printf '%s' "$first" | awk -v keys=content,text -v all=1 "$jscan" 2>/dev/null
+  fi
 }
+
+text=
+text_done=0
+load_text() {
+  [ "$text_done" = 1 ] && return 0
+  text_done=1
+  text=$(brief_text) || text=
+}
+
+# A teammate-style name proves nothing by itself (a user's own agent team may use such names): guard it
+# only when its brief can be read and has the **Status file:** line every crew brief carries.
+if [ "$teammate" = 1 ]; then
+  load_text
+  printf '%s\n' "$text" | grep -Eq '^[[:space:]]*\*\*Status file:\*\*' 2>/dev/null || exit 0
+fi
 
 # Walks the command once. Text inside single quotes, double quotes (backslash escapes), after an escaping
 # backslash and in comments is ignored. Line 1 lists the constructs found; line 2 is "doc" when the only
@@ -142,6 +181,7 @@ END {
     else if (c == "#" && wstart) { while (i < n && substr(s, i + 1, 1) != "\n") i++ }
     else if (c == "&") {
       if (nx == "&") { flag("&&"); nand++; if (nand == 1) andpos = i; i++ }
+      else if ((i == 1 || substr(s, i - 1, 1) ~ /[ \t]/) && nx ~ /[ \t]/) flag("a lone &")
       sep()
     }
     else if (c == "|") {
@@ -177,40 +217,27 @@ END {
 analysis=$(printf '%s' "$cmd" | awk "$analyzer" 2>/dev/null) || exit 0
 found=$(printf '%s\n' "$analysis" | sed -n 1p)
 doc=$(printf '%s\n' "$analysis" | sed -n 2p)
-[ -n "$found" ] || allow
+[ -n "$found" ] || exit 0
 
-# The resend valve, so this hook never traps an employee: the last refused command of each agent is kept
-# by checksum, and the same command sent again straight after the refusal runs (and clears the state).
+# The resend valve, so this hook never traps an employee: every refused command of an agent is kept by
+# checksum (one line each, the newest 20), and the same command sent again runs and drops only its own
+# line. Allowed calls leave the file alone, so other calls in between do not erase the memory.
 sum=$(printf '%s' "$cmd" | cksum 2>/dev/null) || exit 0
-if [ -f "$state" ] && [ "$(cat "$state" 2>/dev/null)" = "$sum" ]; then
-  allow
+if [ -f "$state" ] && grep -Fxq -- "$sum" "$state" 2>/dev/null; then
+  grep -Fxv -- "$sum" "$state" >"$state.new" 2>/dev/null
+  mv -f "$state.new" "$state" 2>/dev/null
+  exit 0
 fi
 
-# Exception: the brief lists this exact command (line 1 of the subagent's own transcript holds the brief).
-transcript_path=$(top_field transcript_path) || transcript_path=
-brief=
-[ -z "$transcript_path" ] || brief="${transcript_path%.jsonl}/subagents/agent-$agent_id.jsonl"
-
-brief_text() {
-  [ -n "$brief" ] && [ -f "$brief" ] || return 1
-  first=$(head -n 1 "$brief" 2>/dev/null) || return 1
-  [ -n "$first" ] || return 1
-  if [ "$use_jq" = 1 ]; then
-    printf '%s' "$first" |
-      jq -r '.message.content | if type == "string" then . else (map(.text? // "") | join("\n")) end' 2>/dev/null
-  else
-    printf '%s' "$first" | awk -v keys=content,text -v all=1 "$jscan" 2>/dev/null
-  fi
-}
-
+# Exception: the brief lists this exact command.
+load_text
 brief_readable=0
-text=$(brief_text) || text=
 if [ -n "$text" ]; then
   brief_readable=1
   printf '%s' "$text" |
     CMD="$cmd" awk 'BEGIN { RS = "\001"; c = ENVIRON["CMD"] } { s = $0 } END { exit (c != "" && index(s, c) > 0) ? 0 : 1 }' 2>/dev/null
+  # 0: the brief lists it; 1: it does not; anything else is an internal error
   case $? in
-    0) allow ;;
     1) ;;
     *) exit 0 ;;
   esac
@@ -218,18 +245,19 @@ fi
 
 # Without a readable brief only the documented form is allowed.
 if [ "$brief_readable" = 0 ] && [ "$doc" = doc ]; then
-  allow
+  exit 0
 fi
 
 # Remember the refusal. If that is impossible the resend valve cannot work, so allow instead.
 mkdir -p "$state_dir" 2>/dev/null
-(printf '%s\n' "$sum" >"$state") 2>/dev/null || exit 0
+( { [ ! -f "$state" ] || cat "$state"; printf '%s\n' "$sum"; } | tail -n 20 >"$state.new" ) 2>/dev/null || exit 0
+mv -f "$state.new" "$state" 2>/dev/null || exit 0
 # State older than a week belongs to finished work.
 find "$state_dir" -maxdepth 1 -type f -name 'triple-a-crew-*' -mtime +7 -exec rm -f {} + 2>/dev/null || true
 
 {
   printf '%s\n' "Bash call refused by the Triple-A-Crew bash guard: the command contains $found."
-  printf '%s\n' "Rule: one plain command per Bash call (no &&, ||, ;, pipes, redirections, line breaks between commands, cd, a leading time or echo \$?), so the user's permission rules match the command and the exit code is the command's own. Use absolute paths, or the tool's own folder flag such as git -C <dir>. A command your brief lists is allowed exactly as written."
+  printf '%s\n' "Rule: one plain command per Bash call (no &&, ||, ;, a lone &, pipes, redirections, line breaks between commands, cd, a leading time or echo \$?), so the user's permission rules match the command and the exit code is the command's own. Use absolute paths, or the tool's own folder flag such as git -C <dir>. A command your brief lists is allowed exactly as written."
   printf '%s\n' "If you need exactly this command, send it once more unchanged and it will run."
 } >&2
 exit 2

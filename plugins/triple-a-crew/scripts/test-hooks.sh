@@ -359,10 +359,13 @@ for m in $modes; do
   expect_silent "subagent-stop: updated from the clock is silent" $m
   printf -- '---\ntask: T1\nstate: done\n---\n## Progress\nupdated: 2026-10-19T10:00:00Z\n' >"$sf"; run $m subagent-stop.sh "$tmp/in.json"
   expect_block "subagent-stop: no updated line blocks (body line does not count)" $m "no updated:"
+  expect_block "subagent-stop: no updated line names the date command" $m "$dcmd"
   printf -- '---\ntask: T1\nstate: done\nupdated:\n---\n' >"$sf"; run $m subagent-stop.sh "$tmp/in.json"
   expect_block "subagent-stop: empty updated blocks" $m "no updated:"
   statusfile "$sf" "state: done" "2026-10-19"; run $m subagent-stop.sh "$tmp/in.json"
   expect_block "subagent-stop: date alone blocks" $m "not a full UTC time"
+  statusfile "$sf" "state: done" "2026-10-19T10:00:00Z$(printf '\t')x"; run $m subagent-stop.sh "$tmp/in.json"
+  expect_block "subagent-stop: tab in updated blocks with valid JSON" $m "not a full UTC time"
   statusfile "$sf" "state: done" "2026-10-19T10:00:00+03:00"; run $m subagent-stop.sh "$tmp/in.json"
   expect_block "subagent-stop: local offset blocks" $m "not a full UTC time"
   statusfile "$sf" "state: done" "2026-10-19T10:00:00Z"; run $m subagent-stop.sh "$tmp/in.json"

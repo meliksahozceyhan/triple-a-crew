@@ -20,7 +20,7 @@ bad() { echo "FAIL $1 [$2 $shell]: $3"; fail=1; }
 
 # json_str <text>: the text as the inside of a JSON string (newlines become \n)
 json_str() {
-  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g' | awk 'NR > 1 { printf "\\n" } { printf "%s", $0 }'
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g' | awk 'NR > 1 { printf "\\n" } { printf "%s", $0 }'
 }
 
 transcript_path="$tmp/proj/session.jsonl"
@@ -83,6 +83,16 @@ check() {
 }
 
 emp=triple-a-crew:engineer
+
+# pad <n>: n letters x
+pad() { awk -v n="$1" 'BEGIN { for (i = 0; i < n; i++) printf "x" }'; }
+
+# The roles of the SubagentStart matcher in hooks.json, so a new role cannot drift from the guard's list.
+hooks_json="$here/../hooks/hooks.json"
+roles=$(awk -v ev='"SubagentStart"' '
+  index($0, ev) { on = 1 }
+  on && /"matcher"/ { sub(/^[^:]*: *"/, ""); sub(/",? *$/, ""); print; exit }
+' "$hooks_json" | sed -n 's/.*\[Tt\]\[0-9\]+\[a-z\]?-(\([^)]*\)).*/\1/p' | tr '|' ' ')
 for m in $modes; do
   # each mode keeps its own state, so the same agent ids can be reused
   CLAUDE_PLUGIN_DATA="$tmp/data-$m"
@@ -95,9 +105,30 @@ for m in $modes; do
   check $m Triple-A-Crew:engineer 'a && b' o3 silent "agent type is case-sensitive"
   check $m T2-nosuchrole 'a && b' o4 silent "teammate with an unknown role may chain"
   check $m $emp 'git -C /x status' p1 silent "employee plain command"
-  check $m T2-engineer 'echo a && echo b' tm1 '&&' "teammate T2-engineer is guarded"
-  check $m t10-test-engineer 'a | b' tm2 'pipe' "teammate t10-test-engineer is guarded"
-  check $m T3b-verifier 'a ; b' tm3 ';' "teammate T3b-verifier is guarded"
+  # a T<n>-<role> name is guarded only when its brief is readable and has the **Status file:** line
+  crew_brief='# T2: x
+
+**Work item:** w
+**Status file:** /abs/.crew/work/w/team/T2-engineer.md
+
+## Goal
+x'
+  brief tm1 "$crew_brief"; brief tm2 "$crew_brief"; brief tm3 "$crew_brief"
+  check $m T2-engineer 'echo a && echo b' tm1 '&&' "teammate T2-engineer with a crew brief is guarded"
+  check $m t10-test-engineer 'a | b' tm2 'pipe' "teammate t10-test-engineer with a crew brief is guarded"
+  check $m T3b-verifier 'a ; b' tm3 ';' "teammate T3b-verifier with a crew brief is guarded"
+  check $m T2-engineer 'echo a && echo b' tm4 silent "teammate name with an unreadable brief may chain"
+  brief tm5 '# Review the pull request
+Run a | b yourself.'
+  check $m T2-reviewer 'echo a && echo b' tm5 silent "teammate name with a brief without a Status file line may chain"
+  brief tm6 'Explain this line: **Status file:** /abs/x.md in the protocol'
+  check $m T2-engineer 'echo a && echo b' tm6 silent "Status file marker mid-sentence does not make a crew brief"
+  brief tm7 '<teammate-message teammate_id="lead">
+# T2: x
+**Status file:** /abs/x.md
+</teammate-message>'
+  check $m T2-engineer 'echo a && echo b' tm7 '&&' "teammate brief wrapped in a teammate message is guarded"
+  check $m triple-a-crew:engineer 'echo a && echo b' tm8 '&&' "triple-a-crew type needs no Status file line"
 
   # refused constructs
   check $m $emp 'echo a && echo b' r1 '&&' "refuses &&"
@@ -123,6 +154,13 @@ pwd' r9 'line break' "refuses a two-line command"
   check $m $emp 'cd "web" && pnpm test | tail' r10 '|' "refuses a pipe added to the documented form"
   check $m $emp 'cd "web" && cd "x" && ls' r11 'cd as the command word' "refuses two cd commands"
   check $m $emp 'ls "a b" && pwd' r12 '&&' "refuses && after a quoted word"
+  check $m $emp 'a & b' r13 'lone &' "refuses a lone & with spaces around it"
+  check $m $emp 'a &	b' r13b 'lone &' "refuses a lone & with a tab after it"
+  check $m $emp 'curl https://x/?a=1&b=2' r14 silent "an & with no spaces (a URL) is text"
+  check $m $emp 'a &>f' r15 'redirection' "&> is a redirection, not a lone &"
+  check $m $emp 'a 2>&1' r15b 'redirection (>&)' "2>&1 is a redirection, not a lone &"
+  check $m $emp 'a &' r16 silent "a trailing & with nothing after it is not a separator"
+  check $m $emp 'a &b' r17 silent "an & with no space after it is left alone"
 
   # text that is not syntax
   check $m $emp 'grep "a && b" file' q1 silent "double-quoted && is text"
@@ -161,6 +199,7 @@ pwd'
   check $m $emp 'ls
 pwd' b3 silent "brief lists a multi-line command"
   brief b4 '<teammate-message teammate_id="lead">
+**Status file:** /abs/x.md
 Run: a | b
 </teammate-message>'
   check $m T2-engineer 'a | b' b4 silent "brief wrapped in a teammate message"
@@ -185,14 +224,30 @@ Run: a | b
   check $m $emp 'echo a && echo b' v1 silent "valve: the same command sent again runs"
   check $m $emp 'echo a && echo b' v1 '&&' "valve: a third send is refused again"
   check $m $emp 'echo a && echo b' v1 silent "valve: and the fourth runs again"
-  check $m $emp 'x | y' v2 'pipe' "valve: other agent starts clean"
-  check $m $emp 'x | z' v2 'pipe' "valve: a different command is refused"
-  check $m $emp 'x | y' v2 'pipe' "valve: the earlier command does not run after a different refusal"
-  check $m $emp 'x | y' v2 silent "valve: only the last refusal is remembered"
-  check $m $emp 'x | y' v3 'pipe' "valve: refused"
+  check $m $emp 'x | y' v2 'pipe' "valve: A refused"
+  check $m $emp 'x | z' v2 'pipe' "valve: B refused in the same turn"
+  check $m $emp 'x | y' v2 silent "valve: A resent together with B runs"
+  check $m $emp 'x | z' v2 silent "valve: B resent together with A runs"
+  check $m $emp 'x | y' v2 'pipe' "valve: A resent a second time is refused again"
+  check $m $emp 'x | z' v2 'pipe' "valve: B resent a second time is refused again"
+  check $m $emp 'x | y' v3 'pipe' "valve: A refused before a plain command"
   check $m $emp 'ls' v3 silent "valve: a plain command in between"
-  check $m $emp 'x | y' v3 'pipe' "valve: a plain command in between clears the remembered refusal"
+  check $m $emp 'date -u' v3 silent "valve: another plain command in between"
+  check $m $emp 'x | y' v3 silent "valve: A runs after plain commands in between"
+  check $m $emp 'x | y' v3 'pipe' "valve: A is refused again after it ran once"
   check $m $emp 'x | y' v5 'pipe' "valve: another agent's first send is refused though others sent it"
+  brief v6 'Run `x | listed` as listed.'
+  check $m $emp 'x | w' v6 'pipe' "valve: C refused"
+  check $m $emp 'x | listed' v6 silent "valve: a brief-listed command in between is allowed"
+  check $m $emp 'x | w' v6 silent "valve: C runs after a brief-listed command in between"
+  # the state keeps the newest 20 refusals: of 22 distinct commands the two oldest are forgotten
+  i=1
+  while [ $i -le 22 ]; do guard_in $emp "x | cap$i" v7; run $m; i=$((i + 1)); done
+  lines=$(wc -l <"$CLAUDE_PLUGIN_DATA/triple-a-crew-bash-v7" | tr -d ' ')
+  [ "$lines" = 20 ] && pass "valve: the state file holds at most 20 lines" $m || bad "valve: state file size" $m "$lines lines"
+  check $m $emp 'x | cap22' v7 silent "valve: the newest refusal still runs"
+  check $m $emp 'x | cap3' v7 silent "valve: the 20th newest refusal still runs"
+  check $m $emp 'x | cap1' v7 'pipe' "valve: the oldest refusal was dropped, so it is refused again"
 
   # prune of old state
   old="$CLAUDE_PLUGIN_DATA/triple-a-crew-bash-ancient"
@@ -205,6 +260,22 @@ Run: a | b
   CLAUDE_PLUGIN_DATA="$tmp/not-a-dir"; : >"$tmp/not-a-dir"
   check $m $emp 'echo a && echo b' w1 silent "unwritable state folder: allowed, not trapped"
   CLAUDE_PLUGIN_DATA=$keep
+
+  # a command longer than 20000 characters is allowed without analysis; one of exactly 20000 is analysed
+  check $m $emp "echo $(pad 19989) && ls" lg1 '&&' "a 20000-character chain is still refused"
+  check $m $emp "echo $(pad 19990) && ls" lg2 silent "a 20001-character chain is allowed unseen"
+  check $m $emp "$(pad 100000)" lg3 silent "a 100000-character plain command is allowed"
+
+  # the guard's role list must cover every role in the SubagentStart matcher of hooks.json
+  if [ -z "$roles" ]; then
+    bad "matcher roles" $m "no roles read from $hooks_json"
+  else
+    for role in $roles; do
+      brief "mt-$role" "$crew_brief"
+      check $m "T1-$role" 'a | b' "mt-$role" 'pipe' "hooks.json role $role: T1-$role with a crew brief is guarded"
+      check $m "triple-a-crew:$role" 'a | b' "mu-$role" 'pipe' "hooks.json role $role: triple-a-crew:$role is guarded"
+    done
+  fi
 
   # unreadable input
   : >"$tmp/in.json"; run $m; expect_silent "empty input" $m

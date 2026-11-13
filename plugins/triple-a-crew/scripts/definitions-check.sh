@@ -37,12 +37,17 @@ now=$(cksum <"$file" 2>/dev/null | awk '{ print $1 }' || true)
 [ -n "$now" ] || exit 0
 [ "$now" != "$recorded" ] || exit 0
 
-printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"%s"}}\n' \
-  "Triple-A-Crew: agents/$role.md changed after this session started. The employee about to start runs on the definition loaded before the change, not on the current file. Ask the user to run /reload-plugins, then staff the task again."
-
-# Record the new checksum so this change is reported once.
+# Record the new checksum so this change is reported once. Only this role's line changes, and the state
+# is read again here, so a parallel call for another role keeps its own update.
 (
   tmp="$state.$$"
-  awk -v r="$role" -v s="$now" '$1 == r { $2 = s } { print }' "$state" >"$tmp" && mv "$tmp" "$state"
+  if awk -v r="$role" -v s="$now" '$1 == r { $2 = s } { print }' "$state" >"$tmp"; then
+    mv "$tmp" "$state"
+  else
+    rm -f "$tmp"
+  fi
 ) 2>/dev/null || true
+
+printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"%s"}}\n' \
+  "Triple-A-Crew: agents/$role.md changed after this session loaded it. Unless /reload-plugins has run since that change, the employee about to start runs on the old definition: ask the user to run /reload-plugins, then staff again. This note is shown once per change."
 exit 0

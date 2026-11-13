@@ -99,7 +99,7 @@ block() {
     fi
     (echo $((n + 1)) >"$counter") 2>/dev/null || true
   fi
-  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g' | {
+  printf '%s' "$1" | tr '[:cntrl:]' ' ' | sed 's/\\/\\\\/g; s/"/\\"/g' | {
     IFS= read -r escaped || true
     printf '{"decision":"block","reason":"%s"}\n' "$escaped"
   }
