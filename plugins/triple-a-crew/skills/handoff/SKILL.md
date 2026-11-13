@@ -168,7 +168,9 @@ agent type, including ones without Bash. Add anything session-specific below it.
   `HANDOFF_DIR=.claude/handoffs node "${CLAUDE_SKILL_DIR}/handoff.mjs" resume`, or move the files to `.crew/handoffs/`.
 - **Work items.** If a Triple-A-Crew work item is open (`.crew/work/index.md`), name it in Open work with its id and
   current board phase. A paused work item has one handoff of its own, `.crew/work/<id>/handoff.md`. Point to it; do
-  not repeat its content here. When you resume, read it before the item's `board.md`.
+  not repeat its content here. If an open work item is unfinished and has no `handoff.md`, write that file first (its
+  shape is in the `work` skill's `formats.md`): the item's next step and open questions belong there, and this
+  handoff points to it. When you resume, read it before the item's `board.md`.
 - **Redaction is best-effort.** Only obvious patterns are scrubbed: `Bearer …`, `token=`, `password:`, `sk-…`, `ghp_…`, `xox…-`.
 - **Re-sent prompts.** A prompt re-sent after an interrupt collapses into one entry. Pasted test failures with a shared
   prefix stay separate.

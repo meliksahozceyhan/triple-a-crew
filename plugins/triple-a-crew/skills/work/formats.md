@@ -61,7 +61,7 @@ work/*/handoff.md
 
 ## plan.md
 
-```markdown
+````markdown
 # Plan
 
 | Task | Goal | File set | Acceptance check | Role | Tier | Depends on |
@@ -112,14 +112,15 @@ Legend: yellow nodes are new or changed.
 |---|---|
 | Exporting 200k rows stays under 100 MB | T2 |
 | Old clients still parse the file | deferred to a follow-up item (decisions.md) |
-```
+````
 
-A size M or L plan with three or more tasks has a `## Flow` section with a Mermaid `flowchart` of the tasks:
-one edge per entry in the "Depends on" column and no others. When the change alters how something runs (a
+A size M or L plan with three or more tasks has, under `## Flow`, a Mermaid `flowchart` of the tasks: one
+edge per entry in the "Depends on" column and no others. When the change alters how something runs (a
 request path, control flow, a state machine, a data pipeline), `## Flow` also shows the current flow and the
-final flow. A researcher draws the current flow, with a `path:line` on every node. You draw the final flow
-and mark each new or changed node. A change that alters no flow (docs, config, a rename) has neither. About
-12 nodes per diagram at most; split a larger flow.
+final flow, whatever the number of tasks. A researcher draws the current flow, with a `path:line` on every
+node. You draw the final flow and mark each new or changed node. A change that alters no flow (docs, config,
+a rename) has no current or final flow; it still has its task graph when it has three or more tasks. A plan
+with no diagram has no `## Flow` section. About 12 nodes per diagram at most; split a larger flow.
 
 `## Lessons that apply` names each open lesson in `lessons.md` that this plan could repeat, with the task or
 brief line that guards against it. Leave the section out when none applies.
@@ -196,19 +197,22 @@ and an abandoned one ("just do it") gets neither. Every point names its source f
 Status is `proposed` until the user answers, then `accepted` (applied or filed), `not filed` (accepted, but
 the repository was missing or unreachable) or `declined`; a lesson that stays here says `kept`. A crew
 feedback draft describes crew behavior only, never project code, paths or names. A lesson still `proposed` or
-`not filed` in another item's retro is still open: name it in the report instead of proposing it again.
+`not filed` in another item's retro is still open: name it in the report instead of proposing the same text
+again; its ledger row still counts the new hit.
 
 The "Repeat of" column holds a ledger id from `lessons.md` (`L1`), not an item name; it is empty for a new
-lesson. The `#` column numbers the lessons of this retro only. A repeat's "Goes to" is never `retro.md` only
-(see `lessons.md` below for why).
+lesson. The `#` column numbers the lessons of this retro only. When a repeat brings its ledger row to two
+hits while `open`, "Goes to" names the proposed mechanism; if there is none, the ledger row says `none:` with
+the reason and "Goes to" says `retro.md` only.
 
 **Goes to.** Each lesson goes to one place, with its exact text under "Proposed text": a profile note or a
 convention-file edit for this project; crew feedback about the organizer, an employee or a hook, as an issue
 draft for the `repository` in `../../.claude-plugin/plugin.json` from this skill's folder (never the project's
 tracker unless the user says so), describing crew behavior only, with no project code, paths or names; or
-`retro.md` only. If that repository is missing or unreachable, keep the draft and say so. Apply none of the
-proposals until the user answers. Then apply what they accept, and file an accepted crew draft in that
-repository as written, not through `file-issue`.
+`retro.md` only, for a first-time lesson or a repeat whose ledger row says `none:`. If that repository is
+missing or unreachable, keep the draft and say so. Apply none of the proposals until the user answers. Then
+apply what they accept, and file an accepted crew draft in that repository as written, not through
+`file-issue`.
 
 ## lessons.md
 
@@ -227,7 +231,9 @@ what now enforces the lesson and where (a hook, a brief line, an eval case, a pr
 the reason. At close (SKILL.md step 10), each lesson of the retro raises `Hits` and adds the item on the
 row it repeats, or gets a new row with the next id. A lesson that reaches two hits while `open` gets a
 mechanism proposed in the retro, or `none:` with the reason; it is never left as a retro-only note. The plan
-step reads the `open` rows.
+step reads the `open` rows. When the user accepts a proposed mechanism and it is applied, write it into the
+row's `Mechanism`; until then the row stays `open`. A project with retros but no `lessons.md` gets one when
+its next item closes: seed it with one row for each lesson those retros mark as a repeat.
 
 ## PR text
 
@@ -239,7 +245,6 @@ step reads the `open` rows.
 
 ## Verification
 - `<verify command>`: <result>
-- Evals: <cases, scores, cost>, or "not run: <why>"
 - Review: <verdict and rounds>
 
 ## Who did what
@@ -253,7 +258,7 @@ Closes #12 · Refs #14 (open: <the criterion still open>)
 
 At close you draft this text from the record: `brief.md`, `decisions.md`, the verify results and the board.
 `Closes` and `Refs` follow protocol.md. The draft goes into your final report; opening the pull request is a
-separate step the user asks for.
+separate step the user asks for. Under Verification, add the project's own checks.
 
 ## handoff.md
 
@@ -267,4 +272,5 @@ separate step the user asks for.
 ```
 
 A paused item has this one handoff. A session handoff written by the `handoff` skill points to it and does not
-repeat it.
+repeat it. Delete it when the item resumes and the board is current again, so a later resume does not read an
+old one.

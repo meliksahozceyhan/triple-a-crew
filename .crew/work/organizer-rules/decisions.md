@@ -38,3 +38,25 @@
   Rejected: keeping the rule with a fix (see above); keeping it as written (it is wrong). What this item did
   instead: the organizer made one worktree per work item, and parallel engineers edited disjoint files in it
   by absolute path, which kept the main checkout, and the running plugin, untouched.
+- **2026-11-13 T6 is the organizer's.** It holds the exact words of all seven rules, and `SKILL.md` needed one
+  owner to stay at 160 lines. Step 7's ladder summary now leans on `staffing.md`, and step 10's lesson routing
+  moved to `formats.md` ("Goes to"); the reviewer checked that nothing was dropped. Rejected: an engineer at
+  critical tier (the brief would have been as long as the edit).
+- **2026-11-13 The ledger is seeded with the lessons the retros repeat.** Ten rows have two or more hits,
+  counted from the retros' own "Repeat of" chains. L11 has one hit in this repository (its first occurrence
+  is behind issue #37) and stays because it now has a mechanism. Rows whose fix is in another open pull
+  request (#32, #44, #45, #51) say `open` until that pull request merges; the release pull request updates
+  them. Single-hit lessons stay in their retros.
+- **2026-11-13 T11 review of the rule text: changes requested, two must-fix, both fixed.** (MF1) `SKILL.md`
+  asked the researcher for the current flow "when the plan shows one", which is circular; it now says "when
+  the change alters how something runs", as `protocol.md` does. (MF2) The repeat rule read three ways; the one
+  wording is now "at two hits while open: a mechanism, or `none:` with the reason; never a retro-only note",
+  and "Goes to" allows `retro.md` only for a first-time lesson or a `none:` row. Should-fix, all fixed: a rule
+  for when a ledger row stops being `open`; the flow rule for a two-task plan and for "no diagram"; nested
+  code fences in `formats.md`; seeding a ledger in a project that already has retros; a stale `handoff.md`
+  (deleted after resume); the eval line removed from the generic pull request text; the handoff skill writes
+  a missing `handoff.md` first. Nits fixed: where `## Budget` sits, a reviewer with no budget, quoting Mermaid
+  labels, the plugin README's flow wording, the path in the final-flow criterion. Each file's own engineer
+  made its fixes (rung 1 of the ladder: sent back once); the organizer fixed `SKILL.md`.
+- **2026-11-13 Declined: a rule that sets the board's `ship` phase (T11 nit N1).** It costs a line in a file at
+  its cap, and the phase list already names the phase.

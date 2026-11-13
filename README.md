@@ -175,13 +175,14 @@ affected: each one runs on the model its tier gives it (step 5).
    failure, time zones, migrations, backward compatibility) and marks each one in or out of scope.
 4. **Plans tasks.** Each task has a file set, an acceptance check, a role and a model tier. It reads the
    lessons ledger (`.crew/lessons.md`) and names the open lessons the plan could repeat under
-   `## Lessons that apply`. A plan of size M or L with three or more tasks shows a `## Flow` task graph in
-   Mermaid. When the change alters how something runs, the plan also shows the current flow (a researcher
-   draws it, with a `path:line` on every node) and the final flow (the organizer marks the new and changed
-   nodes), about 12 nodes a diagram at most. For size L it checks every task against your convention files,
-   records each rule that changes the plan (with its file) in `decisions.md`, maps every done-when line of the
-   brief to a task or a recorded deferral, and asks for your go-ahead, with the diagrams in the message,
-   before any engineer starts.
+   `## Lessons that apply`. Under `## Flow`, a plan of size M or L shows a Mermaid task graph when it has
+   three or more tasks. Whenever the change alters how something runs, whatever the number of tasks, the plan
+   also shows the current flow (a researcher draws it, with a `path:line` on every node) and the final flow
+   (the organizer marks the new and changed nodes), about 12 nodes a diagram at most. A change that alters no
+   flow has no current or final flow, and a plan with no diagram has no `## Flow` section. For size L it
+   checks every task against your convention files, records each rule that changes the plan (with its file)
+   in `decisions.md`, maps every done-when line of the brief to a task or a recorded deferral, and asks for
+   your go-ahead, with the diagrams in the message, before any engineer starts.
 5. **Staffs employees.** Model choice follows a rule table: `mechanical` work goes to haiku, `standard`
    to sonnet, `critical` to opus, each with a default effort level.
    - Parallel tasks run only on disjoint file sets; tasks that write the same files go in sequence.
@@ -193,23 +194,28 @@ affected: each one runs on the model its tier gives it (step 5).
 7. **Verifies and reviews.** It strips debug logs, commented-out code and log-and-rethrow try-catch from the
    lines it changed, runs your profile's verify commands (through the haiku verifier for bigger items), staffs
    a reviewer, and files the findings through `file-issue` in one batch. Crew feedback waits for the retro.
-   Every reviewer brief ends with a `## Budget`: a tool-call budget sized to the diff (about 30 calls plus one
+   Every reviewer brief carries a `## Budget`: a tool-call budget sized to the diff (about 30 calls plus one
    per changed file, 70 at most; a bigger diff is split), with running tests counted against it and at most
-   three plain test commands. Near the budget the reviewer stops, records what is still open, and reports.
+   three plain test commands. Near the budget the reviewer stops, records what is still open, and reports. A
+   reviewer whose brief has no budget takes 40 tool calls.
    When a review requests changes, a fresh reviewer rechecks the fix diff once before the item closes.
    The last review (for size L, one more on the whole diff after the per-task ones) checks every done-when
    line with evidence, and the code against the plan's final flow when it has one. A ticket with a criterion
    still open goes into the PR as `Refs #N`, not `Closes #N`.
 8. **Closes with a short retro and the PR text.** For sizes M and L it writes `retro.md` and adds each
    lesson to `.crew/lessons.md`, or raises the hit count of the row it repeats. A lesson that reaches two hits
-   while still open gets a mechanism (a hook, a brief line, an eval case, a profile note), never a retro-only
-   note. It proposes where each lesson should live (a profile note, a convention file, or crew feedback for
-   this plugin's repository) and changes nothing until you accept. It also drafts the pull request text from
-   the record into its report. It opens the pull request only when you ask, and says one is merged only after
-   checking its state; otherwise it says "not checked". The board's last phases are `review → ship → done`.
+   while still open gets a mechanism proposed in the retro (a hook, a brief line, an eval case, a profile
+   note), or a `none:` reason in its row; it is never left as a retro-only note. When you accept a mechanism
+   and it is applied, it is written into the ledger row. A project with retros but no `lessons.md` gets one
+   at its next close. The organizer proposes where each lesson should live (a profile note, a convention
+   file, or crew feedback for this plugin's repository) and changes nothing until you accept. It also drafts
+   the pull request text from the record into its report. It opens the pull request only when you ask, and
+   says one is merged only after checking its state; otherwise it says "not checked". The board's last
+   phases are `review → ship → done`.
 9. **Answers status questions** ("where are we on X?") from the board, without starting more work. A work
    item that was paused has one handoff, `handoff.md`: it names what to read first, and resuming reads it
-   before the board.
+   before the board, then deletes it once the board is current. A session handoff for an unfinished item
+   that has no `handoff.md` writes that file first.
 
 A real plan from the eval fixture, for "make the orders CSV export production-ready":
 
@@ -316,7 +322,7 @@ They now read each project's rules from its profile and convention files instead
 | Skill | Use it for | Came from |
 |---|---|---|
 | `test-harden` | Find the risky missing test cases (cursor loops, DST, malformed data, retries, partial failure) and report or add them in the project's own framework | `test-robustness-review` skill + reviewer and filler agents |
-| `handoff` | Write, resume or brief from a session handoff, with a facts appendix built from git and the transcript. Writes to `.crew/handoffs/`; for a paused work item it points to the item's own `handoff.md` and lists its researchers' reports under what to read first | `session-handoff` skill |
+| `handoff` | Write, resume or brief from a session handoff, with a facts appendix built from git and the transcript. Writes to `.crew/handoffs/`; for a paused work item it points to the item's own `handoff.md` (writing it first if an unfinished item has none) and lists its researchers' reports under what to read first | `session-handoff` skill |
 
 Three more were migrated and then cut, because plain Claude matched them in the evals: `plan-review` (from
 `plan-reinforcer`), `cleanup` (from `post-plan-cleanup`) and `investigate` (from `investigate-linear-issue`).

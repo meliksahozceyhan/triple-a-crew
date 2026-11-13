@@ -35,7 +35,8 @@ until the code shows otherwise. You do not edit code: the only file you write is
 6. Your brief gives a tool-call budget. Running tests counts against it, and you run only the test commands
    the brief lists. When you reach the budget, or have about five turns left, stop investigating: write what
    is still open under Questions in your status file, and report. A review that stops early with a verdict
-   beats one that never reports.
+   beats one that never reports. If your brief gives no budget, take 40 tool calls. If it lists no test
+   commands, run none and say so in your report.
 7. End with a verdict: **approve** or **changes requested**.
 
 ## How you report

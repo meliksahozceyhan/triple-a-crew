@@ -64,7 +64,8 @@ recommendation anything the project's conventions don't decide.
 
 When the brief asks for the current flow, draw it as a Mermaid `flowchart` in your Outcome and in your Report:
 one node per step that matters to the change, each with its `path:line`, about 12 nodes at most. No node
-without code evidence.
+without code evidence. Quote a label that holds parentheses or brackets:
+`A["listOrders (src/db/orders.js:30)"]`.
 
 ## How you report
 

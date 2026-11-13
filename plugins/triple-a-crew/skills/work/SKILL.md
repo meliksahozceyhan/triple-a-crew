@@ -31,10 +31,10 @@ Arguments: `$ARGUMENTS`. `status` → step 1 only. `next` → resume the most re
 ## 1. Resume before starting
 
 Read `<root>/.crew/work/index.md`. If the request matches an open item (same feature, ticket or files),
-resume it: read its `handoff.md` if it has one, then its `board.md`, and continue from its phase. Never open
-a second item for the same work. For `status`, or a question about where things stand ("where are we on
-X?"), report the phase, what is done and the next step, then stop and let the user decide. Only continue the
-work when they ask you to.
+resume it: read its `handoff.md` if it has one, then its `board.md`; continue from its phase, and delete
+the handoff once the board is current. Never open a second item for the same work. For `status`, or a
+question about where things stand ("where are we on X?"), report the phase, what is done and the next
+step, then stop and let the user decide. Only continue the work when they ask you to.
 
 ## 2. Size the request
 
@@ -80,8 +80,8 @@ dependencies.
 - Record each real decision in `decisions.md`, with the reason and the alternatives you rejected.
 - Read `<root>/.crew/lessons.md` if it exists. Under `## Lessons that apply`, name each open lesson this plan
   could repeat and what guards against it (formats.md).
-- Plans of size M and L with 3+ tasks show a `## Flow` task graph; a change to how something runs adds the
-  current flow (from a researcher) and the final flow; nothing else does. About 12 nodes each (formats.md).
+- Under `## Flow`, a size M or L plan shows a task graph when it has 3+ tasks, and the current flow (from a
+  researcher) and the final flow when the change alters how something runs. About 12 nodes each (formats.md).
 
 **Size L:** read the profile's `conventions` files (without a profile: `CLAUDE.md`, `AGENTS.md`,
 `CONTRIBUTING.md`, `.claude/rules/`, `.cursor/rules/` and ADR folders, where they exist) and check every task
@@ -99,8 +99,8 @@ cases, coverage, every deferral) and get the go-ahead before any engineer starts
 - Give the call no `name`: with agent teams enabled, a named call becomes a teammate. For size L, if `printenv
   CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` prints `1`, read [teams.md](teams.md) before staffing and follow it.
 - Each brief names the status file by absolute path: `<root>/.crew/work/<id>/team/<task>-<role>.md`.
-- A researcher's brief asks for its full report under `## Report`, and for the current flow when the plan
-  shows one. A reviewer's brief ends with `## Budget` (protocol.md).
+- A researcher's brief asks for its full report under `## Report`, and for the current flow when the change
+  alters how something runs. A reviewer's brief carries `## Budget` (protocol.md).
 - Update `board.md` with task, role, model, effort and state.
 - If the Agent tool or these agents are unavailable, do the tasks yourself in the same order, same files.
 
@@ -144,8 +144,8 @@ waits for step 10. Otherwise list them for the user in your final report.
 
 - For size M and L, write this item's `retro.md` first (formats.md): compare the plan with what happened,
   from `board.md`, `findings.md` and every `team/` status file. Add each lesson to `<root>/.crew/lessons.md`,
-  or raise the hits of the row it repeats; a lesson that reaches two hits while open gets a mechanism, never
-  `retro.md` only. Update an existing `retro.md` rather than replace it.
+  or raise the hits of the row it repeats; at two hits while open it gets a mechanism or a `none:` reason,
+  never a retro-only note. Update an existing `retro.md` rather than replace it.
 - Each lesson goes to one place, with its exact text and destination in `retro.md` (formats.md, "Goes to").
   Put the proposals in your final report; apply only what the user accepts, then set each Status.
 - Draft the pull request text from the record (formats.md, "PR text") into your report; open it only when the

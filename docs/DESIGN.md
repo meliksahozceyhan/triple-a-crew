@@ -88,20 +88,22 @@ Responsibilities, in order:
    failure, permissions, migrations, rollback. Record which ones the plan must cover and which are out of scope.
 3. **Plan and decompose.** Break the work into tasks with clear inputs, outputs and file sets. Read the
    lessons ledger (`.crew/lessons.md`) and name each open lesson the plan could repeat under
-   `## Lessons that apply`. A size M or L plan with three or more tasks shows a `## Flow` task graph in
-   Mermaid. When the change alters how something runs, the plan also shows the current flow (a researcher
-   draws it, with a `path:line` on every node) and the final flow (the organizer draws it and marks the new
-   and changed nodes), about 12 nodes per diagram at most; the last review checks the code against the final
-   flow like a done-when line. For size L, map every done-when line to a task or a recorded deferral and show
-   the diagrams in the message that asks for the go-ahead.
+   `## Lessons that apply`. Under `## Flow`, a size M or L plan shows a Mermaid task graph when it has three
+   or more tasks. Whenever the change alters how something runs, whatever the number of tasks, the plan also
+   shows the current flow (a researcher draws it, with a `path:line` on every node) and the final flow (the
+   organizer draws it and marks the new and changed nodes), about 12 nodes per diagram at most; the last
+   review checks the code against the final flow like a done-when line. A change that alters no flow has no
+   current or final flow, and a plan with no diagram has no `## Flow` section. For size L, map every done-when
+   line to a task or a recorded deferral and show the diagrams in the message that asks for the go-ahead.
 4. **Staff.** Pick a role and model per task (see staffing policy), and decide sequential vs parallel.
 5. **Brief.** Hand each employee a self-contained brief (see protocol). Employees never see the conversation.
 6. **Track.** Keep `board.md` current from the employees' status files.
 7. **Unblock.** Answer employee questions, or escalate to the user when the answer is the user's call.
 8. **Integrate and verify.** Check results against acceptance criteria; send work back when it falls short.
-   Every reviewer brief ends with a `## Budget`: a tool-call budget sized to the diff (about 30 calls plus one
+   Every reviewer brief carries a `## Budget`: a tool-call budget sized to the diff (about 30 calls plus one
    per changed file, 70 at most; a bigger diff is split), with running tests counted against it and at most
-   three plain test commands. Near the budget the reviewer stops, records what is open and reports.
+   three plain test commands. Near the budget the reviewer stops, records what is open and reports. A reviewer
+   whose brief has no budget takes 40 tool calls.
    When a review requests changes, a fresh reviewer rechecks the fix diff once: in four items in a row the
    second round found something new, sometimes caused by the fixes.
 9. **File follow-ups.** Collect out-of-scope findings from all employees, dedupe them, file them via `file-issue`.
@@ -109,11 +111,14 @@ Responsibilities, in order:
 10. **Close.** For size M and L, write `retro.md`: what happened and where each lesson goes (a profile or
     convention edit, or crew feedback for the plugin's repository), applied only once the user accepts. Add
     each lesson to `.crew/lessons.md`, or raise the hit count of the row it repeats; a lesson that reaches two
-    hits while open gets a mechanism, never `retro.md` only, and the retro's "Repeat of" column holds a ledger
+    hits while open gets a mechanism proposed in the retro, or `none:` with the reason in its row, and is
+    never left as a retro-only note. An accepted mechanism, once applied, is written into the row. A project
+    with retros but no `lessons.md` gets one at its next close. The retro's "Repeat of" column holds a ledger
     id. Draft the pull request text from the record into the report (the shape is in `formats.md`, "PR
     text"); open the pull request only when the user asks, and call it merged only after checking its state,
     otherwise "not checked". If the work stops early, write `handoff.md` instead of a retro: the item's one
-    handoff, which names what to read first. Resuming reads it before `board.md`.
+    handoff, which names what to read first. Resuming reads it before `board.md` and deletes it once the board
+    is current. A session handoff for an unfinished item with no `handoff.md` writes that file first.
 
 ### How work starts
 
@@ -150,7 +155,7 @@ Plugin agents with a fixed role, default model and tool set. The organizer can o
 | architect | Options and trade-offs for ambiguous or cross-cutting work | opus | read-only | Not a separate agent: a researcher at critical tier answers design questions (work item `employees-v2`) |
 | engineer | Implements one task from the plan | sonnet | edit, bash | Runs in parallel only on a file set no other writer touches; overlapping writers go in sequence |
 | test-engineer | Writes the tests for a task, never production code | sonnet | edit, bash | Built (`employees-v2`); `test-harden` preloaded with `skills: [test-harden]`; a test that exposes a bug stays failing and goes back to the code task |
-| reviewer | Fresh-context, adversarial review of a diff | opus | read-only | Never reviews its own work; its brief ends with a tool-call budget (`maxTurns` stays 60) |
+| reviewer | Fresh-context, adversarial review of a diff | opus | read-only | Never reviews its own work; its brief carries a tool-call budget, 40 calls when it has none (`maxTurns` stays 60) |
 | verifier | Runs the profile's check commands, reports facts | haiku | bash | Built (`employees-v2`); reports each exit code and the failing lines verbatim, does not fix; staffed for size L, and for M with more than one verify command |
 | scribe | Issues, handoffs, PR text, status reports | haiku | write | Dropped: subagents cannot confirm issues with the user; `file-issue` and `handoff` are skills; PR text needs the conversation |
 
@@ -333,13 +338,13 @@ approval → implement → verify → review → ship → done`.
     index.md                   open work items, one line each                   ignored
     <id>/                      e.g. shop-1062-entitlements
       brief.md                 what, why, acceptance criteria, edge cases       committed
-      plan.md                  tasks, file sets, staffing, flow diagrams        committed
+      plan.md                  tasks, file sets, staffing, flow (if any)        committed
       decisions.md             decision, why, rejected alternatives             committed
       findings.md              out-of-scope problems and issues filed           committed
       retro.md                 lessons, repeats (ledger ids), where they went   committed
       board.md                 phase, task table with state/owner/model         ignored
       team/<task>.md           one status file per task                         ignored
-      handoff.md               a paused item's one handoff, read before board   ignored
+      handoff.md               a paused item's one handoff, deleted on resume   ignored
 ```
 
 **Why `.crew/` and not `.claude/`:** Claude Code treats `.claude/` as a protected directory. Writes there

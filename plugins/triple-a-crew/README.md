@@ -12,10 +12,10 @@ design.
 
 | Skill | Invoke | What it does |
 |---|---|---|
-| `work` | starts on its own for multi-step work; `/triple-a-crew:work [start <request> \| next \| status]` | The organizer: sizes the request, opens a work item in `.crew/work/`, stress-tests edge cases, plans (with flow diagrams for size M and L, and the open lessons that apply), staffs employees on model tiers, tracks status files, verifies, reviews, files follow-ups, and at close updates the lessons ledger and drafts the pull request text |
+| `work` | starts on its own for multi-step work; `/triple-a-crew:work [start <request> \| next \| status]` | The organizer: sizes the request, opens a work item in `.crew/work/`, stress-tests edge cases, plans (with a task graph for size M and L plans of three or more tasks, the current and final flow when the change alters how something runs, and the open lessons that apply), staffs employees on model tiers, tracks status files, verifies, reviews, files follow-ups, and at close updates the lessons ledger and drafts the pull request text |
 | `onboard` | "set this repo up for the crew" | Writes or refreshes `.crew/profile.md`: stack, verify commands from CI, test globs, convention files, tracker |
 | `test-harden` | "harden these tests" | Finds risky missing test cases and reports or adds them in the project's own framework |
-| `handoff` | "write a handoff", `/triple-a-crew:handoff resume` | Writes, resumes or briefs from a session handoff in `.crew/handoffs/`, with facts from git and the transcript; points to a paused work item's own `handoff.md` and lists its researchers' reports under what to read first |
+| `handoff` | "write a handoff", `/triple-a-crew:handoff resume` | Writes, resumes or briefs from a session handoff in `.crew/handoffs/`, with facts from git and the transcript; points to a paused work item's own `handoff.md` (writing it first if an unfinished item has none) and lists its researchers' reports under what to read first |
 
 ## Agents
 
