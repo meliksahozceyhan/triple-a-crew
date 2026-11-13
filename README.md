@@ -659,7 +659,7 @@ divided.
 
 | Case | Plugin | Last cost per run | When | Source |
 |---|---|---|---|---|
-| `starts-work-item-on-large-request` | `triple-a-crew` | $0.41 | 2026-10-19 | `.crew/work/issue-30-criteria-check/decisions.md` |
+| `starts-work-item-on-large-request` | `triple-a-crew` | $0.41 | 2026-11-13 | `.crew/work/eval-tooling/decisions.md` |
 | `stays-out-of-small-request` | `triple-a-crew` | unknown | | |
 | `stays-out-of-read-only-investigation` | `triple-a-crew` | $0.15 | 2026-10-27 | `.crew/work/publish-v1/decisions.md` |
 | `session-start-mentions-open-item` | `triple-a-crew` | unknown | | |
@@ -803,9 +803,12 @@ runs work in parallel only on disjoint file sets. Details are in [docs/DESIGN.md
   briefed on the README fix alone, until it also required another ticket's id. A regex on an Agent row also
   sees the call's `description`, so a keyword there passes a grader meant for the brief. Build the near miss
   from the real passing row with the wanted text removed, not by adding the text to some other row:
-  `failures-in-brief` first matched on the description alone. A new `regex` or `tool_used` grader ships with
-  both rows, in `scripts/grader-rows/<plugin>/<case>/<grader>.pass.jsonl` and `.fail.jsonl`, and
-  `node scripts/test-graders.mjs` checks every grader that has them, with no model call.
+  `failures-in-brief` first matched on the description alone. A new `tool_used` grader, or a `regex` grader
+  on the trace or the final message, ships with both rows, in
+  `scripts/grader-rows/<plugin>/<case>/<grader>.pass.jsonl` and `.fail.jsonl`, and
+  `node scripts/test-graders.mjs` checks every grader that has them, with no model call. The first real pair
+  showed why: `edge-cases-in-brief` passed a brief with its edge-case table removed, because the request's
+  own words satisfied the pattern.
 
 ## Troubleshooting
 

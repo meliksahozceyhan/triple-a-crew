@@ -138,16 +138,16 @@ function readRows(file) {
     }
     rows.push(line);
   });
+  if (rows.length === 0) throw new Error(`${file}: holds no rows`);
   return rows;
 }
 
 // ------------------------------------------------------------------ verdicts
 
-// The final message: the last row's `result`, else its text blocks, else the raw row.
+// The final message: the last row's `result`, else its assistant text. A last row that is
+// neither is an error: the rows have no final message.
 function finalMessage(rows) {
-  if (rows.length === 0) return "";
-  const raw = rows[rows.length - 1];
-  const obj = JSON.parse(raw);
+  const obj = rows.length ? JSON.parse(rows[rows.length - 1]) : {};
   if (typeof obj.result === "string") return obj.result;
   const content = obj.message?.content ?? obj.content;
   if (typeof content === "string") return content;
@@ -155,7 +155,7 @@ function finalMessage(rows) {
     const texts = content.filter((b) => b && b.type === "text" && typeof b.text === "string").map((b) => b.text);
     if (texts.length) return texts.join("\n");
   }
-  return raw;
+  throw new Error("the rows have no final message (the last row is not a result or assistant text row)");
 }
 
 function regexTarget(g, rows) {
@@ -173,7 +173,7 @@ function toolCalls(rows) {
   const walk = (node, rowIndex) => {
     if (Array.isArray(node)) return node.forEach((n) => walk(n, rowIndex));
     if (!node || typeof node !== "object") return;
-    if (typeof node.name === "string" && node.input && typeof node.input === "object") {
+    if (node.type === "tool_use" && typeof node.name === "string" && node.input && typeof node.input === "object") {
       calls.push({ name: node.name, input: node.input, rowIndex });
       return;
     }
@@ -220,6 +220,7 @@ function run(root) {
 
   const { graders, errors } = loadGraders(root);
   errors.forEach((e) => problem(`ERROR ${e}`));
+  if (graders.length === 0 && errors.length === 0) problem(`ERROR no grader files found under ${path.join(root, "plugins")}`);
 
   const byType = Object.fromEntries(TYPES.map((t) => [t, 0]));
   let checked = 0;
@@ -248,17 +249,20 @@ function run(root) {
     }
     let passRows;
     let failRows;
+    const wrong = [];
     try {
       passRows = readRows(files.pass);
       failRows = readRows(files.fail);
+      if (passRows.length !== failRows.length) {
+        throw new Error(`${passRows.length} pass rows but ${failRows.length} fail rows; the fail file is the pass rows with the wanted text removed, so the counts must match`);
+      }
+      if (verdict(g, passRows) !== "pass") wrong.push(".pass.jsonl rows do not pass the grader");
+      if (verdict(g, failRows) !== "fail") wrong.push(".fail.jsonl rows pass the grader (near miss accepted)");
     } catch (e) {
       problem(`ERROR ${g.id}: ${e.message}`);
       continue;
     }
     checked++;
-    const wrong = [];
-    if (verdict(g, passRows) !== "pass") wrong.push(".pass.jsonl rows do not pass the grader");
-    if (verdict(g, failRows) !== "fail") wrong.push(".fail.jsonl rows pass the grader (near miss accepted)");
     if (wrong.length) problem(`WRONG ${g.id}: ${wrong.join("; ")}`);
     else log(`ok    ${g.id} (${passRows.length} pass rows, ${failRows.length} fail rows)`);
   }
@@ -294,15 +298,23 @@ function run(root) {
 
 // -------------------------------------------------------------- harvest mode
 
-function homeRegexes() {
+// Replacements, in order: the home folder, then the same folder in the dashed form Claude uses
+// for project folder names (/Users/jo/work becomes -Users-jo-work), where only the user name goes.
+function homeReplacements() {
   const home = os.homedir();
-  const escaped = JSON.stringify(home).slice(1, -1);
-  return [...new Set([home, escaped])].filter((h) => h.length > 1);
+  const user = path.basename(home);
+  const dashed = home.split("/").join("-");
+  const list = [
+    [home, "$HOME"],
+    [JSON.stringify(home).slice(1, -1), "$HOME"],
+    [dashed, dashed.slice(0, dashed.length - user.length) + "$USER"],
+  ];
+  return list.filter(([from]) => from.length > 1 && user.length > 0);
 }
 
 function scrubHome(line) {
   let s = line;
-  for (const h of homeRegexes()) s = s.split(h).join("$HOME");
+  for (const [from, to] of homeReplacements()) s = s.split(from).join(to);
   return s;
 }
 
@@ -364,7 +376,15 @@ function harvest(root, tracePath, caseId, force) {
       cannot.push(`${g.id} (${checkability(g)})`);
       continue;
     }
-    if (verdict(g, traceRows) !== "pass") {
+    let onTrace;
+    try {
+      onTrace = verdict(g, traceRows);
+    } catch (e) {
+      out.push(`ERROR ${g.id}: ${e.message}`);
+      code = 1;
+      continue;
+    }
+    if (onTrace !== "pass") {
       notPassing.push(g.id);
       continue;
     }
@@ -465,9 +485,13 @@ function selftest() {
     rows(good, "p/c/final", "fail", [final("SHOP-501 was mentioned earlier"), final("created it")]);
     grader(good, "p/c/twice", 'type: regex\ntarget: trace\nmatch: count:2\npattern: \'"name":"Bash"\'');
     rows(good, "p/c/twice", "pass", [call("Bash", { command: "a" }), call("Bash", { command: "b" })]);
-    rows(good, "p/c/twice", "fail", [call("Bash", { command: "a" })]);
+    rows(good, "p/c/twice", "fail", [call("Bash", { command: "a" }), call("Edit", { file_path: "x" })]);
     grader(good, "p/c/bounded", "type: tool_used\ntool: Write\ninput_match: 'brief\\.md'\nmin: 1\nmax: 2");
-    rows(good, "p/c/bounded", "pass", [call("Write", { file_path: "brief.md" }), call("Edit", { file_path: "x" })]);
+    rows(good, "p/c/bounded", "pass", [
+      call("Write", { file_path: "brief.md" }),
+      call("Write", { file_path: "brief.md" }),
+      call("Edit", { file_path: "x" }),
+    ]);
     rows(good, "p/c/bounded", "fail", [
       call("Write", { file_path: "brief.md" }),
       call("Write", { file_path: "brief.md" }),
@@ -496,7 +520,7 @@ function selftest() {
     r = run(wrong);
     assert(r.code === 1, "wrong grader must exit 1");
     assert(/WRONG p\/c\/loose/.test(r.out), `wrong grader must be reported as WRONG:\n${r.out}`);
-    console.log(r.out.split("\n").find((l) => l.startsWith("WRONG")) + "   <- planted wrong grader, expected");
+    console.log("self-test: the planted wrong grader was caught");
 
     // A grader that rejects its own passing row is wrong too.
     const strict = tree("strict");
@@ -529,6 +553,42 @@ function selftest() {
     r = run(unparsable);
     assert(r.code === 1 && /cannot parse/.test(r.out), `unparseable grader must exit 1:\n${r.out}`);
 
+    // Rows files with no rows, or with different row counts, are errors.
+    const empty = tree("empty");
+    grader(empty, "p/c/g", "type: regex\ntarget: trace\nmatch: not_contains\npattern: 'a'");
+    rows(empty, "p/c/g", "pass", []);
+    rows(empty, "p/c/g", "fail", [row({ text: "a" })]);
+    r = run(empty);
+    assert(r.code === 1 && /pass\.jsonl: holds no rows/.test(r.out), `empty pass file must exit 1:\n${r.out}`);
+    rows(empty, "p/c/g", "pass", [row({ text: "b" })]);
+    rows(empty, "p/c/g", "fail", []);
+    r = run(empty);
+    assert(r.code === 1 && /fail\.jsonl: holds no rows/.test(r.out), `empty fail file must exit 1:\n${r.out}`);
+    rows(empty, "p/c/g", "pass", [row({ text: "b" }), row({ text: "c" })]);
+    rows(empty, "p/c/g", "fail", [row({ text: "a" })]);
+    r = run(empty);
+    assert(r.code === 1 && /counts must match/.test(r.out), `different row counts must exit 1:\n${r.out}`);
+
+    // No grader files at all is a failure, not a pass.
+    r = run(tree("nothing"));
+    assert(r.code === 1 && /no grader files found/.test(r.out), `an empty root must exit 1:\n${r.out}`);
+
+    // A no-target grader needs a final message in the last row.
+    const noFinal = tree("nofinal");
+    grader(noFinal, "p/c/g", "type: regex\npattern: 'x'");
+    rows(noFinal, "p/c/g", "pass", [row({ type: "system", text: "x" })]);
+    rows(noFinal, "p/c/g", "fail", [row({ type: "system", text: "y" })]);
+    r = run(noFinal);
+    assert(r.code === 1 && /no final message/.test(r.out), `rows without a final message must exit 1:\n${r.out}`);
+
+    // Only objects with type tool_use count as tool calls.
+    const typed = tree("typed");
+    grader(typed, "p/c/g", "type: tool_used\ntool: Write");
+    rows(typed, "p/c/g", "pass", [call("Write", { file_path: "a" })]);
+    rows(typed, "p/c/g", "fail", [row({ note: { name: "Write", input: { file_path: "a" } } })]);
+    r = run(typed);
+    assert(r.code === 0, `an object without type tool_use is not a call:\n${r.out}`);
+
     // Harvest: rows are scrubbed of the home folder, minimal, and then pass check mode.
     const hv = tree("harvest");
     grader(hv, "p/c/wrote", "type: tool_used\ntool: Write\ninput_match: 'brief\\.md'");
@@ -542,7 +602,10 @@ function selftest() {
       trace,
       [
         row({ text: "noise" }),
-        call("Write", { file_path: `${home}/proj/brief.md` }),
+        call("Write", {
+          file_path: `${home}/proj/brief.md`,
+          scratch: `/private/tmp/claude-501/${home.split("/").join("-")}-workspace-x`,
+        }),
         row({ text: "alpha" }),
         row({ text: "middle" }),
         row({ text: "omega" }),
@@ -555,6 +618,9 @@ function selftest() {
     assert(r.code === 0, `harvest should exit 0:\n${r.out}`);
     const pass = (n) => fs.readFileSync(path.join(hv, ROWS_DIR, "p", "c", `${n}.pass.jsonl`), "utf8");
     assert(!pass("wrote").includes(home) && pass("wrote").includes("$HOME/proj/brief.md"), "home path must become $HOME");
+    const user = path.basename(home);
+    assert(!pass("wrote").includes(user), "the user name must not survive, not even in the dashed form");
+    assert(pass("wrote").includes("/-Users-$USER-workspace-x"), "the dashed home form must keep its shape with $USER");
     assert(pass("wrote").trim().split("\n").length === 1, "tool_used harvest keeps only the matching row");
     assert(pass("said").trim().split("\n").length === 3, "regex harvest keeps the rows the match spans");
     assert(pass("lookahead").trim().split("\n").length === 2, "regex harvest grows to satisfy a lookahead");
@@ -567,8 +633,11 @@ function selftest() {
     harvest(hv, trace, "p/c", true);
     assert(pass("wrote").includes("$HOME"), "--force overwrites");
     rows(hv, "p/c/wrote", "fail", [row({ text: "no brief" })]);
-    rows(hv, "p/c/said", "fail", [row({ text: "alpha" })]);
-    rows(hv, "p/c/lookahead", "fail", [row({ text: "start" })]);
+    rows(hv, "p/c/said", "fail", [row({ text: "alpha" }), row({ text: "middle" }), row({ text: "end" })]);
+    rows(hv, "p/c/lookahead", "fail", [
+      row({ text: "start", parent_tool_use_id: "toolu_1" }),
+      row({ text: "later", parent_tool_use_id: "toolu_2" }),
+    ]);
     r = run(hv);
     assert(/ok    p\/c\/wrote/.test(r.out), `harvested rows must pass check mode:\n${r.out}`);
     assert(r.code === 0, `harvested rows must pass check mode:\n${r.out}`);
@@ -583,7 +652,7 @@ function selftest() {
 
 function main(argv) {
   const args = [];
-  let root = process.cwd();
+  let root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   let force = false;
   let only = false;
   for (let i = 0; i < argv.length; i++) {
