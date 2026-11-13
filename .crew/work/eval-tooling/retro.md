@@ -24,7 +24,7 @@
 |---|---|---|---|---|---|
 | 1 | A near miss removes one thing, the thing the grader is for; removing every wanted word proves nothing | team/T7-reviewer.md must-fix 1 | L3 | `scripts/grader-rows/README.md` and README "Graders match what you mean" (this change), checked by `node scripts/test-graders.mjs` | accepted |
 | 2 | The recheck after review fixes found two new must-fix, one caused by a fix | team/T7b-reviewer.md | L1 | `retro.md` only (the recheck rule is the mechanism, and it worked) | kept |
-| 3 | A check that can exit 0 without running is worse than no check: the script did nothing when called through a link | team/T7b-reviewer.md N2 | | `.crew/profile.md` note | proposed |
+| 3 | A check that can exit 0 without running is worse than no check: the script did nothing when called through a link | team/T7b-reviewer.md N2 | | `.crew/profile.md` note | accepted |
 | 4 | A researcher's figures were wrong twice; the engineer who used them checked each against its source | team/T3-engineer.md | | `retro.md` only | kept |
 
 ## Proposed text

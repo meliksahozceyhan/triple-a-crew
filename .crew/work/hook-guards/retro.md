@@ -29,12 +29,15 @@
 | # | Lesson | Evidence | Repeat of | Goes to | Status |
 |---|---|---|---|---|---|
 | 1 | The recheck after review fixes found a new must-fix, caused by the fix | team/T9b-reviewer.md R1 | L1 | `retro.md` only (the recheck rule is the mechanism, and it worked) | kept |
-| 2 | Hook state that is read, changed and written back races; one file per fact does not | team/T9b-reviewer.md R1 | | `docs/DESIGN.md`, "Enforcement through hooks" | proposed |
+| 2 | Hook state that is read, changed and written back races; one file per fact does not | team/T9b-reviewer.md R1 | | `docs/DESIGN.md`, "Enforcement through hooks" | accepted |
 | 3 | A cheap live probe settled six facts the docs leave open and changed the design twice | team/T2-engineer.md | L5 | `retro.md` only (the convention exists) | kept |
 | 4 | Three statements in the docs did not match the scripts they describe | team/T9-reviewer.md S5 | L7 | `retro.md` only (the profile note exists; the reviewer caught it) | kept |
-| 5 | The stop hook's report check may be skipped in the desktop app | findings.md | | <repository from plugin.json> | proposed |
-| 6 | `claude plugin validate` may not read `hooks.json`, so it proves little for hooks | findings.md | | <repository from plugin.json> | proposed |
-| 7 | Hook state falls back to a shared temp folder, and the 7-day prune can delete a live session's stamp | findings.md | | <repository from plugin.json> | proposed |
+| 5 | The stop hook's report check may be skipped in the desktop app | findings.md | | <repository from plugin.json> | accepted (#55) |
+| 6 | `claude plugin validate` may not read `hooks.json`, so it proves little for hooks | findings.md | | <repository from plugin.json> | accepted (#56) |
+| 7 | Hook state falls back to a shared temp folder, and the 7-day prune can delete a live session's stamp | findings.md | | <repository from plugin.json> | accepted (#57) |
+
+All four proposals were accepted on 2026-11-13. The three issues were filed with a fuller text than the
+drafts below (context, evidence, acceptance criteria), which the user saw before filing.
 
 ## Proposed text
 - **2** (`docs/DESIGN.md`, "Enforcement through hooks"): "Hook state is one small file per fact, created to

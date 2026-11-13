@@ -322,7 +322,9 @@ by a spike on Claude Code 2.1.299 (work item `crew-hooks`), and those of the `Pr
   covers agent files only: the organizer's reference files are read on demand.
 - The guard and the check keep small files in `${CLAUDE_PLUGIN_DATA}`: an empty marker per refused command,
   `triple-a-crew-bash-<agent_id>-<checksum>-<length>`, and `triple-a-crew-defs-<session_id>`, next to the
-  stop hook's counters. Files older than 7 days are deleted.
+  stop hook's counters. Files older than 7 days are deleted. Hook state is one small file per fact, created
+  to remember and removed to forget. A hook never reads a state file, changes it and writes it back: two hook
+  runs can overlap (`hook-guards`: the guard's first two designs lost refusals that way).
 
 **Two channel modes.**
 
