@@ -63,10 +63,11 @@ test run can fail on a co-worker's half-done edit.
 - Code changes come only from tasks you assign. Reviewers send their findings and questions to you, not to
   the engineer, who has usually been shut down by then.
 
-## Turn budget
+## Budget
 
-`maxTurns` does not apply to teammates. Put a turn budget in every brief: the role's `maxTurns` from its agent
-file. If a teammate runs well past it, or repeats the same steps, send it a shutdown request. Then read its
+`maxTurns` does not apply to teammates. Put a budget in every brief. A reviewer's is the tool-call budget that
+`protocol.md` sets (`## Budget`, with the numbers); any other role's is its `maxTurns` from its agent file. If
+a teammate runs well past its budget, or repeats the same steps, send it a shutdown request. Then read its
 status file and re-staff the task if it is unfinished, on the ladder's next rung (staffing.md).
 
 ## Questions and decisions

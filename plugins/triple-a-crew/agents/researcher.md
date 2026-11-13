@@ -60,6 +60,12 @@ already does for similar problems before proposing anything new. Put this in you
 No option without code evidence. Say which facts would change the recommendation. Label as a
 recommendation anything the project's conventions don't decide.
 
+## Current flow
+
+When the brief asks for the current flow, draw it as a Mermaid `flowchart` in your Outcome and in your Report:
+one node per step that matters to the change, each with its `path:line`, about 12 nodes at most. No node
+without code evidence.
+
 ## How you report
 
 Your brief names a status file by absolute path. It is yours alone. Create it first thing and keep it
@@ -77,7 +83,11 @@ updated: <ISO timestamp>
 ## Assumptions   (reversible choices you made without asking)
 ## Questions     (what blocks you, and your proposed answer)
 ## Findings      (problems outside your task: what, where as path:line, evidence)
+## Report        (your full report, written last)
 ```
+
+Before you finish, write your full report into the status file under `## Report`: every table, list and
+`path:line` the organizer needs. Your final message may be shorter; it names the status file.
 
 Set `updated` from `date -u +%Y-%m-%dT%H:%M:%SZ` each time the file changes; never write a time from memory.
 

@@ -6,6 +6,7 @@ Everything is under `<root>/.crew/`. Every file has exactly one writer: the orga
 ```
 .crew/
   .gitignore
+  lessons.md                                                     committed: the durable record
   work/
     index.md
     <id>/
@@ -69,6 +70,42 @@ work/*/handoff.md
 | T2 | Stream rows from the query | src/db/orders.js | 200k rows under 100 MB (test) | engineer | standard | T1 |
 | T3 | Review T2 | read only | verdict + findings | reviewer | critical | T2 |
 
+## Flow
+
+```mermaid
+flowchart LR
+  T1[T1 map the query] --> T2[T2 stream rows]
+  T2 --> T3[T3 review]
+```
+
+Current flow (drawn by the researcher):
+
+```mermaid
+flowchart LR
+  A["route handler (src/routes/orders.js:12)"] --> B["listOrders (src/db/orders.js:30)"]
+  B --> C["load all rows (src/db/orders.js:41)"]
+  C --> D["build CSV in memory (src/export/csv.js:18)"]
+  D --> E["send response (src/routes/orders.js:27)"]
+```
+
+Final flow (new and changed nodes are marked):
+
+```mermaid
+flowchart LR
+  A["route handler"] --> B["listOrders"]
+  B --> C["open cursor"]
+  C --> D["write CSV row by row"]
+  D --> E["send response"]
+  classDef changed fill:#ffd,stroke:#a80
+  class B,C,D changed
+```
+
+Legend: yellow nodes are new or changed.
+
+## Lessons that apply
+
+- L1 (date filters state their time zone): T2's acceptance check includes a UTC boundary case.
+
 ## Done-when coverage
 
 | Done when | Met by |
@@ -76,6 +113,16 @@ work/*/handoff.md
 | Exporting 200k rows stays under 100 MB | T2 |
 | Old clients still parse the file | deferred to a follow-up item (decisions.md) |
 ```
+
+A size M or L plan with three or more tasks has a `## Flow` section with a Mermaid `flowchart` of the tasks:
+one edge per entry in the "Depends on" column and no others. When the change alters how something runs (a
+request path, control flow, a state machine, a data pipeline), `## Flow` also shows the current flow and the
+final flow. A researcher draws the current flow, with a `path:line` on every node. You draw the final flow
+and mark each new or changed node. A change that alters no flow (docs, config, a rename) has neither. About
+12 nodes per diagram at most; split a larger flow.
+
+`## Lessons that apply` names each open lesson in `lessons.md` that this plan could repeat, with the task or
+brief line that guards against it. Leave the section out when none applies.
 
 Size L only: the "Done-when coverage" table goes at the end of `plan.md`, with one row per done-when line of
 `brief.md`. Size M has none.
@@ -135,12 +182,12 @@ and an abandoned one ("just do it") gets neither. Every point names its source f
 ## Lessons
 | # | Lesson | Evidence | Repeat of | Goes to | Status |
 |---|---|---|---|---|---|
-| L1 | Date filters state their time zone | team/T3-reviewer.md | orders-filter L2 | `.crew/profile.md` notes | proposed |
-| L2 | The verifier brief chained commands that allow rules deny | team/T5-verifier.md | | <repository from plugin.json> | proposed |
+| 1 | Date filters state their time zone | team/T3-reviewer.md | L1 | `.crew/profile.md` notes | proposed |
+| 2 | The verifier brief chained commands that allow rules deny | team/T5-verifier.md | | <repository from plugin.json> | proposed |
 
 ## Proposed text
-- **L1** (`.crew/profile.md`, notes): "Date filters take and return UTC; the route's doc comment says so."
-- **L2** (issue draft): "Verifier brief chains commands that allow rules deny". The organizer wrote
+- **1** (`.crew/profile.md`, notes): "Date filters take and return UTC; the route's doc comment says so."
+- **2** (issue draft): "Verifier brief chains commands that allow rules deny". The organizer wrote
   `a && b` into the verifier's brief; `Bash(node *)` did not match, so the command was denied. Suggested
   fix: the organizer writes one plain command per line in verifier briefs, and copies a profile command
   that contains `&&` as listed.
@@ -151,6 +198,55 @@ the repository was missing or unreachable) or `declined`; a lesson that stays he
 feedback draft describes crew behavior only, never project code, paths or names. A lesson still `proposed` or
 `not filed` in another item's retro is still open: name it in the report instead of proposing it again.
 
+The "Repeat of" column holds a ledger id from `lessons.md` (`L1`), not an item name; it is empty for a new
+lesson. The `#` column numbers the lessons of this retro only. A repeat's "Goes to" is never `retro.md` only
+(see `lessons.md` below for why).
+
+## lessons.md
+
+```markdown
+# Lessons
+
+| Id | Lesson | Hits | Items | Mechanism |
+|---|---|---|---|---|
+| L1 | Date filters state their time zone | 2 | orders-filter, csv-export | open |
+| L2 | The verifier brief chained commands that allow rules deny | 1 | csv-export | brief: one plain command per line (protocol.md) |
+| L3 | The export test depends on the machine's locale | 1 | csv-export | none: the CI image fixes the locale |
+```
+
+One row per lesson, across all work items of the project; you are its only writer. `Mechanism` is `open`, or
+what now enforces the lesson and where (a hook, a brief line, an eval case, a profile note), or `none:` with
+the reason. At close (SKILL.md step 10), each lesson of the retro raises `Hits` and adds the item on the
+row it repeats, or gets a new row with the next id. A lesson that reaches two hits while `open` gets a
+mechanism proposed in the retro, or `none:` with the reason; it is never left as a retro-only note. The plan
+step reads the `open` rows.
+
+## PR text
+
+```markdown
+<one or two sentences: what this pull request does and why>
+
+## What changed
+- <area or file>: <the change>
+
+## Verification
+- `<verify command>`: <result>
+- Evals: <cases, scores, cost>, or "not run: <why>"
+- Review: <verdict and rounds>
+
+## Who did what
+- <task>: <role> (<model>)
+
+## Not done, on purpose
+- <deferral, and where it is recorded>
+
+Closes #12 · Refs #14 (open: <the criterion still open>)
+```
+
+At close you draft this text from the record: `brief.md`, `decisions.md`, the verify results and the board.
+`Closes` and `Refs` follow protocol.md. The draft goes into your final report; opening the pull request is a
+separate step the user asks for.
+
 ## handoff.md
 
 ```markdown
@@ -158,5 +254,9 @@ feedback draft describes crew behavior only, never project code, paths or names.
 
 **Done:** T1, T2 (verified with `node --test`)
 **Next:** staff T3 reviewer on the T2 diff
+**Read first:** team/T1-researcher.md (its ## Report), team/T2-engineer.md
 **Open questions:** <for the user>
 ```
+
+A paused item has this one handoff. A session handoff written by the `handoff` skill points to it and does not
+repeat it.

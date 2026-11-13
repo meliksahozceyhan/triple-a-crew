@@ -48,11 +48,16 @@ and what it missed, verbatim: the acceptance check and the command output, or th
 Its status file carries the attempt's letter (`T2b-engineer.md`), so the first attempt's file stays as the
 record.
 
+A researcher's brief has this acceptance line: `- [ ] The full report is in the status file under ## Report`.
+When the change alters how something runs, the researcher's brief asks for the current flow; its agent file
+has the format.
+
 `## Criteria` goes into the last review's brief (SKILL.md step 8): every done-when line of `brief.md`, each
 ticket's criteria as written and numbered by ticket (`#41.2` is #41's second). A line that only points at
 tickets ("every issue's acceptance criteria hold") is replaced first by those criteria, copied from the
-tracker; write them into `brief.md` too. Mark a deferral the user accepted as such. For size L, that review
-covers the whole diff against the base. The reviewer reports each line with one of:
+tracker; write them into `brief.md` too. Mark a deferral the user accepted as such. When `plan.md` has a final
+flow, add one line: `The code matches the final flow in plan.md`. For size L, that review covers the whole
+diff against the base. The reviewer reports each line with one of:
 
 | Evidence | Means |
 |---|---|
@@ -66,6 +71,11 @@ recheck after fixes gets the lines that had `none`, plus every line whose files 
 whose lines are all met is `Closes #N`; one with a line still open is `Refs #N`, with the open lines named,
 unless the user says to close it anyway. Name the derived lines in your final report, so the user sees what
 a `Closes` rests on.
+
+`## Budget` goes into every reviewer's brief, as its last section: a tool-call budget sized to the diff (about
+30 calls plus one per changed file, 70 at most; when a diff needs more, split the review by task or area), the
+note that running tests counts against it, and at most three test commands, each plain and ready to run. Never
+write "you may run related tests".
 
 Every brief also carries this rule for shell commands: run each command alone, as its own Bash call: no pipes,
 redirection, `;` or `&&` chains, no `cd` (use absolute paths), and no `echo $?`, `time` or other wrappers of
@@ -102,6 +112,10 @@ updated: 2026-10-16T14:05:00Z
 ## Findings
 <problems outside the task: what, where (path:line), evidence>
 ```
+
+A researcher's status file ends with a `## Report` section, placed after `## Findings`: its full report (every
+table, list and `path:line`), written before it finishes, so the research survives the session. Its final
+message may be shorter and names the status file. Other roles have no Report section.
 
 Set `updated` from `date -u +%Y-%m-%dT%H:%M:%SZ` (one plain command) each time the file changes. Never invent
 a timestamp.
