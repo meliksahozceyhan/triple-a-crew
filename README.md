@@ -8,9 +8,9 @@ is an organizer that runs work like a team lead: it understands the problem, sta
 on the right models, tracks their state, answers their questions, and files follow-up issues for anything
 out of scope.
 
-> **Status: v1.0.0.** Two plugins: `file-issue`, and `triple-a-crew` with the organizer, its employees,
-> `onboard`, and two workflow skills migrated from the author's previous project (`test-harden`, `handoff`).
-> The full design is in [docs/DESIGN.md](docs/DESIGN.md).
+> **Status: `triple-a-crew` v1.1.0, `file-issue` v1.0.0.** Two plugins: `file-issue`, and `triple-a-crew`
+> with the organizer, its employees, `onboard`, and two workflow skills migrated from the author's previous
+> project (`test-harden`, `handoff`). The full design is in [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Contents
 
@@ -387,7 +387,7 @@ The plugins do not depend on each other, so install both: the organizer uses `fi
 when it is there, and lists findings for you when it is not.
 
 **Updating.** Auto-update is off by default for marketplaces that are not Anthropic's. Releases are tagged
-`<plugin>--v<version>` (for example `triple-a-crew--v1.0.0`). Pull the latest with:
+`<plugin>--v<version>` (for example `triple-a-crew--v1.1.0`). Pull the latest with:
 
 ```bash
 claude plugin marketplace update triple-a-crew
@@ -713,7 +713,7 @@ divided.
 | `agents/verifier.md` | `verify-staffs-verifier` |
 | `agents/researcher.md` | None: no case staffs the researcher. |
 | `hooks/hooks.json`, `scripts/session-start.sh` | `session-start-mentions-open-item` |
-| `scripts/subagent-start.sh`, `scripts/subagent-stop.sh` | None grade them. Run `sh plugins/triple-a-crew/scripts/test-hooks.sh`; the cases that staff employees load them. |
+| `scripts/subagent-start.sh`, `scripts/subagent-stop.sh`, `scripts/bash-guard.sh`, `scripts/definitions-check.sh` | None grade them. Run `sh plugins/triple-a-crew/scripts/test-hooks.sh`; the cases that staff employees load them (`hook-guards` ran `medium-fix-end-to-end` to see that the command guard refuses nothing in a normal run). |
 | `skills/onboard/` (`SKILL.md`, `profile-format.md`) | `creates-profile-from-repo`, `refreshes-profile-keeps-user-values`, `no-fire-setup-question` |
 | `skills/test-harden/` | `test-harden-adds-edge-cases`, `test-engineer-keeps-failing-test` |
 | `skills/handoff/` | `writes-handoff-to-crew` |
@@ -727,7 +727,7 @@ divided.
 | `starts-work-item-on-large-request` | `triple-a-crew` | $0.49 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
 | `stays-out-of-small-request` | `triple-a-crew` | unknown | | |
 | `stays-out-of-read-only-investigation` | `triple-a-crew` | $0.15 | 2026-10-27 | `.crew/work/publish-v1/decisions.md` |
-| `session-start-mentions-open-item` | `triple-a-crew` | unknown | | |
+| `session-start-mentions-open-item` | `triple-a-crew` | $0.10 | 2026-11-13 | `.crew/work/hook-guards/decisions.md` |
 | `reports-status-of-open-item` | `triple-a-crew` | unknown | | |
 | `plans-against-project-conventions` | `triple-a-crew` | $0.54 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
 | `plan-shows-flow-for-runtime-change` | `triple-a-crew` | $0.52 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
@@ -759,7 +759,8 @@ Cases run more than once show the latest figure above. The recorded range, from 
   `eval-tooling` and `organizer-rules`).
 - `plan-shows-flow-for-runtime-change`: $0.51 to $0.60 (`.crew/work/organizer-rules/decisions.md`).
 - `medium-fix-end-to-end`: $0.80 to $1.46 (`.crew/work/issue-30-criteria-check/decisions.md`,
-  `follow-ups-25-28`, `retro-skill`, `review-24-fixes`, `effort-ladder` and `organizer-rules`).
+  `follow-ups-25-28`, `retro-skill`, `review-24-fixes`, `effort-ladder`, `hook-guards` and
+  `organizer-rules`).
 - `verify-staffs-verifier`: $0.67 to $1.43 (`.crew/work/employees-v2/findings.md`, `fix-open-issues`).
 - `test-engineer-keeps-failing-test`: $0.96 to $1.19 (`.crew/work/agent-teams-mode/decisions.md`,
   `fix-open-issues`).
@@ -813,6 +814,7 @@ the model change, so the date matters.
 | **Agent teams** (done) | An opt-in agent-teams mode (`agent-teams-mode`, PR #23) |
 | **Next** (planned) | The Cursor check (`cursor-check`, paused), with a live test you run, and the open crew issues. Each plan is in `.crew/work/<id>/plan.md` |
 | **Publish** (done) | v1.0.0 on 2026-10-27 (`publish-v1`, PR #41): Apache-2.0, versions and tags, an exposure audit, the repository public, the `file-issue` zip tested in Claude chat |
+| **1.1.0** (done) | `triple-a-crew` v1.1.0 on 2026-11-13, from three work items. `hook-guards` (PR #52): the stop hook checks the status file's `updated` time, a command guard refuses an employee's chained shell command, and a note tells the organizer when an agent file changed after the session loaded it. `eval-tooling` (PR #53): grader tests with no model call, and the table of which eval cases to rerun and what they cost. `organizer-rules` (PR #54): flowcharts in plans, the lessons ledger, a ship step, one handoff, a tool-call budget for reviewers, and researcher reports kept on disk |
 
 The organizer's model choice is a rule table: `mechanical` work goes to haiku, `standard` to sonnet,
 `critical` to opus, each with a default effort. A task that misses its check climbs a ladder (sent back
@@ -859,7 +861,10 @@ runs work in parallel only on disjoint file sets. Details are in [docs/DESIGN.md
   of a long run goes unseen: judge the final reply when it carries the facts, or use a `regex` grader with
   `target: trace`, which sees every message. A fixture's planted change must agree with its own work item: in
   the plan, used, and correct. Otherwise the organizer rightly changes it, and the case fails for the wrong
-  reason (`verify-staffs-verifier` once planted an unused retry the organizer deleted).
+  reason (`verify-staffs-verifier` once planted an unused retry the organizer deleted). Run a new case once
+  before the first review, not after the last: it costs about as much as a tenth of a review round, and it
+  sees what the model does, which a reviewer of the text cannot (`organizer-rules`: the flow case found that
+  the approval message retold the diagrams in prose).
 - **Graders match what you mean.** A `tool_used` grader's `input_match` is matched against the whole tool
   input, file content included, so a "never writes `profile.md`" check also fails on a write to another file
   that mentions `profile.md`. Anchor a path check on the path: `'"file_path"\s*:\s*"[^"]*profile\.md"'`. No

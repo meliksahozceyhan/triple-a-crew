@@ -57,3 +57,7 @@
   it is made and verify is rerun, with no third reviewer.
 - **2026-11-13 The definition hook prints no permission decision, on purpose.** A decision of `allow` would
   approve every Agent call in the user's session; the probe showed the note is delivered without one.
+- **2026-11-13 T10: two eval cases, one run each, both 1.00, $0.98.** `session-start-mentions-open-item`
+  ($0.10) and `medium-fix-end-to-end` ($0.88), with all hooks loaded and `--no-publish`; the guard refused
+  nothing in the `medium-fix` run. Written down in the release pull request (1.1.0): the runs were made
+  before the branch was merged, and this record was missing.

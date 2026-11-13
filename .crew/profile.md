@@ -26,7 +26,11 @@ models: { critical: fable }
   they are not in `verify`. Iterate with `--runs 1 --ablation none --case <name>` and report the cost. README
   "Evals" has the table of which cases to rerun when a file changes and what each last cost. Run a case with
   `--keep-temp` when its graders have no saved rows yet, and harvest them (`node scripts/test-graders.mjs
-  harvest`).
+  harvest`). `--case` takes one glob, not a list: run several named cases as separate commands, or by a
+  shared prefix or `--tag`.
+- A verify command must print a last line that says what it checked (`all hook tests passed`, `all checked
+  graders behave`), and the verifier's brief asks for that line. Exit code 0 alone is not evidence:
+  `test-graders.mjs` once exited 0 without running (eval-tooling).
 - If you install the plugins at user scope from this checkout, switching branches here changes the plugins in
   every project, and edits apply after `/reload-plugins`.
 - Never write under `.claude/`; crew state goes in `.crew/`.
@@ -46,7 +50,9 @@ models: { critical: fable }
 - A rule here is often stated in several places: `SKILL.md`, `protocol.md` and an agent file (follow-ups-25-28:
   the verifier's folder rule). When one changes, grep the others for the same rule before review. When adding
   a rule, grep the other files for the words it hinges on (`effort-ladder`: `miss`, `recheck`), not only for
-  the old wording; step 8 and `staffing.md` disagreed twice within one change.
+  the old wording; step 8 and `staffing.md` disagreed twice within one change. The last review's brief lists
+  each changed rule with the words it hinges on and asks for a grep of every file that states it
+  (`organizer-rules`: two rounds each found a copy that differed).
 - Before closing a work item or deleting its branch, confirm the PR is merged with
   `gh pr view <n> --repo meliksahozceyhan/triple-a-crew --json state`; the user may say "merged" before GitHub
   has it (review-24-fixes, follow-ups-25-28).

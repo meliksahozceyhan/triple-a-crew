@@ -30,14 +30,14 @@
 | # | Lesson | Evidence | Repeat of | Goes to | Status |
 |---|---|---|---|---|---|
 | 1 | The recheck after review fixes found a new must-fix, caused by a fix | team/T11c-reviewer.md MF1 | L1 | `retro.md` only (the recheck rule is the mechanism, and it worked) | kept |
-| 2 | A changed rule read differently in another file in both review rounds, although every brief carried its exact words | team/T11-reviewer.md MF2; team/T11c-reviewer.md S3 to S5 | L7 | `.crew/profile.md` note | proposed |
-| 3 | An eval run of a new case found two gaps that two review rounds had missed | decisions.md, "T12" | | `README.md`, "Conventions for new skills" | proposed |
+| 2 | A changed rule read differently in another file in both review rounds, although every brief carried its exact words | team/T11-reviewer.md MF2; team/T11c-reviewer.md S3 to S5 | L7 | `.crew/profile.md` note | accepted |
+| 3 | An eval run of a new case found two gaps that two review rounds had missed | decisions.md, "T12" | | `README.md`, "Conventions for new skills" | accepted |
 | 4 | A cheap live probe overturned the execution plan before anything depended on it | decisions.md, "F" | L5 | `retro.md` only (the convention exists) | kept |
 | 5 | The brief's own edge-case row contradicted the issue it was built from | team/T11c-reviewer.md MF1 | | `retro.md` only | kept |
-| 6 | `claude plugin eval --case` takes one glob, not a list of names | decisions.md, "T12" | | `.crew/profile.md` note | proposed |
+| 6 | `claude plugin eval --case` takes one glob, not a list of names | decisions.md, "T12" | | `.crew/profile.md` note | accepted |
 
-The ledger rows for this item and its two sibling items are updated in the release pull request, once all
-three are on `main`.
+The ledger rows for this item and its two sibling items were updated in the release pull request (1.1.0),
+which also applied the three accepted proposals.
 
 ## Proposed text
 - **2** (`.crew/profile.md` note, added to the "A rule here is often stated in several places" note): "The
