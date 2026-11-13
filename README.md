@@ -428,6 +428,17 @@ Test the hooks without a model call:
 sh plugins/triple-a-crew/scripts/test-hooks.sh
 ```
 
+Test the eval graders without a model call:
+
+```bash
+node scripts/test-graders.mjs
+```
+
+It runs every `regex` and `tool_used` grader that has saved rows in `scripts/grader-rows/` against rows it
+must pass and a near miss it must fail, and lists the graders that have no rows yet. After an eval run with
+`--keep-temp`, `node scripts/test-graders.mjs harvest <trace.jsonl> <plugin>/<case>` saves the passing rows;
+the near miss is made by hand (`scripts/grader-rows/README.md`).
+
 Every eval `fixture.sh` refuses to run unless its folder is empty, because it writes files and runs git
 there. To try one by hand, run `bash <path to fixture.sh>` inside a fresh `mktemp -d` folder. Fixtures are
 bash scripts (`set -euo pipefail`), and the eval harness runs them with `bash`. The scripts in
@@ -506,7 +517,8 @@ ones that test the no-tracker path.
   - `handoff` writes and finalizes to `.crew/handoffs/`.
 
 **Latest results:** 2026-10-16, Claude Code 2.1.295, default model. The organizer rows were rerun on
-2026-10-19 (Claude Code 2.1.299) after the skill cut: one run per case, one arm, $1.69 for the suite.
+2026-10-19 (Claude Code 2.1.299) after the skill cut: one run per case, one arm, $1.69 for the five cases
+that were rerun.
 
 | Plugin | Case | With plugin | Without | Δ | Runs (with) |
 |---|---|---|---|---|---|
@@ -717,6 +729,7 @@ the model change, so the date matters.
 │       │   ├── test-harden/            SKILL.md, examples.md
 │       │   └── handoff/                SKILL.md, handoff.mjs (facts from git and the transcript)
 │       └── evals/                      16 cases; each fixture.sh scaffolds a sample repo
+├── scripts/                            test-graders.mjs and grader-rows/: grader tests with no model call
 └── README.md
 ```
 
@@ -790,7 +803,9 @@ runs work in parallel only on disjoint file sets. Details are in [docs/DESIGN.md
   briefed on the README fix alone, until it also required another ticket's id. A regex on an Agent row also
   sees the call's `description`, so a keyword there passes a grader meant for the brief. Build the near miss
   from the real passing row with the wanted text removed, not by adding the text to some other row:
-  `failures-in-brief` first matched on the description alone.
+  `failures-in-brief` first matched on the description alone. A new `regex` or `tool_used` grader ships with
+  both rows, in `scripts/grader-rows/<plugin>/<case>/<grader>.pass.jsonl` and `.fail.jsonl`, and
+  `node scripts/test-graders.mjs` checks every grader that has them, with no model call.
 
 ## Troubleshooting
 

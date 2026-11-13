@@ -4,6 +4,7 @@ verify:
   - sh plugins/triple-a-crew/scripts/test-hooks.sh
   - node --check plugins/triple-a-crew/skills/handoff/handoff.mjs
   - claude plugin validate .
+  - node scripts/test-graders.mjs
 tests: ["plugins/*/evals/**"]
 conventions: [README.md, docs/DESIGN.md]
 issue_tracker:
@@ -22,7 +23,10 @@ models: { critical: fable }
   change to `plugins/<name>/` that users should get: git-sourced plugins are cached per version, so a fix
   merged without a bump never reaches someone who runs those commands.
 - Evals (`claude plugin eval .`, run from a plugin folder) are real model calls on the user's account, so
-  they are not in `verify`. Iterate with `--runs 1 --ablation none --case <name>` and report the cost.
+  they are not in `verify`. Iterate with `--runs 1 --ablation none --case <name>` and report the cost. README
+  "Evals" has the table of which cases to rerun when a file changes and what each last cost. Run a case with
+  `--keep-temp` when its graders have no saved rows yet, and harvest them (`node scripts/test-graders.mjs
+  harvest`).
 - If you install the plugins at user scope from this checkout, switching branches here changes the plugins in
   every project, and edits apply after `/reload-plugins`.
 - Never write under `.claude/`; crew state goes in `.crew/`.

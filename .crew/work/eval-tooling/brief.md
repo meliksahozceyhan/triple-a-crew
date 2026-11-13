@@ -1,6 +1,6 @@
 # Eval tooling: grader tests without a model, and a cost map
 
-**Size:** M · **Tickets:** two issues to be filed (D: grader tests, E: cost map) · **Opened:** 2026-11-13
+**Size:** M · **Tickets:** #45 (D: grader tests), #46 (E: cost map) · **Opened:** 2026-11-13
 
 ## What
 1. A command that checks eval graders against saved rows, with no model call (issue D).
@@ -24,8 +24,7 @@ found only by a reviewer or by a paid run.
 - [ ] E.2 The table is where the organizer looks: README "Evals", pointed to from the profile's eval note.
 - [ ] F.1 (derived) The profile's verify commands pass, the new one included.
 
-The D and E lines are this brief's own until the issues are filed; then the issues' criteria replace them as
-written.
+The D lines are the criteria of #45 and the E lines those of #46, as written (filed 2026-11-13).
 
 ## Constraints
 - Neither part needs an eval run. If one is run: one run per case, cost reported (`.crew/profile.md`).
