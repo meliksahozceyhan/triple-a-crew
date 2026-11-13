@@ -1,7 +1,7 @@
 # Organizer rules: reports, budgets, flowcharts, a lessons ledger, a ship step, one handoff, worktrees
 
-**Size:** L · **Tickets:** #37, #38, #40, and four issues to be filed (A: lessons ledger, F: worktree rule,
-G: ship step, H: one handoff) · **Opened:** 2026-11-13
+**Size:** L · **Tickets:** #37, #38, #40, #50 (A: lessons ledger), #47 (F: worktree rule), #48 (G: ship step),
+#49 (H: one handoff) · **Opened:** 2026-11-13
 
 ## What
 Seven changes to the organizer's text and its reference files:
@@ -66,8 +66,7 @@ pull request text by hand although the work item holds every input.
 - [ ] I.3 (derived) The organizer eval cases the changes touch score 1.00, one run each, cost reported.
 
 #37 and #38 have no acceptance list of their own, so their lines are derived from each issue's suggested fix.
-The A, F, G and H lines are this brief's own until the issues are filed; then the issues' criteria replace
-them as written.
+The A, F, G and H lines are the criteria of #50, #47, #48 and #49, as written (filed 2026-11-13).
 
 ## Constraints
 - Short `SKILL.md`: about 150 lines, now 160. Details move to reference files, and no condition is trimmed

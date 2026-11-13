@@ -32,7 +32,7 @@ answers their questions and files follow-up issues for anything out of scope.
 | D1 | Broad scope: coding and non-coding workflows | The author works in Claude Code and Claude chat; issue writing, status, triage apply to both. |
 | D2 | Claude Code first, Cursor second | Organizer, subagents and hooks are Claude Code features. For Cursor, promise only tier-1 skills until a v2 test shows what Cursor loads. |
 | D3 | The organizer holds full state and staffs employees | Matches how the author wants to work: a lead who reasons about the problem and delegates to the right "employee". |
-| D4 | Work state lives in the repo under `.crew/`; the durable record is committed, working state is ignored | State travels with the code and survives sessions. Committing only the record (brief, plan, decisions, findings) gives history without churning every PR. Not under `.claude/`, which Claude Code protects (see state on disk). |
+| D4 | Work state lives in the repo under `.crew/`; the durable record is committed, working state is ignored | State travels with the code and survives sessions. Committing only the record (brief, plan, decisions, findings, lessons) gives history without churning every PR. Not under `.claude/`, which Claude Code protects (see state on disk). |
 | D5 | Process in the plugin, knowledge in the project | Plugins cannot ship rules or CLAUDE.md anyway; skills read a project profile instead of hardcoding a stack. |
 | D6 | The issue-writing skill is the first deliverable and must stand alone | Highest daily value, and the part most worth publishing. |
 | D7 | The organizer starts on its own for multi-step work | The author should not have to remember a command; a sizing step keeps it out of small requests. |
@@ -63,7 +63,7 @@ Three tiers in the plugin, plus a layer each project owns.
   the noise rule in the verify step) live only in the organizer.
   Frontmatter is limited to `name` and `description`: other fields are Claude Code extensions to the
   [Agent Skills spec](https://agentskills.io/specification) and may be ignored elsewhere.
-- **Tier 2** may assume Claude Code: subagents, model selection, worktrees, background agents.
+- **Tier 2** may assume Claude Code: subagents, model selection, background agents.
 - **Tier 3** hooks only make things faster or more visible. Nothing breaks if they are disabled.
 
 This split matches what each surface loads. A plugin zip uploaded to Claude chat (Customize > Plugins) loads
@@ -86,20 +86,34 @@ Responsibilities, in order:
    found in the code, the tracker or the profile.
 2. **Stress-test.** Before planning, list edge and extreme cases: empty and huge inputs, concurrency, partial
    failure, permissions, migrations, rollback. Record which ones the plan must cover and which are out of scope.
-3. **Plan and decompose.** Break the work into tasks with clear inputs, outputs and file sets. For size L, map
-   every done-when line to a task or a recorded deferral before asking for the go-ahead.
+3. **Plan and decompose.** Break the work into tasks with clear inputs, outputs and file sets. Read the
+   lessons ledger (`.crew/lessons.md`) and name each open lesson the plan could repeat under
+   `## Lessons that apply`. A size M or L plan with three or more tasks shows a `## Flow` task graph in
+   Mermaid. When the change alters how something runs, the plan also shows the current flow (a researcher
+   draws it, with a `path:line` on every node) and the final flow (the organizer draws it and marks the new
+   and changed nodes), about 12 nodes per diagram at most; the last review checks the code against the final
+   flow like a done-when line. For size L, map every done-when line to a task or a recorded deferral and show
+   the diagrams in the message that asks for the go-ahead.
 4. **Staff.** Pick a role and model per task (see staffing policy), and decide sequential vs parallel.
 5. **Brief.** Hand each employee a self-contained brief (see protocol). Employees never see the conversation.
 6. **Track.** Keep `board.md` current from the employees' status files.
 7. **Unblock.** Answer employee questions, or escalate to the user when the answer is the user's call.
 8. **Integrate and verify.** Check results against acceptance criteria; send work back when it falls short.
+   Every reviewer brief ends with a `## Budget`: a tool-call budget sized to the diff (about 30 calls plus one
+   per changed file, 70 at most; a bigger diff is split), with running tests counted against it and at most
+   three plain test commands. Near the budget the reviewer stops, records what is open and reports.
    When a review requests changes, a fresh reviewer rechecks the fix diff once: in four items in a row the
    second round found something new, sometimes caused by the fixes.
 9. **File follow-ups.** Collect out-of-scope findings from all employees, dedupe them, file them via `file-issue`.
    Crew feedback (about the organizer, an employee or a hook) waits for the close step.
-10. **Close.** For size M and L, write `retro.md`: what happened, repeats from earlier retros, and where each
-    lesson goes (a profile or convention edit, or crew feedback for the plugin's repository), applied only once
-    the user accepts. Write `handoff.md` if the work stops early.
+10. **Close.** For size M and L, write `retro.md`: what happened and where each lesson goes (a profile or
+    convention edit, or crew feedback for the plugin's repository), applied only once the user accepts. Add
+    each lesson to `.crew/lessons.md`, or raise the hit count of the row it repeats; a lesson that reaches two
+    hits while open gets a mechanism, never `retro.md` only, and the retro's "Repeat of" column holds a ledger
+    id. Draft the pull request text from the record into the report (the shape is in `formats.md`, "PR
+    text"); open the pull request only when the user asks, and call it merged only after checking its state,
+    otherwise "not checked". If the work stops early, write `handoff.md` instead of a retro: the item's one
+    handoff, which names what to read first. Resuming reads it before `board.md`.
 
 ### How work starts
 
@@ -132,11 +146,11 @@ Plugin agents with a fixed role, default model and tool set. The organizer can o
 
 | Role | Does | Default model | Tools | Notes |
 |---|---|---|---|---|
-| researcher | Maps code, docs and tickets; answers "where/how does X work" | haiku → sonnet | read-only | Cheap, parallel-friendly |
+| researcher | Maps code, docs and tickets; answers "where/how does X work" | haiku → sonnet | read-only | Cheap, parallel-friendly; writes its full report into its status file under `## Report`; draws the current flow when the brief asks |
 | architect | Options and trade-offs for ambiguous or cross-cutting work | opus | read-only | Not a separate agent: a researcher at critical tier answers design questions (work item `employees-v2`) |
-| engineer | Implements one task from the plan | sonnet | edit, bash | Own worktree when running in parallel |
+| engineer | Implements one task from the plan | sonnet | edit, bash | Runs in parallel only on a file set no other writer touches; overlapping writers go in sequence |
 | test-engineer | Writes the tests for a task, never production code | sonnet | edit, bash | Built (`employees-v2`); `test-harden` preloaded with `skills: [test-harden]`; a test that exposes a bug stays failing and goes back to the code task |
-| reviewer | Fresh-context, adversarial review of a diff | opus | read-only | Never reviews its own work |
+| reviewer | Fresh-context, adversarial review of a diff | opus | read-only | Never reviews its own work; its brief ends with a tool-call budget (`maxTurns` stays 60) |
 | verifier | Runs the profile's check commands, reports facts | haiku | bash | Built (`employees-v2`); reports each exit code and the failing lines verbatim, does not fix; staffed for size L, and for M with more than one verify command |
 | scribe | Issues, handoffs, PR text, status reports | haiku | write | Dropped: subagents cannot confirm issues with the user; `file-issue` and `handoff` are skills; PR text needs the conversation |
 
@@ -148,7 +162,8 @@ How a role maps onto an agent file (`agents/<role>.md`):
 - `model` and `effort` carry the default tier; the organizer overrides both per task when it spawns.
 - `tools` / `disallowedTools` carry the tool set. Employees do not get the `Agent` tool: Claude Code allows
   nesting up to three levels, but a flat team keeps every task visible on the board.
-- `isolation: worktree` for engineers that run in parallel; `maxTurns` as a runaway guard.
+- `maxTurns` as a runaway guard. It counts turns, not tool calls, so a reviewer's brief also carries a
+  tool-call budget.
 - Plugin agents ignore `permissionMode`, `hooks` and `mcpServers`. Employees run under the user's own
   permission rules, and a background employee's permission prompts surface in the main session under its name.
   Hooks that must apply to employees go in the plugin's `hooks/hooks.json`.
@@ -180,8 +195,9 @@ Rules on top of the table:
   each attempt is its own board row and status file (`T2b`).
 - **Separation of duties.** The agent that wrote a change never reviews it. For size L, the test-engineer
   writes the independent tests for a code task; engineers still write the tests their own acceptance check needs.
-- **Parallel only on disjoint file sets.** Overlapping writers run in sequence, or in separate worktrees with
-  the organizer merging.
+- **Parallel only on disjoint file sets.** Overlapping writers run in sequence. An earlier version let them
+  each work in a worktree (`isolation: "worktree"`) with the organizer merging; the rule was removed on the
+  evidence in "Verified mechanics" (a worktree refuses writes to the main checkout, where status files live).
 - **Aliases, not model IDs.** Agents use `haiku` / `sonnet` / `opus` / `fable` so the plugin does not age
   with releases. The tier table lives in one reference file, and a project can override it in its profile.
   New models slot into the table without touching any skill.
@@ -199,9 +215,8 @@ ticket); scope in and out; acceptance criteria; constraints from the profile; wh
 format. Written for a reader who has seen nothing.
 
 **Status file (employee → organizer).** One file per task at `.crew/work/<id>/team/<task>.md`, written only
-by that employee, so parallel employees never edit the same file. The brief gives it as an absolute path into
-the main checkout: an employee in its own worktree would otherwise write into the worktree's copy, which the
-organizer never sees and git never merges (`team/` is ignored).
+by that employee, so parallel employees never edit the same file. The brief gives it as an absolute path, so
+the file is always in the one place the organizer reads, whatever folder the employee works from.
 
 ```markdown
 ---
@@ -217,7 +232,12 @@ updated: 2026-10-16T14:05:00Z   # from `date -u +%Y-%m-%dT%H:%M:%SZ`, never from
 ## Assumptions        (reversible choices made without asking)
 ## Questions          (what blocks me, and my proposed answer)
 ## Findings           (problems outside my task; the organizer decides what to file)
+## Report             (researcher only: its full report, written last, before it finishes)
 ```
+
+A researcher writes its full report (every table, list and `path:line`) under `## Report`, after
+`## Findings`, so the research survives the session; its final message may be shorter and names the status
+file. Other roles have no Report section.
 
 **Questions up.** An employee that hits an unknown either (a) makes a reversible assumption and records it,
 or (b) stops with `state: blocked`, the question and its proposed answer. It never guesses on anything
@@ -260,7 +280,7 @@ by a spike on Claude Code 2.1.299 (work item `crew-hooks`):
 | Requires | nothing | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` (shell or settings `env`) and an interactive session. Under `-p`, the Agent SDK and eval runs, a named call stays a subagent |
 | Starts | the organizer spawns each employee with the Agent tool | no separate create step: an Agent call from the main session with a `name` launches a teammate, unless it is a fork or passes `isolation` on the call itself. Claude also names subagents on its own, so a team can form unasked |
 | Employees | subagents; their plugin agent definition applies, including `skills` and `maxTurns` | separate Claude Code sessions. From a plugin agent definition a teammate gets `tools` (plus `SendMessage` and the task tools), `model` (unless the spawn prompt names one), `effort` and the body, but not `skills`: it loads the project's and the user's skills instead. `maxTurns` is not documented |
-| Working directory | an engineer may get its own worktree (`isolation: "worktree"` on the call) | shared with the lead: a teammate gets no worktree, so writers running at the same time need disjoint files |
+| Working directory | the project's working tree, shared with every other employee; overlapping writers run in sequence | shared with the lead, so writers running at the same time need disjoint files |
 | Questions | stop as `blocked`; the organizer resumes them with `SendMessage` | live messages by name, to the lead and to each other; a finished teammate's final answer reaches the lead automatically; teammates' permission prompts appear in the lead's session |
 | Task list | `board.md` + `team/*.md` in the repository | a shared list in `~/.claude/tasks/<team>/`, outside the repository, with dependencies; the lead assigns tasks or teammates claim them. File locking covers claiming a task, not editing files |
 | Hooks | `SubagentStart` and `SubagentStop` (see above) | the same two fire for a teammate, but `agent_type` is its name, so the crew matcher also accepts `T<n>-<role>`; plus `TeammateIdle` (seen in the live test), `TaskCreated` and `TaskCompleted` |
@@ -271,8 +291,9 @@ names](https://code.claude.com/docs/en/sub-agents#subagent-names) on 2026-10-19 
 a live test the same day (`agent-teams-mode` T3): `maxTurns` does not cap an in-process teammate, the subagent
 hooks fire with the teammate's name as `agent_type`, and readers see writers' edits mid-run. The desktop app
 was not tested. The organizer's rules for this mode are in `skills/work/teams.md`: teammates named after
-their status file, writers on disjoint files, readers after writers, a turn budget per brief, `board.md` as
-the only task list, and re-staffing after `/resume`.
+their status file, writers on disjoint files, readers after writers, a budget per brief (a reviewer's
+tool-call budget, the role's `maxTurns` for the others), `board.md` as the only task list, and re-staffing
+after `/resume`.
 
 The design must work fully in subagent mode. Team mode is an upgrade the organizer uses when it is enabled,
 and the files on disk stay the source of truth in both modes so a later session can pick up the work.
@@ -283,7 +304,8 @@ line, so each one prompts the user (or is denied in an eval), and `cmd | tail` r
 profile verify command that itself contains `&&` runs exactly as listed.
 
 **Final report.** Every employee ends with the same shape: outcome, what changed (files), evidence (commands
-and results), assumptions, open questions, findings. The organizer copies findings into `findings.md`.
+and results), assumptions, open questions, findings. The organizer copies findings into `findings.md`. A
+researcher's full report is also on disk, in its status file under `## Report`.
 
 **Findings → issues.** Employees never file issues themselves. The organizer dedupes findings across the team
 and files them via `file-issue`, the way an engineer flags a problem and the lead decides what becomes a ticket.
@@ -295,7 +317,9 @@ intake → investigate → plan → convention check → implement → cleanup �
 ```
 
 Each phase is skippable; the organizer records why in `decisions.md`. `work next` reads the current phase
-from `board.md` and runs the next one.
+from `board.md` and runs the next one. `ship` drafts the pull request text from the record into the
+organizer's report; it opens the pull request only when the user asks. The board's phases are `intake → plan →
+approval → implement → verify → review → ship → done`.
 
 ### State on disk
 
@@ -303,18 +327,19 @@ from `board.md` and runs the next one.
 .crew/
   .gitignore                   written on first use
   profile.md                   the project contract (see "Project profile")     committed
+  lessons.md                   lessons ledger: id, hits, mechanism per lesson   committed
   issues/<date>-<slug>.md      file-issue drafts when no tracker is found       committed
   work/
     index.md                   open work items, one line each                   ignored
     <id>/                      e.g. shop-1062-entitlements
       brief.md                 what, why, acceptance criteria, edge cases       committed
-      plan.md                  tasks, file sets, staffing                       committed
+      plan.md                  tasks, file sets, staffing, flow diagrams        committed
       decisions.md             decision, why, rejected alternatives             committed
       findings.md              out-of-scope problems and issues filed           committed
-      retro.md                 lessons, repeats and where each lesson went      committed
+      retro.md                 lessons, repeats (ledger ids), where they went   committed
       board.md                 phase, task table with state/owner/model         ignored
       team/<task>.md           one status file per task                         ignored
-      handoff.md               written on close or before a context reset       ignored
+      handoff.md               a paused item's one handoff, read before board   ignored
 ```
 
 **Why `.crew/` and not `.claude/`:** Claude Code treats `.claude/` as a protected directory. Writes there
@@ -336,7 +361,9 @@ work/*/team/
 work/*/handoff.md
 ```
 
-Ownership rule: every file has exactly one writer. The organizer owns everything except `team/`.
+Ownership rule: every file has exactly one writer. The organizer owns everything except `team/`, including
+`lessons.md`: one row per lesson across all work items, with a hit count and a mechanism (`open`, what
+enforces the lesson, or `none:` with the reason). The plan step reads the open rows.
 
 ## Flagship skill: `file-issue`
 
@@ -435,7 +462,7 @@ claude-skill-folder/
       .claude-plugin/plugin.json
       agents/                         researcher, engineer, test-engineer, verifier, reviewer
       skills/                         work, onboard, test-harden, handoff
-      evals/                          14 cases, each on a scaffolded fixture repo
+      evals/                          19 cases, each on a scaffolded fixture repo
     file-issue/                       standalone, so others can install just this
       .claude-plugin/plugin.json
       skills/file-issue/
@@ -466,6 +493,7 @@ Checked against the Claude Code docs on 2026-10-16.
 | Validation | `claude plugin validate ./plugins/triple-a-crew` | [manifest reference](https://code.claude.com/docs/en/plugins/manifest-reference) |
 | Agents | `model` (aliases incl. `fable`), `effort`, `tools`, `isolation: worktree`, `maxTurns`, `background`, `skills`. Plugin agents ignore `permissionMode`, `hooks`, `mcpServers`, `initialPrompt`. A plugin agent's `skills: [x]` preloads the plugin's own skill only by its bare name; `plugin:x` loads nothing, silently, and eval traces never show the injected text | [subagents](https://code.claude.com/docs/en/sub-agents); probe 2026-10-19 (`employees-v2`) |
 | Nesting | Subagents may spawn subagents up to 3 levels deep by default | [subagents](https://code.claude.com/docs/en/sub-agents) |
+| Worktree isolation | An `isolation: "worktree"` subagent starts in `.claude/worktrees/agent-<id>` on branch `worktree-agent-<id>`, from the remote's default branch. It can take in a local branch with `git merge --ff-only`, commit, and run commands relative to its own root. It is refused when it writes a file in the main checkout ("Edit the worktree copy of this file instead"), so a crew status file cannot live there, and the stop hook then blocks it three times. Its worktree path and branch come back in the task notification; an unchanged worktree is removed | [sub-agents](https://code.claude.com/docs/en/sub-agents); probe 2026-11-13 (`organizer-rules` P1) |
 | Hooks | `SessionStart` and `SubagentStart` can add context; `SubagentStop` and `Stop` can block. Scripts use `${CLAUDE_PLUGIN_ROOT}`; persistent plugin data goes in `${CLAUDE_PLUGIN_DATA}`. Plugin hooks live in `hooks/hooks.json` under a top-level `hooks` key and run with `sh -c`. Subagent matchers see plugin agents as `<plugin>:<agent>`. Subagent hook input has no prompt; SubagentStop gets `agent_transcript_path` (line 1 is the brief), `last_assistant_message` and `stop_hook_active`. In the spike a subagent ended after 9 consecutive blocks (the hook keeps its own cap of 3). Eval runs load plugin hooks. For an agent-team teammate both subagent hooks fire with the teammate's name as `agent_type`; line 1 of its transcript is the brief inside a `<teammate-message>` tag | [hooks](https://code.claude.com/docs/en/hooks); spike 2026-10-19 (`crew-hooks` T2); live test 2026-10-19 (`agent-teams-mode` T3) |
 | Skills | Bundled reference files load on demand; scripts via `${CLAUDE_SKILL_DIR}`; `context: fork` runs a skill in a chosen agent. `model` and `effort` in a skill's frontmatter apply for the rest of the current turn only; the session's model resumes on the next prompt | [skills](https://code.claude.com/docs/en/skills), read 2026-11-13 |
 | Workflows | Plugins can ship `workflows/*.js`, but a run cannot take user input mid-way, so the organizer's Q&A loop stays in the main session | [workflows](https://code.claude.com/docs/en/workflows) |
