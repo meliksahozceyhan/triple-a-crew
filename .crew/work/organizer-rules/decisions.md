@@ -77,4 +77,14 @@
   its open questions are in `decisions.md` and its next step is on the board, also in the handoff skill; the
   ledger seed takes every lesson of the old retros; the handoff skill writes a missing `handoff.md` only for
   the item the session worked on. The round is many small text edits across ten files, which is more than
-  size S, so step 8 says to ask the user whether to staff a third reviewer.
+  size S, so step 8 says to ask the user whether to staff a third reviewer. The question was put to the user
+  three times with a recommendation to staff one; there was no answer by the time the pull request was
+  opened, so the last round has no independent review. The eval runs below are its only outside check.
+- **2026-11-13 T12: nine eval cases, one run each, all 1.00, $7.96 on this branch.** The three new cases
+  ($1.62 together), `starts-work-item-on-large-request` ($0.49), `plans-against-project-conventions` ($0.54),
+  `writes-handoff-to-crew` ($0.24), `flags-unmet-ticket-criterion` ($1.08), `medium-fix-end-to-end` ($1.46)
+  and `escalates-effort-before-tier` ($0.88), plus three earlier runs of the flow case ($1.65). The flow
+  case scored 0.71, then 0.86, then 1.00: `plan.md` had the task graph and both flows each time, but the
+  approval message first retold them in prose, then showed them without the final flow's marks.
+  `formats.md` now says to copy the diagrams exactly as they are in `plan.md`. A first attempt to run eight
+  cases with a list in `--case` matched nothing and cost nothing. All runs used `--no-publish`.

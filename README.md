@@ -525,8 +525,10 @@ ones that test the no-tracker path.
     the ladder one rung, not two: re-staffs the task at the same tier with effort raised (sonnet, high) as
     `T1b` with its own status file, carries both failures in the brief, records the attempt on the board, and
     ends with the line-break test passing. The text before the ladder jumped to opus here.
-  - **Plan diagrams, written and not run yet** (three cases, each starting a work item and stopping at the
-    plan):
+  - **Plan diagrams and the lessons ledger** (three cases, each starting a work item and stopping at the
+    plan; 1.00 each on 2026-11-13, one run, one arm). The flow case first scored 0.71 and 0.86: `plan.md` had
+    the diagrams, but the message that asks for the go-ahead retold them in prose, then showed them without
+    the final flow's marks. `formats.md` now says to copy them exactly as they are in `plan.md`.
     - `plan-shows-flow-for-runtime-change`: a size-L request that changes how an export runs, and asks to see
       what each task depends on. `plan.md` has a `## Flow` section with a Mermaid task graph, a current flow
       and a final flow, and the message that asks for the go-ahead shows the task graph, the current flow and
