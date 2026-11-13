@@ -60,3 +60,21 @@
   made its fixes (rung 1 of the ladder: sent back once); the organizer fixed `SKILL.md`.
 - **2026-11-13 Declined: a rule that sets the board's `ship` phase (T11 nit N1).** It costs a line in a file at
   its cap, and the phase list already names the phase.
+- **2026-11-13 T11b review of the eval cases and the ledger: changes requested, two must-fix, both fixed by
+  T8.** The flow case could fail a correct run (its reply grader needed dependencies nobody asked for) and
+  could pass a `plan.md` with no current or final flow. The request now asks for the dependencies, and two
+  new graders read `plan.md` for each flow. Ledger: L11 has one hit; rows that wait on another pull request
+  say exactly `open`.
+- **2026-11-13 The current and final flow do not depend on the number of tasks.** A plan with fewer than three
+  tasks has no task graph, but it shows both flows when the change alters how something runs. That is #40.2
+  as written; the brief's own edge-case row said "no diagram" and is corrected. Cost: a two-task size M fix
+  would need a researcher only for a diagram, so at size M the organizer may draw the current flow itself
+  from code it has read, with a `path:line` on every node. Rejected: both flows only at three or more tasks
+  (a small change to a request path is exactly where the before and after help most).
+- **2026-11-13 T11c recheck: changes requested, one must-fix (the decision above was missing), six
+  should-fix, eight nits; every earlier must-fix was fixed.** Fixed in this round: two shapes of a correct
+  plan failed the flow graders; "no diagram, no section" is back in step 5; the handoff is deleted only once
+  its open questions are in `decisions.md` and its next step is on the board, also in the handoff skill; the
+  ledger seed takes every lesson of the old retros; the handoff skill writes a missing `handoff.md` only for
+  the item the session worked on. The round is many small text edits across ten files, which is more than
+  size S, so step 8 says to ask the user whether to staff a third reviewer.

@@ -32,9 +32,9 @@ Arguments: `$ARGUMENTS`. `status` → step 1 only. `next` → resume the most re
 
 Read `<root>/.crew/work/index.md`. If the request matches an open item (same feature, ticket or files),
 resume it: read its `handoff.md` if it has one, then its `board.md`; continue from its phase, and delete
-the handoff once the board is current. Never open a second item for the same work. For `status`, or a
-question about where things stand ("where are we on X?"), report the phase, what is done and the next
-step, then stop and let the user decide. Only continue the work when they ask you to.
+the handoff once the board and `decisions.md` hold what it says. Never open a second item for the same
+work. For `status`, or a question about where things stand ("where are we on X?"), report the phase, what
+is done and the next step, then stop and let the user decide. Only continue the work when they ask you to.
 
 ## 2. Size the request
 
@@ -80,8 +80,8 @@ dependencies.
 - Record each real decision in `decisions.md`, with the reason and the alternatives you rejected.
 - Read `<root>/.crew/lessons.md` if it exists. Under `## Lessons that apply`, name each open lesson this plan
   could repeat and what guards against it (formats.md).
-- Under `## Flow`, a size M or L plan shows a task graph when it has 3+ tasks, and the current flow (from a
-  researcher) and the final flow when the change alters how something runs. About 12 nodes each (formats.md).
+- Under `## Flow`, a size M or L plan shows a task graph when it has 3+ tasks, and the current and final flow
+  when the change alters how something runs. No diagram, no section. About 12 nodes each (formats.md).
 
 **Size L:** read the profile's `conventions` files (without a profile: `CLAUDE.md`, `AGENTS.md`,
 `CONTRIBUTING.md`, `.claude/rules/`, `.cursor/rules/` and ADR folders, where they exist) and check every task

@@ -177,12 +177,13 @@ affected: each one runs on the model its tier gives it (step 5).
    lessons ledger (`.crew/lessons.md`) and names the open lessons the plan could repeat under
    `## Lessons that apply`. Under `## Flow`, a plan of size M or L shows a Mermaid task graph when it has
    three or more tasks. Whenever the change alters how something runs, whatever the number of tasks, the plan
-   also shows the current flow (a researcher draws it, with a `path:line` on every node) and the final flow
-   (the organizer marks the new and changed nodes), about 12 nodes a diagram at most. A change that alters no
-   flow has no current or final flow, and a plan with no diagram has no `## Flow` section. For size L it
-   checks every task against your convention files, records each rule that changes the plan (with its file)
-   in `decisions.md`, maps every done-when line of the brief to a task or a recorded deferral, and asks for
-   your go-ahead, with the diagrams in the message, before any engineer starts.
+   also shows the current flow (a researcher draws it, or at size M the organizer from code it has read, with
+   a `path:line` on every node) and the final flow (the organizer marks the new and changed nodes), about 12
+   nodes a diagram at most. A change that alters no flow has no current or final flow, and a plan with no
+   diagram has no `## Flow` section. For size L it checks every task against your convention files, records
+   each rule that changes the plan (with its file) in `decisions.md`, maps every done-when line of the brief
+   to a task or a recorded deferral, and asks for your go-ahead, with the diagrams in the message, before any
+   engineer starts.
 5. **Staffs employees.** Model choice follows a rule table: `mechanical` work goes to haiku, `standard`
    to sonnet, `critical` to opus, each with a default effort level.
    - Parallel tasks run only on disjoint file sets; tasks that write the same files go in sequence.
@@ -214,8 +215,9 @@ affected: each one runs on the model its tier gives it (step 5).
    phases are `review → ship → done`.
 9. **Answers status questions** ("where are we on X?") from the board, without starting more work. A work
    item that was paused has one handoff, `handoff.md`: it names what to read first, and resuming reads it
-   before the board, then deletes it once the board is current. A session handoff for an unfinished item
-   that has no `handoff.md` writes that file first.
+   before the board, then deletes it once its open questions are answered or written to `decisions.md` and
+   its next step is on the board. A session handoff for an unfinished item that has no `handoff.md` writes
+   that file first.
 
 A real plan from the eval fixture, for "make the orders CSV export production-ready":
 
@@ -232,7 +234,7 @@ injection and a `NaN` total.
 
 | Agent | Model | Does | Writes |
 |---|---|---|---|
-| `researcher` | sonnet | Maps code, docs and tickets with `path:line` evidence; for a bug, ranks the likely causes with a confidence and a way to confirm each; when asked, draws the current flow of the code; writes its full report into its status file | only its status file |
+| `researcher` | sonnet | Maps code, docs and tickets with `path:line` evidence; for a bug, ranks the likely causes with a confidence and a way to confirm each; when asked (at size M the organizer may draw it itself), draws the current flow of the code; writes its full report into its status file | only its status file |
 | `engineer` | sonnet | Implements one task inside its file set and runs the acceptance check | code in its file set |
 | `test-engineer` | sonnet | Writes the tests for a task, never production code, with the `test-harden` rules preloaded; a test that exposes a bug stays failing and goes back to the code task; for risky work it shows each regression the brief lists failing on a broken copy outside the repository | tests in its file set |
 | `verifier` | haiku | Runs the profile's verify commands, all of them even after a failure, and reports each exit code and the failing lines verbatim; never fixes | only its status file |
@@ -525,11 +527,12 @@ ones that test the no-tracker path.
     ends with the line-break test passing. The text before the ladder jumped to opus here.
   - **Plan diagrams, written and not run yet** (three cases, each starting a work item and stopping at the
     plan):
-    - `plan-shows-flow-for-runtime-change`: a size-L request that changes how an export runs. `plan.md` has a
-      `## Flow` section with a Mermaid task graph, and the message that asks for the go-ahead shows the task
-      graph, the current flow and the final flow with the new and changed nodes marked.
+    - `plan-shows-flow-for-runtime-change`: a size-L request that changes how an export runs, and asks to see
+      what each task depends on. `plan.md` has a `## Flow` section with a Mermaid task graph, a current flow
+      and a final flow, and the message that asks for the go-ahead shows the task graph, the current flow and
+      the final flow with the new and changed nodes marked.
     - `plan-has-no-flow-for-docs-change`: a documentation-only request with several tasks. The plan has no
-      current flow and no final flow.
+      current flow and no final flow; it keeps its task graph.
     - `plan-names-ledger-lesson`: a repo whose `.crew/lessons.md` has two open lessons. The plan's
       `## Lessons that apply` names the one the request would repeat and not the other.
 - Hooks: with one open item in `.crew/work/index.md`, Claude names it without using any tool, because the

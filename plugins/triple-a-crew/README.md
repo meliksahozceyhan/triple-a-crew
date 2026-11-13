@@ -21,7 +21,7 @@ design.
 
 | Agent | Model | Role |
 |---|---|---|
-| `researcher` | sonnet | Maps code, docs and tickets; ranks a bug's likely causes; draws the current flow when asked; writes only its status file, with its full report under `## Report` |
+| `researcher` | sonnet | Maps code, docs and tickets; ranks a bug's likely causes; draws the current flow when asked (at size M the organizer may draw it itself); writes only its status file, with its full report under `## Report` |
 | `engineer` | sonnet | Implements one task inside its file set and runs its acceptance check |
 | `test-engineer` | sonnet | Writes the tests for a task, never production code; `test-harden` preloaded |
 | `verifier` | haiku | Runs the verify commands and reports exit codes and failing lines verbatim; never fixes |
@@ -51,7 +51,7 @@ retro committed; board, team status files, and the one `handoff.md` of a paused 
 
 | Tag | Cases | Run with |
 |---|---|---|
-| `organizer` | large request opens a work item and waits; small request and read-only investigation stay out; status of an open item; verify staffs the verifier; a test task keeps its failing test; medium fix end to end; a size-L plan cites the project's convention files; three cases not run yet: a plan shows the current and final flow for a runtime change, a docs-only plan has no flow diagram, and a plan names the open ledger lesson that applies | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)" "Bash(date *)"` |
+| `organizer` | large request opens a work item and waits; small request and read-only investigation stay out; status of an open item; verify staffs the verifier; a test task keeps its failing test; medium fix end to end; a size-L plan cites the project's convention files; three cases not run yet: a plan shows the current and final flow for a runtime change, a docs-only plan has no current or final flow but keeps its task graph when it has three or more tasks, and a plan names the open ledger lesson that applies | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)" "Bash(date *)"` |
 | `migrated` | test-harden, handoff | `claude plugin eval . --tag migrated --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` |
 | `hooks` | the session-start summary names the open item | `claude plugin eval . --tag hooks --scaffold` |
 | `onboard` | create a profile; refresh one and keep user values | `claude plugin eval . --tag onboard no-trigger --scaffold --allow-tools Write Edit` |

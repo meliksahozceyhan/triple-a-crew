@@ -130,6 +130,7 @@ shape, because `brief` and `finalize` parse them. Write "None." under a section 
    It reports branch/HEAD drift, new commits and the current working tree.
 2. Read the handoff in full with the Read tool, then the files it lists under **Read first**.
    For an open work item, open its `handoff.md` first, then its `board.md`, then the researchers' reports.
+   Delete the `handoff.md` once its open questions are answered or written to `decisions.md` and its next step is on the board.
 3. Reconcile drift. New commits or changes the handoff doesn't explain probably came from the user. Ask before overwriting them.
 4. Rebuild the task list from Open work, then follow Next steps. Ground rules bind you exactly like instructions from the user.
 5. If you write a handoff later, carry this one forward (see *How to write it*). Finalize records the chain for you
@@ -168,9 +169,10 @@ agent type, including ones without Bash. Add anything session-specific below it.
   `HANDOFF_DIR=.claude/handoffs node "${CLAUDE_SKILL_DIR}/handoff.mjs" resume`, or move the files to `.crew/handoffs/`.
 - **Work items.** If a Triple-A-Crew work item is open (`.crew/work/index.md`), name it in Open work with its id and
   current board phase. A paused work item has one handoff of its own, `.crew/work/<id>/handoff.md`. Point to it; do
-  not repeat its content here. If an open work item is unfinished and has no `handoff.md`, write that file first (its
-  shape is in the `work` skill's `formats.md`): the item's next step and open questions belong there, and this
-  handoff points to it. When you resume, read it before the item's `board.md`.
+  not repeat its content here. If the work item this session worked on is unfinished and has no `handoff.md`, write
+  that file first (its shape is in `../work/formats.md`): the item's next step and open questions belong there, and
+  this handoff points to it. When you resume, read it before the item's `board.md`, and delete it once its open
+  questions are answered or written to `decisions.md` and its next step is on the board.
 - **Redaction is best-effort.** Only obvious patterns are scrubbed: `Bearer …`, `token=`, `password:`, `sk-…`, `ghp_…`, `xox…-`.
 - **Re-sent prompts.** A prompt re-sent after an interrupt collapses into one entry. Pasted test failures with a shared
   prefix stay separate.

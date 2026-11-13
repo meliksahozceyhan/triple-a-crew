@@ -56,8 +56,9 @@ has the format.
 ticket's criteria as written and numbered by ticket (`#41.2` is #41's second). A line that only points at
 tickets ("every issue's acceptance criteria hold") is replaced first by those criteria, copied from the
 tracker; write them into `brief.md` too. Mark a deferral the user accepted as such. When `plan.md` has a final
-flow, add one line: `The code matches the final flow in the work item's plan.md`. For size L, that review
-covers the whole diff against the base. The reviewer reports each line with one of:
+flow, add one line: `The code matches the final flow in the work item's plan.md`. Give the reviewer the
+path of `plan.md` in its brief. For size L, that review covers the whole diff against the base. The reviewer
+reports each line with one of:
 
 | Evidence | Means |
 |---|---|
@@ -72,10 +73,11 @@ whose lines are all met is `Closes #N`; one with a line still open is `Refs #N`,
 unless the user says to close it anyway. Name the derived lines in your final report, so the user sees what
 a `Closes` rests on.
 
-`## Budget` goes into every reviewer's brief, after `## Criteria` and before the shell rule: a tool-call
-budget sized to the diff (about 30 calls plus one per changed file, 70 at most; when a diff needs more, split
-the review by task or area), the note that running tests counts against it, and at most three test commands,
-each plain and ready to run. Never write "you may run related tests".
+`## Budget` goes into every reviewer's brief, after the acceptance check (after `## Criteria` in the last
+review's brief) and before the shell rule: a tool-call budget sized to the diff (about 30 calls plus one per
+changed file, 70 at most; when a diff needs more, split the review by task or area), the note that running
+tests counts against it, and at most three test commands, each plain and ready to run. Never write "you may
+run related tests".
 
 Every brief also carries this rule for shell commands: run each command alone, as its own Bash call: no pipes,
 redirection, `;` or `&&` chains, no `cd` (use absolute paths), and no `echo $?`, `time` or other wrappers of

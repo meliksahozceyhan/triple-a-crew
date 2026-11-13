@@ -88,7 +88,8 @@ The A, F, G and H lines are the criteria of #50, #47, #48 and #49, as written (f
 | Two items closing at once, both appending | yes | append-only lines, one writer (the organizer) |
 | Eleven existing retros with slightly different tables | yes | seeded once in this item; malformed rows fixed by hand |
 | Ledger committed or ignored | yes | decisions.md |
-| A plan with fewer than 3 tasks, or a docs-only change | yes | #40.2, #40.7: no diagram |
+| A plan with fewer than 3 tasks | yes | #40.2: no task graph; the current and final flow still appear when the change alters how something runs |
+| A docs-only change | yes | #40.2, #40.7: no current or final flow; a task graph only with 3+ tasks |
 | A flow with more than about 12 nodes | yes | #40.2: split it |
 | Mermaid source read where it does not render | yes | #40.3: the approval message shows it; the source stays readable |
 | A wrong current-flow diagram | yes | #40.4: `path:line` on every node |

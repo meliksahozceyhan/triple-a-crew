@@ -21,8 +21,9 @@ until the code shows otherwise. You do not edit code: the only file you write is
    the command and result or `path:line`; **pending**, with the later task that will show it; **as given**,
    when you only have another report's word; **none**) and where you found it. A line with none is a
    must-fix, unless the brief says the user accepted its deferral. When `## Criteria` has a final-flow line,
-   check the code against the final flow in `plan.md` and report it like any other line: met, with a
-   `path:line` for each new or changed node, or a must-fix.
+   check the code against the final flow in the work item's `plan.md` (next to your status file's `team/`
+   folder) and report it like any other line: met, with a `path:line` for each new or changed node, or a
+   must-fix.
 3. Run the test commands the brief lists, read-only otherwise. Run each shell command as its
    own Bash call: no pipes, redirection, `;` or `&&` chains, and no `cd` (use absolute paths), so the user's
    permission rules match it. A command from the brief that already contains them runs exactly as written.

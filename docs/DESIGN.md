@@ -90,11 +90,12 @@ Responsibilities, in order:
    lessons ledger (`.crew/lessons.md`) and name each open lesson the plan could repeat under
    `## Lessons that apply`. Under `## Flow`, a size M or L plan shows a Mermaid task graph when it has three
    or more tasks. Whenever the change alters how something runs, whatever the number of tasks, the plan also
-   shows the current flow (a researcher draws it, with a `path:line` on every node) and the final flow (the
-   organizer draws it and marks the new and changed nodes), about 12 nodes per diagram at most; the last
-   review checks the code against the final flow like a done-when line. A change that alters no flow has no
-   current or final flow, and a plan with no diagram has no `## Flow` section. For size L, map every done-when
-   line to a task or a recorded deferral and show the diagrams in the message that asks for the go-ahead.
+   shows the current flow (a researcher draws it, or at size M the organizer from code it has read, with a
+   `path:line` on every node) and the final flow (the organizer draws it and marks the new and changed
+   nodes), about 12 nodes per diagram at most; the last review checks the code against the final flow like a
+   done-when line. A change that alters no flow has no current or final flow, and a plan with no diagram has
+   no `## Flow` section. For size L, map every done-when line to a task or a recorded deferral and show the
+   diagrams in the message that asks for the go-ahead.
 4. **Staff.** Pick a role and model per task (see staffing policy), and decide sequential vs parallel.
 5. **Brief.** Hand each employee a self-contained brief (see protocol). Employees never see the conversation.
 6. **Track.** Keep `board.md` current from the employees' status files.
@@ -117,8 +118,9 @@ Responsibilities, in order:
     id. Draft the pull request text from the record into the report (the shape is in `formats.md`, "PR
     text"); open the pull request only when the user asks, and call it merged only after checking its state,
     otherwise "not checked". If the work stops early, write `handoff.md` instead of a retro: the item's one
-    handoff, which names what to read first. Resuming reads it before `board.md` and deletes it once the board
-    is current. A session handoff for an unfinished item with no `handoff.md` writes that file first.
+    handoff, which names what to read first. Resuming reads it before `board.md` and deletes it once its open
+    questions are answered or written to `decisions.md` and its next step is on the board. A session handoff
+    for an unfinished item with no `handoff.md` writes that file first.
 
 ### How work starts
 
@@ -151,7 +153,7 @@ Plugin agents with a fixed role, default model and tool set. The organizer can o
 
 | Role | Does | Default model | Tools | Notes |
 |---|---|---|---|---|
-| researcher | Maps code, docs and tickets; answers "where/how does X work" | haiku → sonnet | read-only | Cheap, parallel-friendly; writes its full report into its status file under `## Report`; draws the current flow when the brief asks |
+| researcher | Maps code, docs and tickets; answers "where/how does X work" | haiku → sonnet | read-only | Cheap, parallel-friendly; writes its full report into its status file under `## Report`; draws the current flow when the brief asks (at size M the organizer may draw it itself) |
 | architect | Options and trade-offs for ambiguous or cross-cutting work | opus | read-only | Not a separate agent: a researcher at critical tier answers design questions (work item `employees-v2`) |
 | engineer | Implements one task from the plan | sonnet | edit, bash | Runs in parallel only on a file set no other writer touches; overlapping writers go in sequence |
 | test-engineer | Writes the tests for a task, never production code | sonnet | edit, bash | Built (`employees-v2`); `test-harden` preloaded with `skills: [test-harden]`; a test that exposes a bug stays failing and goes back to the code task |
@@ -344,7 +346,7 @@ approval → implement → verify → review → ship → done`.
       retro.md                 lessons, repeats (ledger ids), where they went   committed
       board.md                 phase, task table with state/owner/model         ignored
       team/<task>.md           one status file per task                         ignored
-      handoff.md               a paused item's one handoff, deleted on resume   ignored
+      handoff.md               a paused item's handoff, deleted after resume    ignored
 ```
 
 **Why `.crew/` and not `.claude/`:** Claude Code treats `.claude/` as a protected directory. Writes there
@@ -366,9 +368,10 @@ work/*/team/
 work/*/handoff.md
 ```
 
-Ownership rule: every file has exactly one writer. The organizer owns everything except `team/`, including
-`lessons.md`: one row per lesson across all work items, with a hit count and a mechanism (`open`, what
-enforces the lesson, or `none:` with the reason). The plan step reads the open rows.
+Ownership rule: every file has exactly one writer. The organizer owns everything except `team/`, with one
+exception: the `handoff` skill may write a work item's `handoff.md` when the item has none. The organizer
+also owns `lessons.md`: one row per lesson across all work items, with a hit count and a mechanism
+(`open`, what enforces the lesson, or `none:` with the reason). The plan step reads the open rows.
 
 ## Flagship skill: `file-issue`
 
