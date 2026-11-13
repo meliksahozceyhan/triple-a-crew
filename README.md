@@ -57,7 +57,7 @@ or a protocol.
   in passing, searched the connected Linear for duplicates, drafted the issue, marked it unconfirmed and asked
   before creating. `onboard` and `test-harden` load in chat but need a filesystem and a shell to work, so use
   them in Claude Code. \*\*Cursor support is not verified yet.
-- **Tier 2** uses Claude Code features: subagents, model selection, worktrees.
+- **Tier 2** uses Claude Code features: subagents and model selection.
 - **Tier 3** hooks only make things faster or more visible; nothing breaks without them.
 
 ## Plugins
@@ -173,13 +173,20 @@ affected: each one runs on the model its tier gives it (step 5).
    lists each ticket's acceptance criteria as written, one per line.
 3. **Stress-tests before planning.** It lists edge cases (empty and huge inputs, concurrency, partial
    failure, time zones, migrations, backward compatibility) and marks each one in or out of scope.
-4. **Plans tasks.** Each task has a file set, an acceptance check, a role and a model tier. For size L it
-   checks every task against your convention files, records each rule that changes the plan (with its file)
-   in `decisions.md`, maps every done-when line of the brief to a task or a recorded deferral, and asks for
-   your go-ahead before any engineer starts.
+4. **Plans tasks.** Each task has a file set, an acceptance check, a role and a model tier. It reads the
+   lessons ledger (`.crew/lessons.md`) and names the open lessons the plan could repeat under
+   `## Lessons that apply`. Under `## Flow`, a plan of size M or L shows a Mermaid task graph when it has
+   three or more tasks. Whenever the change alters how something runs, whatever the number of tasks, the plan
+   also shows the current flow (a researcher draws it, or at size M the organizer from code it has read, with
+   a `path:line` on every node) and the final flow (the organizer marks the new and changed nodes), about 12
+   nodes a diagram at most. A change that alters no flow has no current or final flow, and a plan with no
+   diagram has no `## Flow` section. For size L it checks every task against your convention files, records
+   each rule that changes the plan (with its file) in `decisions.md`, maps every done-when line of the brief
+   to a task or a recorded deferral, and asks for your go-ahead, with the diagrams in the message, before any
+   engineer starts.
 5. **Staffs employees.** Model choice follows a rule table: `mechanical` work goes to haiku, `standard`
    to sonnet, `critical` to opus, each with a default effort level.
-   - Parallel tasks run only on disjoint file sets.
+   - Parallel tasks run only on disjoint file sets; tasks that write the same files go in sequence.
    - A task that misses its check climbs a ladder: sent back once, then effort up at the same tier, then one
      tier up, then the organizer asks you. Every attempt is a row on the board.
    - Whoever writes a change never reviews it, and for size L a test-engineer adds the independent tests.
@@ -188,13 +195,29 @@ affected: each one runs on the model its tier gives it (step 5).
 7. **Verifies and reviews.** It strips debug logs, commented-out code and log-and-rethrow try-catch from the
    lines it changed, runs your profile's verify commands (through the haiku verifier for bigger items), staffs
    a reviewer, and files the findings through `file-issue` in one batch. Crew feedback waits for the retro.
+   Every reviewer brief carries a `## Budget`: a tool-call budget sized to the diff (about 30 calls plus one
+   per changed file, 70 at most; a bigger diff is split), with running tests counted against it and at most
+   three plain test commands. Near the budget the reviewer stops, records what is still open, and reports. A
+   reviewer whose brief has no budget takes 40 tool calls.
    When a review requests changes, a fresh reviewer rechecks the fix diff once before the item closes.
    The last review (for size L, one more on the whole diff after the per-task ones) checks every done-when
-   line with evidence. A ticket with a criterion still open goes into the PR as `Refs #N`, not `Closes #N`.
-8. **Closes with a short retro** (sizes M and L): writes `retro.md`, marks problems an earlier item's retro
-   already had, and proposes where each lesson should live (a profile note, a convention file, or crew
-   feedback for this plugin's repository). It changes nothing until you accept.
-9. **Answers status questions** ("where are we on X?") from the board, without starting more work.
+   line with evidence, and the code against the plan's final flow when it has one. A ticket with a criterion
+   still open goes into the PR as `Refs #N`, not `Closes #N`.
+8. **Closes with a short retro and the PR text.** For sizes M and L it writes `retro.md` and adds each
+   lesson to `.crew/lessons.md`, or raises the hit count of the row it repeats. A lesson that reaches two hits
+   while still open gets a mechanism proposed in the retro (a hook, a brief line, an eval case, a profile
+   note), or a `none:` reason in its row; it is never left as a retro-only note. When you accept a mechanism
+   and it is applied, it is written into the ledger row. A project with retros but no `lessons.md` gets one
+   at its next close. The organizer proposes where each lesson should live (a profile note, a convention
+   file, or crew feedback for this plugin's repository) and changes nothing until you accept. It also drafts
+   the pull request text from the record into its report. It opens the pull request only when you ask, and
+   says one is merged only after checking its state; otherwise it says "not checked". The board's last
+   phases are `review → ship → done`.
+9. **Answers status questions** ("where are we on X?") from the board, without starting more work. A work
+   item that was paused has one handoff, `handoff.md`: it names what to read first, and resuming reads it
+   before the board, then deletes it once its open questions are answered or written to `decisions.md` and
+   its next step is on the board. A session handoff for an unfinished item that has no `handoff.md` writes
+   that file first.
 
 A real plan from the eval fixture, for "make the orders CSV export production-ready":
 
@@ -211,16 +234,18 @@ injection and a `NaN` total.
 
 | Agent | Model | Does | Writes |
 |---|---|---|---|
-| `researcher` | sonnet | Maps code, docs and tickets with `path:line` evidence; for a bug, ranks the likely causes with a confidence and a way to confirm each | only its status file |
+| `researcher` | sonnet | Maps code, docs and tickets with `path:line` evidence; for a bug, ranks the likely causes with a confidence and a way to confirm each; when asked (at size M the organizer may draw it itself), draws the current flow of the code; writes its full report into its status file | only its status file |
 | `engineer` | sonnet | Implements one task inside its file set and runs the acceptance check | code in its file set |
 | `test-engineer` | sonnet | Writes the tests for a task, never production code, with the `test-harden` rules preloaded; a test that exposes a bug stays failing and goes back to the code task; for risky work it shows each regression the brief lists failing on a broken copy outside the repository | tests in its file set |
 | `verifier` | haiku | Runs the profile's verify commands, all of them even after a failure, and reports each exit code and the failing lines verbatim; never fixes | only its status file |
-| `reviewer` | opus | Adversarial review of a diff: must-fix, should-fix and nit, each with a failure scenario, written to its status file as it goes | only its status file |
+| `reviewer` | opus | Adversarial review of a diff within the tool-call budget of its brief: must-fix, should-fix and nit, each with a failure scenario, written to its status file as it goes | only its status file |
 
 Every employee keeps a status file (`.crew/work/<id>/team/<task>-<role>.md`) and ends with the same report:
 outcome, changed files, evidence, assumptions, open questions, findings. It takes the file's `updated` time
-from the clock (`date -u`). Employees and the organizer run one plain command per Bash call, with no pipes,
-`;`, `&&` or `cd`, so your permission rules match each command; a [hook](#hooks) refuses an employee's
+from the clock (`date -u`). A researcher also writes its full report into its status file under `## Report`,
+after `## Findings`, before it finishes, so the research survives the session; its final message may be
+shorter and names the status file. Employees and the organizer run one plain command per Bash call, with no
+pipes, `;`, `&&` or `cd`, so your permission rules match each command; a [hook](#hooks) refuses an employee's
 command that breaks the rule. Employees never spawn agents, never file issues and never write under
 `.claude/`.
 
@@ -295,14 +320,14 @@ What changes, from [`teams.md`](plugins/triple-a-crew/skills/work/teams.md):
   subagents, and the same rules stay safe.
 - Each teammate is named after its status file (`T2-engineer`); the hooks match that form, so the protocol
   reminder and the status-file gate still apply.
-- Teammates share your working tree, with no worktrees. Writers run together only on files that don't
+- Teammates share your working tree. Writers run together only on files that don't
   build together (separate modules), no writer runs the verify commands, reviewers and the verifier start
   only after every writer is done, every teammate learns who else is running, and teammates never commit
   (the organizer commits only when you ask, as in subagent mode).
 - A teammate with a question still sets `blocked`, then gets the answer by message.
-- `maxTurns` doesn't stop a teammate, so each brief carries a turn budget and the organizer shuts down a
-  teammate that overruns or loops. A teammate gets its agent's tools, model and instructions, but not its
-  preloaded skills.
+- `maxTurns` doesn't stop a teammate, so each brief carries a budget (a reviewer's tool-call budget, or the
+  role's `maxTurns` for the others) and the organizer shuts down a teammate that overruns or loops. A
+  teammate gets its agent's tools, model and instructions, but not its preloaded skills.
 - `board.md` stays the only task list; the built-in team task list is not used. Teammates don't survive
   `/resume`: the organizer re-staffs unfinished tasks from the status files.
 - **Cost:** each teammate is a full Claude Code session, so a team uses significantly more tokens than the
@@ -325,7 +350,7 @@ They now read each project's rules from its profile and convention files instead
 | Skill | Use it for | Came from |
 |---|---|---|
 | `test-harden` | Find the risky missing test cases (cursor loops, DST, malformed data, retries, partial failure) and report or add them in the project's own framework | `test-robustness-review` skill + reviewer and filler agents |
-| `handoff` | Write, resume or brief from a session handoff, with a facts appendix built from git and the transcript. Writes to `.crew/handoffs/` | `session-handoff` skill |
+| `handoff` | Write, resume or brief from a session handoff, with a facts appendix built from git and the transcript. Writes to `.crew/handoffs/`; for a paused work item it points to the item's own `handoff.md` (writing it first if an unfinished item has none) and lists its researchers' reports under what to read first | `session-handoff` skill |
 
 Three more were migrated and then cut, because plain Claude matched them in the evals: `plan-review` (from
 `plan-reinforcer`), `cleanup` (from `post-plan-cleanup`) and `investigate` (from `investigate-linear-issue`).
@@ -405,6 +430,7 @@ All crew state lives in `.crew/` at the project root:
 ```
 .crew/
   profile.md                   the project contract                     committed
+  lessons.md                   lessons ledger, one row per lesson       committed
   issues/<date>-<slug>.md      file-issue drafts when no tracker exists  committed
   handoffs/                    session handoffs (ignore themselves)      ignored
   work/                        organizer work items
@@ -489,7 +515,7 @@ Every run is a real model call on your account. A full run of both suites costs 
 | `file-issue` | `claude plugin eval . --tag trigger no-trigger --allow-tools Write` | 3 trigger, 3 no-trigger, with baseline |
 | `file-issue` | `claude plugin eval . --tag mock-tracker --ablation none --scaffold` | 3 mocked-Linear cases, one arm |
 | `triple-a-crew` | `claude plugin eval . --tag migrated onboard no-trigger --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` | 2 migrated-skill cases, 2 onboard, 3 no-trigger, with baseline |
-| `triple-a-crew` | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)" "Bash(date *)"` | 10 organizer cases, one arm |
+| `triple-a-crew` | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)" "Bash(date *)"` | 13 organizer cases, one arm |
 | `triple-a-crew` | `claude plugin eval . --tag hooks --scaffold` | 1 hooks case, with baseline |
 
 Add `--runs 1 --ablation none --case <name>` to iterate on one case cheaply. Add `--keep-temp` to keep each
@@ -537,6 +563,18 @@ ones that test the no-tracker path.
     the ladder one rung, not two: re-staffs the task at the same tier with effort raised (sonnet, high) as
     `T1b` with its own status file, carries both failures in the brief, records the attempt on the board, and
     ends with the line-break test passing. The text before the ladder jumped to opus here.
+  - **Plan diagrams and the lessons ledger** (three cases, each starting a work item and stopping at the
+    plan; 1.00 each on 2026-11-13, one run, one arm). The flow case first scored 0.71 and 0.86: `plan.md` had
+    the diagrams, but the message that asks for the go-ahead retold them in prose, then showed them without
+    the final flow's marks. `formats.md` now says to copy them exactly as they are in `plan.md`.
+    - `plan-shows-flow-for-runtime-change`: a size-L request that changes how an export runs, and asks to see
+      what each task depends on. `plan.md` has a `## Flow` section with a Mermaid task graph, a current flow
+      and a final flow, and the message that asks for the go-ahead shows the task graph, the current flow and
+      the final flow with the new and changed nodes marked.
+    - `plan-has-no-flow-for-docs-change`: a documentation-only request with several tasks. The plan has no
+      current flow and no final flow; it keeps its task graph.
+    - `plan-names-ledger-lesson`: a repo whose `.crew/lessons.md` has two open lessons. The plan's
+      `## Lessons that apply` names the one the request would repeat and not the other.
 - Hooks: with one open item in `.crew/work/index.md`, Claude names it without using any tool, because the
   `SessionStart` hook put it in its context. The baseline cannot know.
 - Migrated skills, one fixture each:
@@ -664,8 +702,8 @@ divided.
 
 | When this changes | Rerun these cases |
 |---|---|
-| `triple-a-crew` `skills/work/SKILL.md` (the organizer) | `starts-work-item-on-large-request`, `stays-out-of-small-request`, `stays-out-of-read-only-investigation`, `reports-status-of-open-item`, `plans-against-project-conventions`, `medium-fix-end-to-end`, `verify-staffs-verifier`, `test-engineer-keeps-failing-test`, `flags-unmet-ticket-criterion`, `escalates-effort-before-tier` |
-| `skills/work/formats.md` (work item files) | `starts-work-item-on-large-request`, `reports-status-of-open-item`, `plans-against-project-conventions`, `medium-fix-end-to-end`, `escalates-effort-before-tier` |
+| `triple-a-crew` `skills/work/SKILL.md` (the organizer) | `starts-work-item-on-large-request`, `stays-out-of-small-request`, `stays-out-of-read-only-investigation`, `reports-status-of-open-item`, `plans-against-project-conventions`, `medium-fix-end-to-end`, `verify-staffs-verifier`, `test-engineer-keeps-failing-test`, `flags-unmet-ticket-criterion`, `escalates-effort-before-tier`, `plan-shows-flow-for-runtime-change`, `plan-has-no-flow-for-docs-change`, `plan-names-ledger-lesson` |
+| `skills/work/formats.md` (work item files) | `starts-work-item-on-large-request`, `reports-status-of-open-item`, `plans-against-project-conventions`, `medium-fix-end-to-end`, `escalates-effort-before-tier`, `plan-shows-flow-for-runtime-change`, `plan-has-no-flow-for-docs-change`, `plan-names-ledger-lesson` |
 | `skills/work/protocol.md` (briefs, status files) | `test-engineer-keeps-failing-test`, `medium-fix-end-to-end`, `verify-staffs-verifier`, `flags-unmet-ticket-criterion`, `escalates-effort-before-tier` |
 | `skills/work/staffing.md` (roles, tiers, effort ladder) | `verify-staffs-verifier`, `test-engineer-keeps-failing-test`, `medium-fix-end-to-end`, `flags-unmet-ticket-criterion`, `escalates-effort-before-tier` |
 | `skills/work/teams.md` (team mode) | None: no case sets `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`. |
@@ -686,21 +724,24 @@ divided.
 
 | Case | Plugin | Last cost per run | When | Source |
 |---|---|---|---|---|
-| `starts-work-item-on-large-request` | `triple-a-crew` | $0.41 | 2026-11-13 | `.crew/work/eval-tooling/decisions.md` |
+| `starts-work-item-on-large-request` | `triple-a-crew` | $0.49 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
 | `stays-out-of-small-request` | `triple-a-crew` | unknown | | |
 | `stays-out-of-read-only-investigation` | `triple-a-crew` | $0.15 | 2026-10-27 | `.crew/work/publish-v1/decisions.md` |
 | `session-start-mentions-open-item` | `triple-a-crew` | unknown | | |
 | `reports-status-of-open-item` | `triple-a-crew` | unknown | | |
-| `plans-against-project-conventions` | `triple-a-crew` | unknown | | |
-| `medium-fix-end-to-end` | `triple-a-crew` | $1.25 | 2026-10-21 | `.crew/work/effort-ladder/decisions.md` |
+| `plans-against-project-conventions` | `triple-a-crew` | $0.54 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
+| `plan-shows-flow-for-runtime-change` | `triple-a-crew` | $0.52 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
+| `plan-has-no-flow-for-docs-change` | `triple-a-crew` | $0.49 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
+| `plan-names-ledger-lesson` | `triple-a-crew` | $0.61 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
+| `medium-fix-end-to-end` | `triple-a-crew` | $1.46 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
 | `verify-staffs-verifier` | `triple-a-crew` | $1.05 | 2026-10-21 | `.crew/work/effort-ladder/decisions.md` |
 | `test-engineer-keeps-failing-test` | `triple-a-crew` | $1.19 | 2026-10-19 | `.crew/work/review-24-fixes/decisions.md` |
-| `flags-unmet-ticket-criterion` | `triple-a-crew` | $0.91 | 2026-10-19 | `.crew/work/issue-30-criteria-check/decisions.md` |
-| `escalates-effort-before-tier` | `triple-a-crew` | $0.85 | 2026-10-21 | `.crew/work/effort-ladder/decisions.md` |
+| `flags-unmet-ticket-criterion` | `triple-a-crew` | $1.08 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
+| `escalates-effort-before-tier` | `triple-a-crew` | $0.88 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
 | `creates-profile-from-repo` | `triple-a-crew` | unknown | | |
 | `refreshes-profile-keeps-user-values` | `triple-a-crew` | unknown | | |
 | `no-fire-setup-question` | `triple-a-crew` | unknown | | |
-| `writes-handoff-to-crew` | `triple-a-crew` | unknown | | |
+| `writes-handoff-to-crew` | `triple-a-crew` | $0.24 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
 | `test-harden-adds-edge-cases` | `triple-a-crew` | unknown | | |
 | `implicit-out-of-scope-finding` | `file-issue` | unknown | | |
 | `implicit-finding-in-side-note` | `file-issue` | unknown | | |
@@ -714,14 +755,16 @@ divided.
 
 Cases run more than once show the latest figure above. The recorded range, from the same decisions files:
 
-- `starts-work-item-on-large-request`: $0.39 to $0.41 (`.crew/work/review-24-fixes/decisions.md`).
-- `medium-fix-end-to-end`: $0.80 to $1.25 (`.crew/work/issue-30-criteria-check/decisions.md`,
-  `follow-ups-25-28`, `retro-skill` and `review-24-fixes`).
+- `starts-work-item-on-large-request`: $0.39 to $0.49 (`.crew/work/review-24-fixes/decisions.md`,
+  `eval-tooling` and `organizer-rules`).
+- `plan-shows-flow-for-runtime-change`: $0.51 to $0.60 (`.crew/work/organizer-rules/decisions.md`).
+- `medium-fix-end-to-end`: $0.80 to $1.46 (`.crew/work/issue-30-criteria-check/decisions.md`,
+  `follow-ups-25-28`, `retro-skill`, `review-24-fixes`, `effort-ladder` and `organizer-rules`).
 - `verify-staffs-verifier`: $0.67 to $1.43 (`.crew/work/employees-v2/findings.md`, `fix-open-issues`).
 - `test-engineer-keeps-failing-test`: $0.96 to $1.19 (`.crew/work/agent-teams-mode/decisions.md`,
   `fix-open-issues`).
-- `flags-unmet-ticket-criterion`: $0.70 to $0.91 (`.crew/work/issue-30-criteria-check/decisions.md`; the
-  $0.70 runs were on the text before #30).
+- `flags-unmet-ticket-criterion`: $0.70 to $1.08 (`.crew/work/issue-30-criteria-check/decisions.md` and
+  `organizer-rules`; the $0.70 runs were on the text before #30).
 - `escalates-effort-before-tier`: $0.85 to $0.89 (`.crew/work/effort-ladder/decisions.md`; $0.89 was on the
   text before the ladder).
 - `profile-confirm-never-creates`: $0.16 to $0.17 (`.crew/work/fix-open-issues/decisions.md`).
@@ -755,7 +798,7 @@ the model change, so the date matters.
 │       │   ├── onboard/                SKILL.md, profile-format.md (the profile contract)
 │       │   ├── test-harden/            SKILL.md, examples.md
 │       │   └── handoff/                SKILL.md, handoff.mjs (facts from git and the transcript)
-│       └── evals/                      16 cases; each fixture.sh scaffolds a sample repo
+│       └── evals/                      19 cases; each fixture.sh scaffolds a sample repo
 ├── scripts/                            test-graders.mjs and grader-rows/: grader tests with no model call
 └── README.md
 ```

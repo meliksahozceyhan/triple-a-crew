@@ -12,20 +12,20 @@ design.
 
 | Skill | Invoke | What it does |
 |---|---|---|
-| `work` | starts on its own for multi-step work; `/triple-a-crew:work [start <request> \| next \| status]` | The organizer: sizes the request, opens a work item in `.crew/work/`, stress-tests edge cases, plans, staffs employees on model tiers, tracks status files, verifies, reviews, files follow-ups |
+| `work` | starts on its own for multi-step work; `/triple-a-crew:work [start <request> \| next \| status]` | The organizer: sizes the request, opens a work item in `.crew/work/`, stress-tests edge cases, plans (with a task graph for size M and L plans of three or more tasks, the current and final flow when the change alters how something runs, and the open lessons that apply), staffs employees on model tiers, tracks status files, verifies, reviews, files follow-ups, and at close updates the lessons ledger and drafts the pull request text |
 | `onboard` | "set this repo up for the crew" | Writes or refreshes `.crew/profile.md`: stack, verify commands from CI, test globs, convention files, tracker |
 | `test-harden` | "harden these tests" | Finds risky missing test cases and reports or adds them in the project's own framework |
-| `handoff` | "write a handoff", `/triple-a-crew:handoff resume` | Writes, resumes or briefs from a session handoff in `.crew/handoffs/`, with facts from git and the transcript |
+| `handoff` | "write a handoff", `/triple-a-crew:handoff resume` | Writes, resumes or briefs from a session handoff in `.crew/handoffs/`, with facts from git and the transcript; points to a paused work item's own `handoff.md` (writing it first if an unfinished item has none) and lists its researchers' reports under what to read first |
 
 ## Agents
 
 | Agent | Model | Role |
 |---|---|---|
-| `researcher` | sonnet | Maps code, docs and tickets; ranks a bug's likely causes; writes only its status file |
+| `researcher` | sonnet | Maps code, docs and tickets; ranks a bug's likely causes; draws the current flow when asked (at size M the organizer may draw it itself); writes only its status file, with its full report under `## Report` |
 | `engineer` | sonnet | Implements one task inside its file set and runs its acceptance check |
 | `test-engineer` | sonnet | Writes the tests for a task, never production code; `test-harden` preloaded |
 | `verifier` | haiku | Runs the verify commands and reports exit codes and failing lines verbatim; never fixes |
-| `reviewer` | opus | Adversarial diff review; findings carry a failure scenario |
+| `reviewer` | opus | Adversarial diff review within the tool-call budget of its brief; findings carry a failure scenario |
 
 The organizer picks the model per task from three tiers (`mechanical`: haiku, `standard`: sonnet,
 `critical`: opus); a project can override a tier with `models:` in its profile.
@@ -65,16 +65,17 @@ nothing breaks with them turned off. Test them with `sh scripts/test-hooks.sh`, 
 ## State
 
 Everything is written to `.crew/` at the project root, never `.claude/`, which Claude Code protects:
-`profile.md`, `work/<id>/` (brief, plan, decisions, findings and retro committed; board, team status files,
-handoff ignored through `.crew/.gitignore`), and `handoffs/`.
+`profile.md`, `lessons.md` (the lessons ledger, committed), `work/<id>/` (brief, plan, decisions, findings and
+retro committed; board, team status files, and the one `handoff.md` of a paused item ignored through
+`.crew/.gitignore`), and `handoffs/`.
 
 ## Evals
 
-14 cases in [evals/](evals/), each scaffolding its own small fixture repository.
+19 cases in [evals/](evals/), each scaffolding its own small fixture repository.
 
 | Tag | Cases | Run with |
 |---|---|---|
-| `organizer` | large request opens a work item and waits; small request and read-only investigation stay out; status of an open item; verify staffs the verifier; a test task keeps its failing test; medium fix end to end; a size-L plan cites the project's convention files | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)" "Bash(date *)"` |
+| `organizer` | large request opens a work item and waits; small request and read-only investigation stay out; status of an open item; verify staffs the verifier; a test task keeps its failing test; medium fix end to end; a size-L plan cites the project's convention files; and three plan cases: a plan shows the current and final flow for a runtime change, a docs-only plan has no current or final flow but keeps its task graph when it has three or more tasks, and a plan names the open ledger lesson that applies | `claude plugin eval . --tag organizer --ablation none --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)" "Bash(date *)"` |
 | `migrated` | test-harden, handoff | `claude plugin eval . --tag migrated --scaffold --allow-tools Write Edit "Bash(node *)" "Bash(git *)"` |
 | `hooks` | the session-start summary names the open item | `claude plugin eval . --tag hooks --scaffold` |
 | `onboard` | create a profile; refresh one and keep user values | `claude plugin eval . --tag onboard no-trigger --scaffold --allow-tools Write Edit` |

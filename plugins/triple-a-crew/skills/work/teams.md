@@ -28,8 +28,7 @@ is a full session.
   A teammate takes `effort` from its agent file (DESIGN.md); whether the call's value reaches a teammate is
   not verified live yet. Until it is, a rung that raises effort also names the level in the teammate's brief,
   and the board records it as asked (`high, asked`); never edit the installed agent file for it.
-- Never pass `isolation`: it turns the call into a subagent. An engineer that needs its own worktree is
-  spawned unnamed, as a subagent with `isolation: "worktree"`, and you merge its branch.
+- Never pass `isolation`: it turns the call into a subagent.
 - A teammate gets `tools` and the body of its agent file but not `skills`. The test-engineer reads the
   `test-harden` skill itself: put the absolute path of `../test-harden/SKILL.md` (next to this skill's
   folder) in its brief.
@@ -58,15 +57,16 @@ test run can fail on a co-worker's half-done edit.
   finished; a failure then goes to the task whose files fail.
 - Every brief lists the teammates running at the same time, each with its file set. When you start another
   teammate later, message the running ones its name and file set.
-- These rules also hold when a named call falls back to a subagent: it has no worktree either.
+- These rules also hold when a named call falls back to a subagent: it works in the same tree.
 - Teammates never commit. Commits stay with you, as in subagent mode: only when the user asks.
 - Code changes come only from tasks you assign. Reviewers send their findings and questions to you, not to
   the engineer, who has usually been shut down by then.
 
-## Turn budget
+## Budget
 
-`maxTurns` does not apply to teammates. Put a turn budget in every brief: the role's `maxTurns` from its agent
-file. If a teammate runs well past it, or repeats the same steps, send it a shutdown request. Then read its
+`maxTurns` does not apply to teammates. Put a budget in every brief. A reviewer's is the tool-call budget that
+`protocol.md` sets (`## Budget`, with the numbers); any other role's is its `maxTurns` from its agent file. If
+a teammate runs well past its budget, or repeats the same steps, send it a shutdown request. Then read its
 status file and re-staff the task if it is unfinished, on the ladder's next rung (staffing.md).
 
 ## Questions and decisions

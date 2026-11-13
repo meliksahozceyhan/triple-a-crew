@@ -65,6 +65,7 @@ Arguments given: `$ARGUMENTS`
 - **No secrets.** Never copy env values or tokens, even into Ground rules.
 - **Carry forward.** If this session resumed from an earlier handoff, copy over its decisions, lessons, ground rules
   and open work that still apply. Each handoff must stand alone.
+- **Read first lists the work items' own files.** For each open work item in `.crew/work/index.md`, list its `handoff.md` if it has one, otherwise its `board.md`, and the status files of its researchers (`team/*-researcher.md`): the `## Report` section of each holds the full research.
 - **Near the limit, don't re-read files to write this.** Use your context and the facts; spot-check only what you're unsure of.
 
 ### Template
@@ -128,6 +129,8 @@ shape, because `brief` and `finalize` parse them. Write "None." under a section 
    This picks the newest handoff for the current branch. Pass a file to choose another, or `--any` to ignore the branch.
    It reports branch/HEAD drift, new commits and the current working tree.
 2. Read the handoff in full with the Read tool, then the files it lists under **Read first**.
+   For an open work item, open its `handoff.md` first, then its `board.md`, then the researchers' reports.
+   Delete the `handoff.md` once its open questions are answered or written to `decisions.md` and its next step is on the board.
 3. Reconcile drift. New commits or changes the handoff doesn't explain probably came from the user. Ask before overwriting them.
 4. Rebuild the task list from Open work, then follow Next steps. Ground rules bind you exactly like instructions from the user.
 5. If you write a handoff later, carry this one forward (see *How to write it*). Finalize records the chain for you
@@ -144,7 +147,7 @@ work items. It also names the items other agents own. Paste it into the Agent pr
 agent type, including ones without Bash. Add anything session-specific below it.
 
 - Run items concurrently only when they are marked `Parallel-safe: yes` and don't touch the same files.
-  Otherwise run them one after another, or give each agent `isolation: "worktree"`.
+  Otherwise run them one after another.
 - The brief asks each subagent to report files changed, verification, leftovers and new lessons.
   Merge those into your own handoff before you write the next one.
 
@@ -165,8 +168,11 @@ agent type, including ones without Bash. Add anything session-specific below it.
   `.crew/`. Handoffs written by the older `session-handoff` skill are in `.claude/handoffs/`; resume one with
   `HANDOFF_DIR=.claude/handoffs node "${CLAUDE_SKILL_DIR}/handoff.mjs" resume`, or move the files to `.crew/handoffs/`.
 - **Work items.** If a Triple-A-Crew work item is open (`.crew/work/index.md`), name it in Open work with its id and
-  current board phase. The organizer's own `.crew/work/<id>/handoff.md` is a short status note for that item; this
-  handoff covers the whole session.
+  current board phase. A paused work item has one handoff of its own, `.crew/work/<id>/handoff.md`. Point to it; do
+  not repeat its content here. If the work item this session worked on is unfinished and has no `handoff.md`, write
+  that file first (its shape is in `../work/formats.md`): the item's next step and open questions belong there, and
+  this handoff points to it. When you resume, read it before the item's `board.md`, and delete it once its open
+  questions are answered or written to `decisions.md` and its next step is on the board.
 - **Redaction is best-effort.** Only obvious patterns are scrubbed: `Bearer …`, `token=`, `password:`, `sk-…`, `ghp_…`, `xox…-`.
 - **Re-sent prompts.** A prompt re-sent after an interrupt collapses into one entry. Pasted test failures with a shared
   prefix stay separate.

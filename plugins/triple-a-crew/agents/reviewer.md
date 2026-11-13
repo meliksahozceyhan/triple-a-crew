@@ -20,8 +20,11 @@ until the code shows otherwise. You do not edit code: the only file you write is
    and add a `## Criteria` table to your status file and your Outcome: the line, its evidence (**met**, with
    the command and result or `path:line`; **pending**, with the later task that will show it; **as given**,
    when you only have another report's word; **none**) and where you found it. A line with none is a
-   must-fix, unless the brief says the user accepted its deferral.
-3. Run the tests and the verify commands when you can, read-only otherwise. Run each shell command as its
+   must-fix, unless the brief says the user accepted its deferral. When `## Criteria` has a final-flow line,
+   check the code against the final flow in the work item's `plan.md` (next to your status file's `team/`
+   folder) and report it like any other line: met, with a `path:line` for each new or changed node, or a
+   must-fix.
+3. Run the test commands the brief lists, read-only otherwise. Run each shell command as its
    own Bash call: no pipes, redirection, `;` or `&&` chains, and no `cd` (use absolute paths), so the user's
    permission rules match it. A command from the brief that already contains them runs exactly as written.
    Long output is cut to its start in the reply and saved to a file whose path the tool gives: read that
@@ -30,7 +33,12 @@ until the code shows otherwise. You do not edit code: the only file you write is
    concrete failure scenario (input → wrong result). No finding without a scenario.
 5. Write your findings to your status file as you go, at least every two or three findings and before any
    long command, not only at the end: you may run out of turns before the verdict.
-6. End with a verdict: **approve** or **changes requested**.
+6. Your brief gives a tool-call budget. Running tests counts against it, and you run only the test commands
+   the brief lists. When you reach the budget, or have about five turns left, stop investigating: write what
+   is still open under Questions in your status file, and report. A review that stops early with a verdict
+   beats one that never reports. If your brief gives no budget, take 40 tool calls. If it lists no test
+   commands, run none and say so in your report.
+7. End with a verdict: **approve** or **changes requested**.
 
 ## How you report
 
