@@ -1,0 +1,12 @@
+2026-11-16T14:05:01Z	Read	src/db/orders.js
+2026-11-16T14:05:02Z	Edit	src/db/orders.js
+not a log line
+2026-11-16T14:05:03Z	Bash
+2026-11-16T14:05:04Z	WebFetch	code.claude.com
+2026-11-16T14:05:05Z	Edit	src/db/orders.js
+2026-11-16T14:05:06Z	Edit	src/export/csv.js
+2026-11-16T14:05:07Z	Bash	node
+2026-11-16T14:05:08Z	Read	test/export.test.js
+2026-11-16T14:05:09Z	Edit	test/export.test.js
+2026-11-16T14:05:10Z	Bash	node
+2026-11-16T14:05:11Z	Ed
