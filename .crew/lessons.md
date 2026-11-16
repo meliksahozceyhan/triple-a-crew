@@ -23,10 +23,10 @@
 | L19 | A brief's own edge-case row contradicted the issue it was built from | 1 | organizer-rules | open |
 | L20 | `claude plugin eval --case` takes one glob, not a list of names | 1 | organizer-rules | profile note: run several named cases as separate commands |
 | L21 | Independent tests find what the author's tests cannot | 1 | crew-board | rule: the independent tests for a code task go to the test-engineer (staffing.md, separation of duties) |
-| L22 | The editing tools turn a `\u` escape in file content into the character itself | 1 | crew-board | open |
-| L23 | A reviewer's nits lived only in its final message, so the engineer sent back could not read them | 1 | crew-board | open |
-| L24 | With nothing committed, a recheck has no fix diff | 1 | crew-board | open |
-| L25 | A probe run with all permission checks off is refused; a list of allowed tools works | 1 | crew-board | open |
+| L22 | The editing tools turn a `\u` escape in file content into the character itself | 1 | crew-board | profile note: build such a character from its code point and check the file for the raw character |
+| L23 | A reviewer's nits lived only in its final message, so the engineer sent back could not read them (#60) | 1 | crew-board | open |
+| L24 | With nothing committed, a recheck has no fix diff | 1 | crew-board | profile note: on a work item's own branch the organizer commits one commit per task without asking |
+| L25 | A probe run with all permission checks off is refused; a list of allowed tools works | 1 | crew-board | convention: README "Probe what the docs leave open" (give the probe only the tools it needs) |
 | L26 | Docs written before the code reviews were synced after each round of fixes | 1 | crew-board | open |
-| L27 | The agent files list `Grep` and `Glob`, which the current Claude Code build does not have | 1 | crew-board | open |
-| L28 | Reviews on `fable` reproduced their findings and stayed inside their budgets (trial since 2026-11-13) | 1 | crew-board | open |
+| L27 | The agent files list `Grep` and `Glob`, which the current Claude Code build does not have (#61) | 1 | crew-board | open |
+| L28 | Reviews on `fable` reproduced their findings and stayed inside their budgets (trial since 2026-11-13) | 1 | crew-board | profile note: `models: { critical: fable }` is kept |

@@ -55,13 +55,18 @@ wait for the user.
 | 2 | A rule changed in one file stays old in another | team/T12-reviewer.md (M1, S3) | L7 | `retro.md` only (the mechanism worked: the last review's rule list caught both) | kept |
 | 3 | A cheap live probe settles what the docs leave open | team/T1-researcher.md | L5 | `retro.md` only (the convention exists) | kept |
 | 4 | Independent tests find what the author's tests cannot | team/T5-test-engineer.md | | `retro.md` only (the rule exists: staffing.md, separation of duties) | kept |
-| 5 | The editing tools turn a `\u` escape in file content into the character itself | team/T12-reviewer.md (S2), team/T2-engineer.md, team/T12b-reviewer.md (N-1) | | `.crew/profile.md` notes | proposed |
-| 6 | A reviewer's nits lived only in its final message, so the engineer sent back could not read them | team/T10-reviewer.md, team/T3-engineer.md | | crew repository (issue draft) | proposed |
-| 7 | With nothing committed, a recheck has no fix diff | board.md (T9b), decisions.md | | `.crew/profile.md` notes | proposed |
-| 8 | A probe run with all permission checks off is refused; a list of allowed tools works | decisions.md (T6) | | `README.md`, "Probe what the docs leave open" | proposed |
+| 5 | The editing tools turn a `\u` escape in file content into the character itself | team/T12-reviewer.md (S2), team/T2-engineer.md, team/T12b-reviewer.md (N-1) | | `.crew/profile.md` notes | accepted |
+| 6 | A reviewer's nits lived only in its final message, so the engineer sent back could not read them | team/T10-reviewer.md, team/T3-engineer.md | | crew repository (issue draft) | accepted (#60) |
+| 7 | With nothing committed, a recheck has no fix diff | board.md (T9b), decisions.md | | `.crew/profile.md` notes | accepted |
+| 8 | A probe run with all permission checks off is refused; a list of allowed tools works | decisions.md (T6) | | `README.md`, "Probe what the docs leave open" | accepted |
 | 9 | Docs written before the code reviews were synced three times | team/T7-engineer.md | | `retro.md` only | kept |
-| 10 | The agent files list `Grep` and `Glob`, which this Claude Code build does not have | team/T1-researcher.md, findings.md | | crew repository (issue draft) | proposed |
-| 11 | The `critical: fable` trial: five reviews, each with reproduced findings; rechecks found no must-fix | board.md, team/T9*.md, team/T10-reviewer.md, team/T12*.md | | `.crew/profile.md` notes (the trial note) | proposed |
+| 10 | The agent files list `Grep` and `Glob`, which this Claude Code build does not have | team/T1-researcher.md, findings.md | | crew repository (issue draft) | accepted (#61) |
+| 11 | The `critical: fable` trial: five reviews, each with reproduced findings; rechecks found no must-fix | board.md, team/T9*.md, team/T10-reviewer.md, team/T12*.md | | `.crew/profile.md` notes (the trial note) | accepted |
+
+The user accepted all six proposals on 2026-11-16 ("Apply all six"). The four text changes are applied as
+written below, except that the README sentence (8) also names the real command form and says to put the
+prompt before the flag. The two issues were filed with the same content in the issue template's sections
+(Context, Problem, Evidence, Impact, Suggested approach, Acceptance criteria, Links): #60 and #61.
 
 ## Proposed text
 

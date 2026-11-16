@@ -951,6 +951,10 @@ runs work in parallel only on disjoint file sets. Details are in [docs/DESIGN.md
 - **Probe what the docs leave open.** When a skill depends on a Claude Code mechanic the docs don't settle,
   run a throwaway plugin on haiku in a scratch folder (it costs cents) and record the result with its date in
   DESIGN's Verified mechanics. `crew-hooks` (hook payloads) and `employees-v2` (`skills:` names) both did.
+  Give the probe session only the tools it needs, with the prompt before the flag because the flag takes a
+  list (`claude -p "<prompt>" --model haiku --allowedTools "Agent,Read,Write,Edit,Bash(date:*),Bash(ls:*)"`),
+  not `--permission-mode bypassPermissions`: a session's own safety check can refuse a run with all checks
+  off (`crew-board` T6).
 - **Ask before publishing.** Anything that writes to a shared system (issues, comments, messages) confirms
   first unless the profile says otherwise. Local files need no confirmation.
 - **Spell out the exceptions to location rules.** "Use the git root" sent drafts to the home directory

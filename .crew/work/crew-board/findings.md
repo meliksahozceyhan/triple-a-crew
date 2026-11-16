@@ -3,7 +3,7 @@
 - 2026-11-16 · The agent files list `Glob` and `Grep` (`plugins/triple-a-crew/agents/*.md:4`), but Claude Code
   2.1.325 on this machine has neither tool, for the main session or for a subagent whose `tools:` line names
   them; employees search through Bash (`grep`, `ls`, `find`) · found by T1 researcher (probe run 2) · crew
-  feedback, waits for the close step
+  feedback, filed as #61
 - 2026-11-16 · The docs say a main session started with `--agent` carries `agent_type` but no `agent_id`; not
   probed. The command guard already leaves when `agent_id` is missing; the activity hook must do the same ·
   found by T1 researcher · covered in T2's brief
@@ -31,8 +31,8 @@
   absolute paths (N5) · found by T9 reviewer · not filed
 - 2026-11-16 · A reviewer's nits were only in its final message, not in its status file, so the engineer sent
   back with "read the review file" could not see them (T10's N1 to N16). The researcher's report has a rule
-  for this (lesson L11); the reviewer's findings have none · seen by the organizer · crew feedback, waits for
-  the close step
+  for this (lesson L11); the reviewer's findings have none · seen by the organizer · crew feedback, filed as
+  #60
 - 2026-11-16 · Out of scope: a teammate's `PreToolUse` input in agent-teams mode was never probed, so the
   activity hook logs a teammate only when its brief can be read (the same limit as the command guard) · from
   the edge-case list · not filed

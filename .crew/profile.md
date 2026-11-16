@@ -57,6 +57,13 @@ models: { critical: fable }
 - Before closing a work item or deleting its branch, confirm the PR is merged with
   `gh pr view <n> --repo meliksahozceyhan/triple-a-crew --json state`; the user may say "merged" before GitHub
   has it (review-24-fixes, follow-ups-25-28).
-- Trial since 2026-11-13: `models: { critical: fable }`, so reviewers and design research run on fable instead
-  of opus. On the next size L item, compare its review rounds with the opus runs (the recheck found something
-  new in eight items), and keep or drop the override in that item's retro.
+- Since 2026-11-13 reviews and design research run on `fable` (`models: { critical: fable }`). On `crew-board`
+  (size L) five reviews each reproduced their findings and stayed inside their budgets, and the two rechecks
+  found should-fixes only; with `opus` the recheck had found something new in eight items. Kept.
+- The Write and Edit tools turn a `\uXXXX` escape in file content into the character itself (crew-board: an
+  invisible direction mark in a regular expression, an `é` in a test). Build such a character from its code
+  point (`String.fromCharCode(0x202e)`, `printf '\342\200\256'`) and check the file afterwards for the raw
+  character.
+- On a work item's own branch the organizer commits one commit per task without asking, so a recheck can read
+  the fix diff (`git diff <commit>..`); pushing, pull requests and anything on `main` still wait for the user.
+  (crew-board ran without commits and had to save file copies by hand before a recheck.)
