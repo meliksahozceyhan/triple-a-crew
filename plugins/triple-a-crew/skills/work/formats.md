@@ -1,8 +1,9 @@
 # Work item formats
 
 Everything is under `<root>/.crew/`. Every file has exactly one writer: the organizer writes everything except
-`team/`, where each employee writes only its own status file; the one exception is that the `handoff` skill
-may write a work item's `handoff.md` when the item has none.
+`team/`, where each employee writes only its own status file, and `live/`, which is not the organizer's (the
+activity hook appends to it and the board script creates and removes it); the one exception is that the
+`handoff` skill may write a work item's `handoff.md` when the item has none.
 
 ```
 .crew/
@@ -13,6 +14,7 @@ may write a work item's `handoff.md` when the item has none.
     <id>/
       brief.md  plan.md  decisions.md  findings.md  retro.md  committed: the durable record
       board.md  handoff.md  team/<task>-<role>.md      ignored: working state
+      live/<task>-<role>.log                           ignored by its own .gitignore: written by the activity hook
 ```
 
 ## .crew/.gitignore

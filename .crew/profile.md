@@ -5,6 +5,7 @@ verify:
   - node --check plugins/triple-a-crew/skills/handoff/handoff.mjs
   - claude plugin validate .
   - node scripts/test-graders.mjs
+  - node tools/crew-board/test.mjs
 tests: ["plugins/*/evals/**"]
 conventions: [README.md, docs/DESIGN.md]
 issue_tracker:
@@ -29,7 +30,7 @@ models: { critical: fable }
   harvest`). `--case` takes one glob, not a list: run several named cases as separate commands, or by a
   shared prefix or `--tag`.
 - A verify command must print a last line that says what it checked (`all hook tests passed`, `all checked
-  graders behave`), and the verifier's brief asks for that line. Exit code 0 alone is not evidence:
+  graders behave`, `all crew-board tests passed`), and the verifier's brief asks for that line. Exit code 0 alone is not evidence:
   `test-graders.mjs` once exited 0 without running (eval-tooling).
 - If you install the plugins at user scope from this checkout, switching branches here changes the plugins in
   every project, and edits apply after `/reload-plugins`.

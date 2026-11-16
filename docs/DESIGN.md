@@ -45,7 +45,7 @@ Three tiers in the plugin, plus a layer each project owns.
 
 ```
 ┌─ Tier 3: automation (Claude Code only) ─────────────────────────────┐
-│  hooks: summary, protocol, status gate, bash guard, definition check│
+│  hooks: summary, protocol, gate, guard, definition, activity log    │
 ├─ Tier 2: organization (Claude Code only) ───────────────────────────┤
 │  organizer skill · employee agents · handoff · .crew/work/ state    │
 ├─ Tier 1: portable skills (Claude Code, Cursor, Claude chat) ────────┤
@@ -279,7 +279,8 @@ by a spike on Claude Code 2.1.299 (work item `crew-hooks`), and those of the `Pr
   unless it is the home directory, otherwise the working directory), at most 15 lines, as plain text that
   reaches the main session; it prints nothing in projects without crew state. At `startup` and `resume` it
   also records a checksum of each agent file for the definition check below (`clear` and `compact` keep the
-  earlier record).
+  earlier record). It also prunes live logs: it deletes `*.log` files more than 7 days old (from the eighth day on) directly inside any
+  `.crew/work/*/live/` folder, and prints nothing for that (see the activity hook below).
 - Both subagent hooks match `^(triple-a-crew:[a-z-]+|[Tt][0-9]+[a-z]?-(researcher|engineer|test-engineer|verifier|reviewer))$`,
   so built-in agents and other plugins' agents are left alone, and roles added later under the plugin's
   prefix are covered. The second half exists for team mode: for a teammate, `agent_type` is its name, so the
@@ -320,11 +321,89 @@ by a spike on Claude Code 2.1.299 (work item `crew-hooks`), and those of the `Pr
   says that the employee runs on the old definition unless `/reload-plugins` has run since the change, and it
   is shown once per change: the hook records the new checksum, role by role, before it prints the note. It
   covers agent files only: the organizer's reference files are read on demand.
+- The **activity hook** (`PreToolUse`, matcher `"*"`, work item `crew-board`) appends one line per tool call of
+  a crew employee to `.crew/work/<id>/live/<name>.log`, so a page can show what an employee is doing now. The
+  line is the UTC time, the tool name and a short target, separated by tabs. Reasons, from the work item's
+  `decisions.md`:
+  - *The hook input is a documented interface.* The alternative, a board script that tails the subagent
+    transcripts under `~/.claude/projects/`, needs no plugin change and adds no time per call, but the
+    transcript format is internal to Claude Code, the script would have to search the home folder, and it
+    would parse full transcripts, content included. Rejected. Rejected too: `PostToolUse` as well (it would
+    double the hook runs; "what is it doing now" needs the start of a call only).
+  - *The log lives in the work item.* The hook derives the folder from the `**Status file:**` line of the
+    brief, as the stop hook does: `<root>/.crew/work/<id>/team/<name>.md` gives
+    `<root>/.crew/work/<id>/live/<name>.log`. Rejected: the system temp folder or `${CLAUDE_PLUGIN_DATA}`,
+    because the page would have to know where that is on each machine, and hook state there has an open
+    problem (#57, lesson L15).
+  - *The folder is the switch.* The hook writes only when `live/` exists and never creates it; the board script
+    creates it. The plugin is public and most users have no page, so without the folder the hook costs a few
+    early exits and writes nothing. Rejected: a profile field (`live: on`), which would change `onboard` and
+    its evals. It also writes nothing when `.crew`, `.crew/work`, the work item folder or its `live` folder is a
+    symbolic link, or when the log path already exists and is a symbolic link (a dangling one too) or anything
+    other than a regular file: `>>` follows a link, and a repository could ship a link that points at a file
+    outside the work item, so the file names of tool calls would be appended to it. A linked work item folder
+    was once written through, and the prune deleted an old `*.log` outside the project, so the `SessionStart`
+    prune deletes nothing through such a link either. Only a real `live` folder and a new or regular log file
+    are written. The check and the write are two steps, so a link created in between is not caught (plain `sh`
+    has no lock). The status file's name must also start with a letter or digit.
+    `live/` ignores itself with a `.gitignore` of `*` inside it (as `.crew/handoffs/` does), so a
+    project whose `.crew/.gitignore` predates this never sees the logs in `git status`; a new line in the
+    `.crew/.gitignore` list would reach an existing project only when the organizer opens its next item.
+  - *No state.* It keeps no state file and reads the brief on every employee call, as the command guard does
+    (about 40 ms for an employee's call and 12 ms for a main-session call in T1's 30-run measurement of the
+    guard). Rejected: a cache per agent in `${CLAUDE_PLUGIN_DATA}`, which would bring back lesson L15. For an
+    ordinary call the main session leaves before any `jq` or `awk` starts: the hook reads its input with the
+    shell's own `read` and looks for the text `"agent_id"`. A main-session input that holds that text (for
+    example a search for that word) does start `jq` or `awk`, and no line is written. The hook also leaves
+    when the field list it read does not have exactly nine lines. Measured for the hook on 2026-11-16 (one
+    batch of 30 runs, input through a pipe): about 4.4 ms for a main-session call, about 14.8 ms for an
+    employee's call with `live/`, about 12.0 ms without; an empty `sh -c :` takes about 4.0 ms there.
+  - *It acts on crew employees only* and needs both `agent_type` (`triple-a-crew:<role>`, or a `T<n>-<role>`
+    teammate) and `agent_id`: the docs say a main session started with `--agent` has `agent_type` without
+    `agent_id`, so `agent_type` alone is not enough. A teammate is logged only when its brief can be read and
+    names a status file `.../.crew/work/<id>/team/<name>.md` (the file name starts with a letter or digit); its `PreToolUse` input was never probed, the same
+    limit as the command guard. The organizer's own calls are not logged: a main-session call carries no agent
+    id.
+  - *A line means "a call was started".* Matching hooks run at the same time, and a hook still runs to its end
+    when another refuses the call (probe 2026-11-16, `crew-board` T1), so a Bash call that the command guard
+    refuses is logged too. It never prints, never refuses a call, always exits 0 and, on any error or doubt,
+    writes nothing.
+  - *The target is short on purpose.* For `Read`, `Edit`, `Write` and `NotebookEdit` the file path (relative
+    to the project root when inside it); for `Bash` the program name only (the first word that is not a
+    `NAME=value` word, from its last path component, written only when the word consists of letters, digits,
+    `.`, `_`, `-` and `/` and has at most 30 characters, counted on the whole word unless it starts with `/`,
+    `./` or `../`, and then on its last path component; a token pasted as a bare command would otherwise be
+    written as the program name, GitHub and npm tokens are exactly 40 characters, so the limit is 30, and a
+    key with a slash in it once had its tail written, so a word that is not a path is measured whole. The
+    limit catches long tokens only: a key of 30 characters or fewer typed as a command is written, and so
+    is the last part, of 30 characters or fewer, of one that starts with `/`, `./` or `../`; a
+    `NAME=value` word whose value holds any character other than letters, digits and `_ . / : @ % + , = -`
+    ends the search and the call gets no program name, because the command is not parsed for quotes:
+    `PGPASSWORD="my hunter2 pass" psql` once wrote `hunter2`); for `WebFetch` the host only, and an empty target when
+    the URL contains an `@` anywhere (with a `/` inside a password, a host cut would have let the user name
+    reach the log); for `Grep` and `Glob` the pattern, cut to 60 characters; for every
+    other tool nothing. Never file content, a full command or a query string: tool input can hold secrets, and
+    the log is plain text in the project. A target is cut to 120 characters, a line to 200 bytes. Without
+    `jq`, an input longer than 100,000 characters writes nothing. `Grep` and `Glob` follow the documented
+    input (`pattern`); this build has no such tools, so their input was never seen.
+  - *Cleanup is done by mechanisms*, not by a rule for the organizer (a change to `SKILL.md` would mean
+    rerunning 13 eval cases): the board script deletes the logs and the `.gitignore` of an item listed under
+    Closed and removes the then empty folder, and the `SessionStart` hook deletes `*.log` files more than
+    7 days old (`find -mtime +7`: from the eighth day on). A log has no size limit otherwise.
+  - The link rule, the empty target for a URL with an `@` and a limit on the program name came from the
+    independent tests of work item `crew-board` (T5). The tighter program-name rule (30 characters, no name
+    after a `NAME=value` word with odd characters), the links in `.crew`, `.crew/work` and the work item
+    folder, the file-name and nine-field rules, and the wording about the main session came from review T9 of
+    the same work item, after those tests. Its recheck (T9b) added the whole-word count.
+  - Checked on 2026-11-16 (Claude Code 2.1.325): a haiku session with one `triple-a-crew:engineer` employee
+    and the board running gave 8 log lines for 8 tool calls, and the page showed the current action while it
+    ran. `test-activity-log.sh` runs from `test-hooks.sh`.
 - The guard and the check keep small files in `${CLAUDE_PLUGIN_DATA}`: an empty marker per refused command,
   `triple-a-crew-bash-<agent_id>-<checksum>-<length>`, and `triple-a-crew-defs-<session_id>`, next to the
-  stop hook's counters. Files older than 7 days are deleted. Hook state is one small file per fact, created
+  stop hook's counters. Files more than 7 days old are deleted. Hook state is one small file per fact, created
   to remember and removed to forget. A hook never reads a state file, changes it and writes it back: two hook
-  runs can overlap (`hook-guards`: the guard's first two designs lost refusals that way).
+  runs can overlap (`hook-guards`: the guard's first two designs lost refusals that way). The activity hook
+  keeps no state there: it only appends to a log in the work item.
 
 **Two channel modes.**
 
@@ -394,6 +473,7 @@ approval → implement → verify → review → ship → done`.
       board.md                 phase, task table with state/owner/model         ignored
       team/<task>.md           one status file per task                         ignored
       handoff.md               a paused item's handoff, deleted after resume    ignored
+      live/<task>-<role>.log   one line per tool call of an employee           ignored (own .gitignore)
 ```
 
 **Why `.crew/` and not `.claude/`:** Claude Code treats `.claude/` as a protected directory. Writes there
@@ -415,8 +495,15 @@ work/*/team/
 work/*/handoff.md
 ```
 
-Ownership rule: every file has exactly one writer. The organizer owns everything except `team/`, with one
-exception: the `handoff` skill may write a work item's `handoff.md` when the item has none. The organizer
+Ownership rule: every file has exactly one writer. The organizer owns everything except `team/` and `live/`,
+with one exception: the `handoff` skill may write a work item's `handoff.md` when the item has none. The
+`live/` folder is not the organizer's. The activity hook appends to the logs in it, and only when the folder
+exists. The board script (`tools/crew-board/`, not part of the plugin) creates the folder, with a `.gitignore`
+of `*` inside it, for each open item, and for an item listed under Closed deletes the `*.log` files, and that
+`.gitignore` only when the folder is empty without it, and then removes the folder (an item listed under both
+Open and Closed counts as open, and its `live/` is never cleaned up; the index headings must be exactly
+`## Open` and `## Closed`). The `SessionStart` hook deletes `*.log` files more than 7 days old, and nothing
+through a symbolic link. A project that never runs the board has no `live/` folders and no logs. The organizer
 also owns `lessons.md`: one row per lesson across all work items, with a hit count and a mechanism
 (`open`, what enforces the lesson, or `none:` with the reason). The plan step reads the open rows.
 
@@ -513,7 +600,7 @@ Free-form notes: architecture boundaries, things that keep going wrong, people t
 claude-skill-folder/
   .claude-plugin/marketplace.json     marketplace "triple-a-crew", lists both plugins with relative sources
   plugins/
-    triple-a-crew/                    organizer, employees, onboard, workflow skills, hooks
+    triple-a-crew/                    organizer, employees, onboard, workflow skills, hooks (six, with the activity hook)
       .claude-plugin/plugin.json
       agents/                         researcher, engineer, test-engineer, verifier, reviewer
       skills/                         work, onboard, test-harden, handoff
@@ -522,6 +609,7 @@ claude-skill-folder/
       .claude-plugin/plugin.json
       skills/file-issue/
       evals/                          9 cases
+  tools/crew-board/                   the board, a local page for the crew's work: a prototype, not in the plugin
   docs/DESIGN.md
 ```
 
@@ -549,7 +637,7 @@ Checked against the Claude Code docs on 2026-10-16.
 | Agents | `model` (aliases incl. `fable`), `effort`, `tools`, `isolation: worktree`, `maxTurns`, `background`, `skills`. Plugin agents ignore `permissionMode`, `hooks`, `mcpServers`, `initialPrompt`. A plugin agent's `skills: [x]` preloads the plugin's own skill only by its bare name; `plugin:x` loads nothing, silently, and eval traces never show the injected text | [subagents](https://code.claude.com/docs/en/sub-agents); probe 2026-10-19 (`employees-v2`) |
 | Nesting | Subagents may spawn subagents up to 3 levels deep by default | [subagents](https://code.claude.com/docs/en/sub-agents) |
 | Worktree isolation | An `isolation: "worktree"` subagent starts in `.claude/worktrees/agent-<id>` on branch `worktree-agent-<id>`, from the remote's default branch. It can take in a local branch with `git merge --ff-only`, commit, and run commands relative to its own root. It is refused when it writes a file in the main checkout ("Edit the worktree copy of this file instead"), so a crew status file cannot live there, and the stop hook then blocks it three times. Its worktree path and branch come back in the task notification; an unchanged worktree is removed | [sub-agents](https://code.claude.com/docs/en/sub-agents); probe 2026-11-13 (`organizer-rules` P1) |
-| Hooks | `SessionStart` and `SubagentStart` can add context; `SubagentStop` and `Stop` can block. Scripts use `${CLAUDE_PLUGIN_ROOT}`; persistent plugin data goes in `${CLAUDE_PLUGIN_DATA}`. Plugin hooks live in `hooks/hooks.json` under a top-level `hooks` key and run with `sh -c`. Subagent matchers see plugin agents as `<plugin>:<agent>`. Subagent hook input has no prompt; SubagentStop gets `agent_transcript_path` (line 1 is the brief), `last_assistant_message` and `stop_hook_active`. In the spike a subagent ended after 9 consecutive blocks (the hook keeps its own cap of 3). Eval runs load plugin hooks. For an agent-team teammate both subagent hooks fire with the teammate's name as `agent_type`; line 1 of its transcript is the brief inside a `<teammate-message>` tag. A `PreToolUse` input carries `agent_id` and `agent_type` only for a subagent's call, so a hook can tell it from the main session's. Exit code 2 with stderr, and JSON `permissionDecision: deny`, both refuse the call, and the subagent gets the message and carries on. The tool that starts a subagent is `Agent`, with the agent type in `tool_input.subagent_type`, and its `PreToolUse` fires before `SubagentStart`; `additionalContext` from that hook reaches the main session. A `PreToolUse` hook on `Agent` that prints only `hookSpecificOutput.additionalContext`, with no permission decision, still reaches the main session, and the call runs as it would without the hook (probe 2026-11-13, `hook-guards` T2, question 10). The same `session_id` appears in `SessionStart`, in `SubagentStart` and in the `PreToolUse` inputs of the session. A subagent's transcript is at `transcript_path` without `.jsonl` plus `/subagents/agent-<agent_id>.jsonl`, and its first line is the brief. No hook event fires on `/reload-plugins`. Not probed: a teammate's `PreToolUse` input in agent-teams mode, and where its transcript is; until it is, a teammate is guarded only when its brief can be read | [hooks](https://code.claude.com/docs/en/hooks); spike 2026-10-19 (`crew-hooks` T2); live test 2026-10-19 (`agent-teams-mode` T3); probe 2026-11-13 (`hook-guards` T2); the `/reload-plugins` fact from docs, read 2026-11-13 |
+| Hooks | `SessionStart` and `SubagentStart` can add context; `SubagentStop` and `Stop` can block. Scripts use `${CLAUDE_PLUGIN_ROOT}`; persistent plugin data goes in `${CLAUDE_PLUGIN_DATA}`. Plugin hooks live in `hooks/hooks.json` under a top-level `hooks` key and run with `sh -c`. Subagent matchers see plugin agents as `<plugin>:<agent>`. Subagent hook input has no prompt; SubagentStop gets `agent_transcript_path` (line 1 is the brief), `last_assistant_message` and `stop_hook_active`. In the spike a subagent ended after 9 consecutive blocks (the hook keeps its own cap of 3). Eval runs load plugin hooks. For an agent-team teammate both subagent hooks fire with the teammate's name as `agent_type`; line 1 of its transcript is the brief inside a `<teammate-message>` tag. A `PreToolUse` input carries `agent_id` and `agent_type` only for a subagent's call, so a hook can tell it from the main session's. Exit code 2 with stderr, and JSON `permissionDecision: deny`, both refuse the call, and the subagent gets the message and carries on. The tool that starts a subagent is `Agent`, with the agent type in `tool_input.subagent_type`, and its `PreToolUse` fires before `SubagentStart`; `additionalContext` from that hook reaches the main session. A `PreToolUse` hook on `Agent` that prints only `hookSpecificOutput.additionalContext`, with no permission decision, still reaches the main session, and the call runs as it would without the hook (probe 2026-11-13, `hook-guards` T2, question 10). The same `session_id` appears in `SessionStart`, in `SubagentStart` and in the `PreToolUse` inputs of the session. A subagent's transcript is at `transcript_path` without `.jsonl` plus `/subagents/agent-<agent_id>.jsonl`, and its first line is the brief. No hook event fires on `/reload-plugins`. Not probed: a teammate's `PreToolUse` input in agent-teams mode, and where its transcript is; until it is, a teammate is guarded only when its brief can be read. Probe 2026-11-16 (Claude Code 2.1.325): the matcher forms `"*"`, `""`, an omitted matcher and `".*"` each made a `PreToolUse` entry fire for every tool (`"*"` is the documented form). A subagent's `PreToolUse` input carries `agent_id`, `agent_type` and `transcript_path` for Read, Write, Edit, Bash and WebFetch (`transcript_path` is the main session's transcript). The `tool_input` keys are `file_path` for Read; `file_path`, `content` for Write; `file_path`, `old_string`, `new_string`, `replace_all` for Edit; `command`, `description` for Bash; `url`, `prompt` for WebFetch; Write and Edit carry the whole text. Hooks that match one call start at the same time, and a hook still runs to its end after another refused the call. The employee's transcript file exists, with the brief on its first line, at the employee's first `PreToolUse` event. This build has no `Grep` or `Glob` tool, for the main session or for a subagent whose `tools:` line names them, so their hook input could not be seen (the docs give `pattern` for both). Not probed: a main session started with `--agent` (docs: `agent_type` without `agent_id`) | [hooks](https://code.claude.com/docs/en/hooks); spike 2026-10-19 (`crew-hooks` T2); live test 2026-10-19 (`agent-teams-mode` T3); probe 2026-11-13 (`hook-guards` T2); the `/reload-plugins` fact from docs, read 2026-11-13; probe 2026-11-16 (`crew-board` T1) |
 | Skills | Bundled reference files load on demand; scripts via `${CLAUDE_SKILL_DIR}`; `context: fork` runs a skill in a chosen agent. `model` and `effort` in a skill's frontmatter apply for the rest of the current turn only; the session's model resumes on the next prompt | [skills](https://code.claude.com/docs/en/skills), read 2026-11-13 |
 | Workflows | Plugins can ship `workflows/*.js`, but a run cannot take user input mid-way, so the organizer's Q&A loop stays in the main session | [workflows](https://code.claude.com/docs/en/workflows) |
 | Evals | `claude plugin eval .` runs `evals/<case>/prompt.md` with graders (`tool_used` to check a skill fired, `llm` rubrics), with and without the plugin, and reports the difference | [plugin evals](https://code.claude.com/docs/en/plugin-evals) |
