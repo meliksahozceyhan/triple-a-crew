@@ -155,6 +155,67 @@ for m in $modes; do
 
   echo 'not json' >"$tmp/in.json"; run $m session-start.sh "$tmp/in.json"
   [ "$rc" = 0 ] && pass "session-start: garbage stdin exits 0" $m || bad "session-start: garbage" $m "exit $rc"
+
+  # live logs older than 7 days are deleted; nothing else is touched and the output stays the same
+  mkdir -p "$tmp/two/.crew/work/alpha/live/sub" "$tmp/two/.crew/work/alpha/team" "$tmp/two/.crew/work/beta/live"
+  for f in alpha/live/T1-old.log alpha/live/T2-new.log alpha/live/old.txt alpha/live/sub/deep.log alpha/old.log \
+    alpha/team/old.log beta/live/T3-old.log; do
+    : >"$tmp/two/.crew/work/$f"
+  done
+  for f in alpha/live/T1-old.log alpha/live/old.txt alpha/live/sub/deep.log alpha/old.log alpha/team/old.log beta/live/T3-old.log; do
+    touch -t 202001010000 "$tmp/two/.crew/work/$f"
+  done
+  stdin_cwd "$tmp/two"; run $m session-start.sh "$tmp/in.json"
+  case "$out" in
+    "Open Triple-A-Crew work items in this project (from .crew/work/index.md):
+- \`alpha\` (L) - implement
+- \`beta\` (M) - approved") pass "session-start: prune leaves the printed list as it was" $m ;;
+    *) bad "session-start: prune output" $m "output: $out" ;;
+  esac
+  [ ! -e "$tmp/two/.crew/work/alpha/live/T1-old.log" ] && [ ! -e "$tmp/two/.crew/work/beta/live/T3-old.log" ] &&
+    pass "session-start: old live logs of two work items deleted" $m || bad "session-start: old live logs" $m "still present"
+  [ -e "$tmp/two/.crew/work/alpha/live/T2-new.log" ] && pass "session-start: a fresh live log is kept" $m || bad "session-start: fresh live log" $m "deleted"
+  [ -e "$tmp/two/.crew/work/alpha/live/old.txt" ] && [ -e "$tmp/two/.crew/work/alpha/live/sub/deep.log" ] &&
+    pass "session-start: only *.log directly inside live/ is deleted" $m || bad "session-start: other live files" $m "deleted"
+  [ -e "$tmp/two/.crew/work/alpha/old.log" ] && [ -e "$tmp/two/.crew/work/alpha/team/old.log" ] &&
+    pass "session-start: old logs outside live/ are kept" $m || bad "session-start: logs outside live" $m "deleted"
+  # no index: still silent, still pruned (from a subfolder too)
+  mkdir -p "$tmp/noindex/.git" "$tmp/noindex/src" "$tmp/noindex/.crew/work/z/live"
+  : >"$tmp/noindex/.crew/work/z/live/T1-old.log"; touch -t 202001010000 "$tmp/noindex/.crew/work/z/live/T1-old.log"
+  stdin_cwd "$tmp/noindex/src"; run $m session-start.sh "$tmp/in.json"
+  expect_silent "session-start: prune without an index is silent" $m
+  [ ! -e "$tmp/noindex/.crew/work/z/live/T1-old.log" ] && pass "session-start: prune without an index deletes" $m || bad "session-start: prune without an index" $m "still present"
+  # a live folder that cannot be written: silent, exit 0
+  if [ "$(id -u)" != 0 ]; then
+    : >"$tmp/noindex/.crew/work/z/live/T2-old.log"; touch -t 202001010000 "$tmp/noindex/.crew/work/z/live/T2-old.log"
+    chmod 555 "$tmp/noindex/.crew/work/z/live"
+    stdin_cwd "$tmp/noindex"; run $m session-start.sh "$tmp/in.json"
+    expect_silent "session-start: read-only live folder is silent, exit 0" $m
+    chmod 755 "$tmp/noindex/.crew/work/z/live"
+  fi
+
+  # nothing is deleted through a symbolic link: live, the work item folder, .crew/work, .crew
+  rm -rf "$tmp/lk1" "$tmp/lk2" "$tmp/lk3" "$tmp/lk4" "$tmp/lk1-other" "$tmp/lk2-work" "$tmp/lk3-crew" "$tmp/lk4-out"
+  mkdir -p "$tmp/lk1/.git" "$tmp/lk1/.crew/work/real/live" "$tmp/lk1-other/live" \
+    "$tmp/lk2/.git" "$tmp/lk2/.crew" "$tmp/lk2-work/w/live" "$tmp/lk3/.git" "$tmp/lk3-crew/work/w/live" \
+    "$tmp/lk4/.git" "$tmp/lk4/.crew/work/w" "$tmp/lk4-out"
+  ln -s "$tmp/lk1-other" "$tmp/lk1/.crew/work/lnk"
+  ln -s "$tmp/lk2-work" "$tmp/lk2/.crew/work"
+  ln -s "$tmp/lk3-crew" "$tmp/lk3/.crew"
+  ln -s "$tmp/lk4-out" "$tmp/lk4/.crew/work/w/live"
+  for f in "$tmp/lk1/.crew/work/real/live/old.log" "$tmp/lk1-other/live/old.log" "$tmp/lk2-work/w/live/old.log" \
+    "$tmp/lk3-crew/work/w/live/old.log" "$tmp/lk4-out/old.log"; do
+    : >"$f"; touch -t 202001010000 "$f"
+  done
+  for d in lk1 lk2 lk3 lk4; do
+    stdin_cwd "$tmp/$d"; run $m session-start.sh "$tmp/in.json"
+    expect_silent "session-start: prune with a link in $d is silent" $m
+  done
+  [ ! -e "$tmp/lk1/.crew/work/real/live/old.log" ] && pass "session-start: a real live folder next to a linked item is still pruned" $m || bad "session-start: real folder beside a link" $m "still present"
+  [ -e "$tmp/lk1-other/live/old.log" ] && pass "session-start: work item folder as a link: nothing deleted behind it" $m || bad "session-start: item link" $m "deleted"
+  [ -e "$tmp/lk2-work/w/live/old.log" ] && pass "session-start: .crew/work as a link: nothing deleted behind it" $m || bad "session-start: work link" $m "deleted"
+  [ -e "$tmp/lk3-crew/work/w/live/old.log" ] && pass "session-start: .crew as a link: nothing deleted behind it" $m || bad "session-start: .crew link" $m "deleted"
+  [ -e "$tmp/lk4-out/old.log" ] && pass "session-start: live as a link: nothing deleted behind it" $m || bad "session-start: live link" $m "deleted"
 done
 
 # ---- subagent-start ----
@@ -446,7 +507,7 @@ done
 
 # The other hooks have test files of their own; each one repeats itself under dash.
 if [ -z "${HOOK_SH:-}" ]; then
-  for t in test-bash-guard.sh test-definitions-check.sh; do
+  for t in test-bash-guard.sh test-definitions-check.sh test-activity-log.sh; do
     sh "$here/$t" || fail=1
   done
 fi
