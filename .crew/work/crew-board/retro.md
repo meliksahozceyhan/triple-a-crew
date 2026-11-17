@@ -1,7 +1,8 @@
 # Retro: crew-board
 
-**Closed:** not yet. Written 2026-11-16 with the work finished and reviewed; the commit and the pull request
-wait for the user.
+**Closed:** 2026-11-17. Written 2026-11-16 with the work finished and reviewed. Pull request #59 was merged on
+2026-11-17 (checked on GitHub, merge commit 66172fd), and the tag `triple-a-crew--v1.2.0` was created on that
+commit and pushed.
 
 ## What happened
 
