@@ -61,12 +61,16 @@ wait for the user.
 | 8 | A probe run with all permission checks off is refused; a list of allowed tools works | decisions.md (T6) | | `README.md`, "Probe what the docs leave open" | accepted |
 | 9 | Docs written before the code reviews were synced three times | team/T7-engineer.md | | `retro.md` only | kept |
 | 10 | The agent files list `Grep` and `Glob`, which this Claude Code build does not have | team/T1-researcher.md, findings.md | | crew repository (issue draft) | accepted (#61) |
-| 11 | The `critical: fable` trial: five reviews, each with reproduced findings; rechecks found no must-fix | board.md, team/T9*.md, team/T10-reviewer.md, team/T12*.md | | `.crew/profile.md` notes (the trial note) | accepted |
+| 11 | The `critical: fable` trial: five reviews, each with reproduced findings; rechecks found no must-fix | board.md, team/T9*.md, team/T10-reviewer.md, team/T12*.md | | `.crew/profile.md` notes (the trial note) | accepted 2026-11-16, reversed 2026-11-17 |
 
 The user accepted all six proposals on 2026-11-16 ("Apply all six"). The four text changes are applied as
 written below, except that the README sentence (8) also names the real command form and says to put the
 prompt before the flag. The two issues were filed with the same content in the issue template's sections
 (Context, Problem, Evidence, Impact, Suggested approach, Acceptance criteria, Links): #60 and #61.
+
+On 2026-11-17 the user reversed proposal 11: `fable` for every review is more than the work needs. The profile
+now has `models: {}`, so reviews run on `opus` again, and a note keeps design questions on `fable`. The text
+of proposal 11 below is the one accepted the day before, kept as the record.
 
 ## Proposed text
 

@@ -29,4 +29,4 @@
 | L25 | A probe run with all permission checks off is refused; a list of allowed tools works | 1 | crew-board | convention: README "Probe what the docs leave open" (give the probe only the tools it needs) |
 | L26 | Docs written before the code reviews were synced after each round of fixes | 1 | crew-board | open |
 | L27 | The agent files list `Grep` and `Glob`, which the current Claude Code build does not have (#61) | 1 | crew-board | open |
-| L28 | Reviews on `fable` reproduced their findings and stayed inside their budgets (trial since 2026-11-13) | 1 | crew-board | profile note: `models: { critical: fable }` is kept |
+| L28 | Reviews on `fable` reproduced their findings and stayed inside their budgets (trial 2026-11-13 to 2026-11-16) | 1 | crew-board | profile note: reviews are back on `opus` by the user's decision of 2026-11-17; design questions stay on `fable` |
