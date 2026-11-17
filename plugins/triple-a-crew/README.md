@@ -32,10 +32,11 @@ The organizer picks the model per task from three tiers (`mechanical`: haiku, `s
 
 ## Hooks
 
-`hooks/hooks.json` runs five POSIX `sh` scripts from `scripts/`:
+`hooks/hooks.json` runs six POSIX `sh` scripts from `scripts/`:
 
 - `SessionStart` lists open work items from `.crew/work/index.md`, and at `startup` and `resume` records a
-  checksum of each agent file.
+  checksum of each agent file. It also deletes `*.log` files more than 7 days old (never through a symbolic link) in any `.crew/work/*/live/`
+  folder.
 - `SubagentStart` reminds employees of the status-file protocol.
 - `SubagentStop` sends an employee back while its status file or final report is incomplete. For a `done` or
   `failed` file that includes its `updated` time: missing, not in the form `2026-01-31T14:05:00Z`, or later
@@ -53,14 +54,21 @@ The organizer picks the model per task from three tiers (`mechanical`: haiku, `s
   changed since the session loaded it, it adds a one-time note to the organizer's context that names the file
   and `/reload-plugins`: unless a reload has run since the change, the employee runs on the old definition.
   It never refuses the call, and it covers agent files, not skills.
+- `PreToolUse` on every tool is the activity hook. For a crew employee it appends one line (UTC time, tool
+  name, short target: a file path, a program name only (30 characters at most), or a host only (none for a
+  URL with an `@`); never content or a full command) to `.crew/work/<id>/live/<name>.log`, only when the
+  `live/` folder already exists and is a real folder, and the log is a new or regular file (never through a
+  symbolic link, also not in `.crew`, `.crew/work` or the work item folder). The board script in the
+  repository's `tools/crew-board/` creates the folder (it is not part of this plugin). It never refuses a call
+  and keeps no state.
 
 The employee hooks match only `triple-a-crew:*` agents and agent-team teammates named `T<n>-<role>`
 (team mode, `skills/work/teams.md`). `SessionStart` prints nothing in projects without `.crew/`. The guard and
 the check keep small files in `${CLAUDE_PLUGIN_DATA}` (a marker per refused command,
 `triple-a-crew-bash-<agent_id>-<checksum>-<length>`, and `triple-a-crew-defs-<session_id>`), next to the
-stop hook's own, pruned after 7 days. Hooks are tier 3:
+stop hook's own, pruned when more than 7 days old; the activity hook keeps none there. Hooks are tier 3:
 nothing breaks with them turned off. Test them with `sh scripts/test-hooks.sh`, which also runs
-`test-bash-guard.sh` and `test-definitions-check.sh`.
+`test-bash-guard.sh`, `test-definitions-check.sh` and `test-activity-log.sh`.
 
 ## State
 

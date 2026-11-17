@@ -1,0 +1,1 @@
+Not a log file: the cleanup must leave it alone.

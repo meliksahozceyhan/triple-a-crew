@@ -5,6 +5,7 @@ verify:
   - node --check plugins/triple-a-crew/skills/handoff/handoff.mjs
   - claude plugin validate .
   - node scripts/test-graders.mjs
+  - node tools/crew-board/test.mjs
 tests: ["plugins/*/evals/**"]
 conventions: [README.md, docs/DESIGN.md]
 issue_tracker:
@@ -12,7 +13,7 @@ issue_tracker:
   team: meliksahozceyhan/triple-a-crew
   confirm: batch
 organizer: proactive
-models: { critical: fable }
+models: {}
 ---
 - A marketplace (`.claude-plugin/marketplace.json`) listing two plugins in `plugins/*`: `file-issue` and
   `triple-a-crew`. They declare no `dependencies` on each other, on purpose (see README Troubleshooting).
@@ -29,7 +30,7 @@ models: { critical: fable }
   harvest`). `--case` takes one glob, not a list: run several named cases as separate commands, or by a
   shared prefix or `--tag`.
 - A verify command must print a last line that says what it checked (`all hook tests passed`, `all checked
-  graders behave`), and the verifier's brief asks for that line. Exit code 0 alone is not evidence:
+  graders behave`, `all crew-board tests passed`), and the verifier's brief asks for that line. Exit code 0 alone is not evidence:
   `test-graders.mjs` once exited 0 without running (eval-tooling).
 - If you install the plugins at user scope from this checkout, switching branches here changes the plugins in
   every project, and edits apply after `/reload-plugins`.
@@ -56,6 +57,16 @@ models: { critical: fable }
 - Before closing a work item or deleting its branch, confirm the PR is merged with
   `gh pr view <n> --repo meliksahozceyhan/triple-a-crew --json state`; the user may say "merged" before GitHub
   has it (review-24-fixes, follow-ups-25-28).
-- Trial since 2026-11-13: `models: { critical: fable }`, so reviewers and design research run on fable instead
-  of opus. On the next size L item, compare its review rounds with the opus runs (the recheck found something
-  new in eight items), and keep or drop the override in that item's retro.
+- Reviews run on `opus`, the plugin's default for the critical tier, also when the main session runs on
+  `fable` (the user's decision of 2026-11-17: `fable` for every review is more than the work needs). A design
+  question (a researcher at critical tier) runs on `fable`: pass `model: fable` at spawn. The plan itself is
+  written by the organizer, on the main session's model. From 2026-11-13 to 2026-11-16 reviews ran on `fable`
+  (`models: { critical: fable }`): on `crew-board` five reviews each reproduced their findings and stayed
+  inside their budgets, but no review ran on `opus` on the same diff, so the two were never compared.
+- The Write and Edit tools turn a `\uXXXX` escape in file content into the character itself (crew-board: an
+  invisible direction mark in a regular expression, an `é` in a test). Build such a character from its code
+  point (`String.fromCharCode(0x202e)`, `printf '\342\200\256'`) and check the file afterwards for the raw
+  character.
+- On a work item's own branch the organizer commits one commit per task without asking, so a recheck can read
+  the fix diff (`git diff <commit>..`); pushing, pull requests and anything on `main` still wait for the user.
+  (crew-board ran without commits and had to save file copies by hand before a recheck.)

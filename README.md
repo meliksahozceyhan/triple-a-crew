@@ -8,7 +8,7 @@ is an organizer that runs work like a team lead: it understands the problem, sta
 on the right models, tracks their state, answers their questions, and files follow-up issues for anything
 out of scope.
 
-> **Status: `triple-a-crew` v1.1.0, `file-issue` v1.0.0.** Two plugins: `file-issue`, and `triple-a-crew`
+> **Status: `triple-a-crew` v1.2.0, `file-issue` v1.0.0.** Two plugins: `file-issue`, and `triple-a-crew`
 > with the organizer, its employees, `onboard`, and two workflow skills migrated from the author's previous
 > project (`test-harden`, `handoff`). The full design is in [docs/DESIGN.md](docs/DESIGN.md).
 
@@ -42,7 +42,7 @@ or a protocol.
 
 ```
 ┌─ Tier 3: automation (Claude Code only) ─────────────────────────────┐
-│  hooks: summary, protocol, status gate, bash guard, definition check│
+│  hooks: summary, protocol, gate, guard, definition, activity log    │
 ├─ Tier 2: organization (Claude Code only) ───────────────────────────┤
 │  work (organizer) · 5 employees · handoff                           │
 ├─ Tier 1: portable skills (Claude Code, Claude chat*, Cursor**) ─────┤
@@ -255,7 +255,7 @@ through `file-issue`, handoffs through the `handoff` skill, and PR text stays wi
 
 ### Hooks
 
-The plugin ships five hooks that keep the organizer and its employees honest. The three that act on employees
+The plugin ships six hooks that keep the organizer and its employees honest. The four that act on employees
 match only this plugin's agents (`triple-a-crew:*`, or a [team-mode](#team-mode-experimental-opt-in) teammate
 named `T<n>-<role>`), not built-in agents or other plugins' agents, and nothing breaks with hooks turned off.
 An unrelated teammate that happens to have such a name gets the reminder, but no stop gate and no command
@@ -263,11 +263,12 @@ guard: its brief has no `**Status file:**` line.
 
 | Hook | Runs when | What it does |
 |---|---|---|
-| `SessionStart` | a session starts, resumes, clears or compacts | Lists the open work items from `.crew/work/index.md` at the project root (the git root, unless that is your home folder; otherwise the session's folder), at most 15. Prints nothing in projects without one. At `startup` and `resume` it also records a checksum of each agent file, for the definition check |
+| `SessionStart` | a session starts, resumes, clears or compacts | Lists the open work items from `.crew/work/index.md` at the project root (the git root, unless that is your home folder; otherwise the session's folder), at most 15. Prints nothing in projects without one. At `startup` and `resume` it also records a checksum of each agent file, for the definition check. It also deletes `*.log` files more than 7 days old (from the eighth day on) directly inside any `.crew/work/*/live/` folder (the activity logs, below), and prints nothing for that |
 | `SubagentStart` | an employee starts | Adds a short reminder of the status-file protocol to the employee's context |
 | `SubagentStop` | an employee tries to finish | Sends it back while its status file is missing or not `done`, `blocked` or `failed`, while a `done` or `failed` file has an `updated` time that is missing, not in the form `2026-01-31T14:05:00Z`, or later than the clock (the message gives the `date -u` command; a time in the past is not checked), or while a `done` or `failed` reply lacks a report section. It reads the status-file path from the first line of the brief that starts with `**Status file:**` (in the employee's transcript); if that path doesn't exist and doesn't end in `.md`, it stays silent. It sends the same employee back at most 3 times, and a finished employee answering a follow-up question needs no new report |
 | `PreToolUse` on `Bash` | an employee runs a command | The command guard: refuses a command that chains with `&&`, `\|\|`, `;` or a lone `&`, pipes, redirects, spans lines, uses `cd`, starts with `time`, or is `echo $?` |
 | `PreToolUse` on `Agent` | the organizer starts an employee | The definition check: adds a one-time note to the organizer's context when that employee's agent file changed since the session loaded it. It never refuses the call |
+| `PreToolUse` on every tool | an employee runs any tool | The activity hook: appends one line to the employee's live log, when the work item has a `live/` folder. It never refuses a call |
 
 **The command guard** enforces the one-plain-command rule above. It acts only on crew employees, told apart by
 `agent_type`: an agent of type `triple-a-crew:<role>` always, and an agent named like a teammate
@@ -287,16 +288,107 @@ reload has run since the change, the employee runs on the old definition. Claude
 `/reload-plugins`, so the hook cannot see a reload and shows the note once per change. It covers agent files,
 not skills.
 
-**State.** The two new hooks keep small files in `${CLAUDE_PLUGIN_DATA}`: an empty marker per refused command,
-`triple-a-crew-bash-<agent_id>-<checksum>-<length>` (a resend removes it), and
-`triple-a-crew-defs-<session_id>` (the agent file checksums), next to the stop hook's own. Files older than
-7 days are deleted.
+**The activity hook** runs before every tool call and, for a crew employee, appends one line to
+`<root>/.crew/work/<id>/live/<name>.log`, where `<root>/.crew/work/<id>/team/<name>.md` is the status file
+named by the `**Status file:**` line of the employee's brief (for example `live/T2-engineer.log`). The line is
+the UTC time, the tool name and a short target, separated by tabs:
+`2026-11-16T14:05:12Z	Edit	src/db/orders.js`. A page can then show what an employee is doing right now (see
+[the board](#the-board-prototype)).
+
+- **What the target is.** For `Read`, `Edit`, `Write` and `NotebookEdit` the file path, relative to the project
+  root when it is inside it. For `Bash` the program name only: the first word that is not a `NAME=value` word,
+  taken from its last path component, and written only when the word consists of letters, digits, `.`, `_`,
+  `-` and `/` and has at most 30 characters. The 30 are counted on the whole word, unless it starts with
+  `/`, `./` or `../`; then they are counted on its last path component. A `NAME=value` word whose value holds any character other than letters,
+  digits and `_ . / : @ % + , = -` (a quote, `$`, a backquote, a parenthesis, a backslash, a blank) ends the
+  search and the call gets no program name, because the command is not parsed for quotes. For `WebFetch` the host only, and an empty target when the URL
+  contains an `@` anywhere (a `/` inside a password would hide the `@` from a host cut). For `Grep` and `Glob` the pattern, cut to 60
+  characters. For every other tool nothing. It never writes file content, a full command or a query string, because tool input can hold
+  secrets. A target is cut to 120 characters, a line to 200 bytes.
+- **Only when the folder exists.** It writes only when the `live/` folder already exists, and never creates
+  it. The board script creates it, so a project that never runs the board gets no files. It also writes
+  nothing when `.crew`, `.crew/work`, the work item folder or its `live` folder is a symbolic link, or when
+  the log path already exists and is a symbolic link (a dangling one too) or anything other than a regular
+  file; the `SessionStart` prune deletes nothing through such a link either. The reasons: `>>` follows a link, and a repository could ship a
+  link to a file outside the work item. Only a real `live` folder and a new or regular log file are written.
+  The check and the write are two steps, so a link created in between is not caught (plain `sh` has no lock).
+- **Whom it logs.** A crew employee: an `agent_type` of the form `triple-a-crew:<role>`, or a teammate named
+  `T<n>-<role>`; with an `agent_id`; and with a brief that can be read and names a status file of the form
+  `.../.crew/work/<id>/team/<name>.md`, whose file name starts with a letter or digit. It needs both `agent_type` and `agent_id`, because a main session
+  started with `--agent` has `agent_type` without `agent_id`. For an ordinary call the main session leaves
+  before any other program starts: the hook reads its input with the shell's own `read` and looks for the text
+  `"agent_id"`. A main-session input that holds that text (for example a search for that word) does start
+  `jq` or `awk`, and still no line is written. The hook also leaves when the field list it read does not have
+  exactly nine lines.
+- **It never refuses.** It never prints, never refuses a call, always exits 0, and on any error or doubt
+  writes nothing. A line means "a call was started": hooks that match one call run at the same time, so a
+  Bash call that the command guard refuses is logged too.
+- **No state.** It keeps no state file (nothing in `${CLAUDE_PLUGIN_DATA}`): it reads the brief on every
+  employee call and only appends. Without `jq`, an input longer than 100,000 characters writes nothing.
+- **Cost.** Measured on the development machine on 2026-11-16 (one batch of 30 runs, input through a pipe): about 4.4 ms for a
+  main-session call, about 14.8 ms for an employee's call with `live/`, about 12.0 ms without `live/`; an
+  empty `sh -c :` takes about 4.0 ms there.
+- **Limits.** A teammate in agent-teams mode is logged only when its brief can be read (its `PreToolUse`
+  input was never probed, the same limit as the command guard). The organizer's own tool calls are not logged:
+  a main-session call carries no agent id. A log has no size limit; the `SessionStart` hook deletes `*.log`
+  files more than 7 days old (see the table).
+
+A real run on 2026-11-16 (Claude Code 2.1.325, a haiku session with one `triple-a-crew:engineer` employee, the
+board running) gave 8 log lines for the employee's 8 tool calls, and the page showed the current action while
+it ran.
+
+**State.** The command guard and the definition check keep small files in `${CLAUDE_PLUGIN_DATA}`: an empty
+marker per refused command, `triple-a-crew-bash-<agent_id>-<checksum>-<length>` (a resend removes it), and
+`triple-a-crew-defs-<session_id>` (the agent file checksums), next to the stop hook's own. Files more than
+7 days old (from the eighth day on) are deleted. The activity hook keeps none there: its logs are in the work item, in
+`.crew/work/<id>/live/`.
 
 The scripts are POSIX `sh` and use `jq` when it is installed. Test them without a model call:
 
 ```bash
 sh plugins/triple-a-crew/scripts/test-hooks.sh
 ```
+
+### The board (prototype)
+
+A small local page that shows what the crew is doing: each open work item with its phase and next step, and
+each employee as a character with its todo list (the `## Progress` list of its status file), its state, the
+age of its last update, its last tool calls and their count (from the live log of the
+[activity hook](#hooks)). It lives in this repository, in `tools/crew-board/`. It is not part of the plugin:
+installing the plugin does not give you the page, and you run it from a checkout of this repository.
+
+```bash
+node tools/crew-board/server.mjs
+```
+
+It serves `http://127.0.0.1:4777`. Options: `--root <dir>` (the project folder), `--port <n>`, `--demo` and
+`--no-live`. `--demo` plays a made-up work item on a loop, with no model call, so you can see the page without
+any work running. Open `/?gallery` (`http://127.0.0.1:4777/?gallery`) to see every character in every mood:
+working, busy, quiet, blocked, done, missed, waiting. A character is "working" for 20 seconds after its last
+tool call started. The log records the start of a call and never its end, so after that the page says "busy"
+and shows the last call and when it started. After 3 minutes without a call or a status update it says
+"quiet".
+
+It reads `.crew/work/index.md` (the headings must be exactly `## Open` and `## Closed`), each open item's
+`board.md`, the status files in `team/`, and the end of the logs in `live/`. It reads only regular files: a
+status file, board or log that is a symbolic link or a named pipe is not read. It shows at most 50 open items
+and 200 rows per board. The only things it writes: for each open item it creates `live/` with a `.gitignore`
+containing `*`; for each item listed under Closed it deletes the `*.log` files in `live/`, and the
+`.gitignore` only when the folder is empty without it, and then removes the folder (an item listed under both
+Open and Closed counts as open, and its `live/` is never cleaned up). `--no-live` turns both off, and the
+activity hook then writes nothing for a project whose `live/` folders do not exist. The server listens on
+`127.0.0.1` only, serves only a `GET` for a path that is exactly `/` or `/api/state` (anything else is a 404),
+refuses a `Host` header that is not its own loopback address, and the page shows crew text as text. The page
+carries a Content-Security-Policy that allows only the page's own script, by hash. It uses Node's standard
+library only (Node 18 or newer; developed on Node 22).
+
+More in [`tools/crew-board/README.md`](tools/crew-board/README.md). Test it without a model call:
+
+```bash
+node tools/crew-board/test.mjs
+```
+
+The last line is `all crew-board tests passed`.
 
 ### Team mode (experimental, opt-in)
 
@@ -387,7 +479,7 @@ The plugins do not depend on each other, so install both: the organizer uses `fi
 when it is there, and lists findings for you when it is not.
 
 **Updating.** Auto-update is off by default for marketplaces that are not Anthropic's. Releases are tagged
-`<plugin>--v<version>` (for example `triple-a-crew--v1.1.0`). Pull the latest with:
+`<plugin>--v<version>` (for example `triple-a-crew--v1.2.0`). Pull the latest with:
 
 ```bash
 claude plugin marketplace update triple-a-crew
@@ -436,6 +528,7 @@ All crew state lives in `.crew/` at the project root:
   work/                        organizer work items
     <id>/brief.md, plan.md, decisions.md, findings.md, retro.md          committed
     <id>/board.md, team/, handoff.md, index.md                           ignored
+    <id>/live/                 activity logs; ignored by its own .gitignore  exists only after the board ran
 ```
 
 **Why not `.claude/`?** Claude Code treats `.claude/` as a protected directory. Writes there prompt for
@@ -474,11 +567,17 @@ Run `/reload-plugins` after editing a skill. Validate the manifests before commi
 claude plugin validate .
 ```
 
-Test the hooks without a model call. The runner also runs `test-bash-guard.sh` and
-`test-definitions-check.sh`:
+Test the hooks without a model call. The runner also runs `test-bash-guard.sh`, `test-definitions-check.sh`
+and `test-activity-log.sh`:
 
 ```bash
 sh plugins/triple-a-crew/scripts/test-hooks.sh
+```
+
+Test the board (see [The board](#the-board-prototype)) without a model call:
+
+```bash
+node tools/crew-board/test.mjs
 ```
 
 Test the eval graders without a model call:
@@ -713,7 +812,7 @@ divided.
 | `agents/verifier.md` | `verify-staffs-verifier` |
 | `agents/researcher.md` | None: no case staffs the researcher. |
 | `hooks/hooks.json`, `scripts/session-start.sh` | `session-start-mentions-open-item` |
-| `scripts/subagent-start.sh`, `scripts/subagent-stop.sh`, `scripts/bash-guard.sh`, `scripts/definitions-check.sh` | None grade them. Run `sh plugins/triple-a-crew/scripts/test-hooks.sh`; the cases that staff employees load them (`hook-guards` ran `medium-fix-end-to-end` to see that the command guard refuses nothing in a normal run). |
+| `scripts/subagent-start.sh`, `scripts/subagent-stop.sh`, `scripts/bash-guard.sh`, `scripts/definitions-check.sh`, `scripts/activity-log.sh` | None grade them. Run `sh plugins/triple-a-crew/scripts/test-hooks.sh`; the cases that staff employees load them (`hook-guards` ran `medium-fix-end-to-end` to see that the command guard refuses nothing in a normal run). For `activity-log.sh`, a real run with the board (as on 2026-11-16) is the check that the `hooks.json` entry loads. |
 | `skills/onboard/` (`SKILL.md`, `profile-format.md`) | `creates-profile-from-repo`, `refreshes-profile-keeps-user-values`, `no-fire-setup-question` |
 | `skills/test-harden/` | `test-harden-adds-edge-cases`, `test-engineer-keeps-failing-test` |
 | `skills/handoff/` | `writes-handoff-to-crew` |
@@ -724,16 +823,16 @@ divided.
 
 | Case | Plugin | Last cost per run | When | Source |
 |---|---|---|---|---|
-| `starts-work-item-on-large-request` | `triple-a-crew` | $0.49 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
+| `starts-work-item-on-large-request` | `triple-a-crew` | $0.33 | 2026-11-16 | `.crew/work/crew-board/decisions.md` |
 | `stays-out-of-small-request` | `triple-a-crew` | unknown | | |
 | `stays-out-of-read-only-investigation` | `triple-a-crew` | $0.15 | 2026-10-27 | `.crew/work/publish-v1/decisions.md` |
-| `session-start-mentions-open-item` | `triple-a-crew` | $0.10 | 2026-11-13 | `.crew/work/hook-guards/decisions.md` |
+| `session-start-mentions-open-item` | `triple-a-crew` | $0.06 | 2026-11-16 | `.crew/work/crew-board/decisions.md` |
 | `reports-status-of-open-item` | `triple-a-crew` | unknown | | |
 | `plans-against-project-conventions` | `triple-a-crew` | $0.54 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
 | `plan-shows-flow-for-runtime-change` | `triple-a-crew` | $0.52 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
 | `plan-has-no-flow-for-docs-change` | `triple-a-crew` | $0.49 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
 | `plan-names-ledger-lesson` | `triple-a-crew` | $0.61 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
-| `medium-fix-end-to-end` | `triple-a-crew` | $1.46 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
+| `medium-fix-end-to-end` | `triple-a-crew` | $0.96 | 2026-11-16 | `.crew/work/crew-board/decisions.md` |
 | `verify-staffs-verifier` | `triple-a-crew` | $1.05 | 2026-10-21 | `.crew/work/effort-ladder/decisions.md` |
 | `test-engineer-keeps-failing-test` | `triple-a-crew` | $1.19 | 2026-10-19 | `.crew/work/review-24-fixes/decisions.md` |
 | `flags-unmet-ticket-criterion` | `triple-a-crew` | $1.08 | 2026-11-13 | `.crew/work/organizer-rules/decisions.md` |
@@ -755,12 +854,13 @@ divided.
 
 Cases run more than once show the latest figure above. The recorded range, from the same decisions files:
 
-- `starts-work-item-on-large-request`: $0.39 to $0.49 (`.crew/work/review-24-fixes/decisions.md`,
-  `eval-tooling` and `organizer-rules`).
+- `starts-work-item-on-large-request`: $0.33 to $0.49 (`.crew/work/review-24-fixes/decisions.md`,
+  `eval-tooling`, `organizer-rules` and `crew-board`).
+- `session-start-mentions-open-item`: $0.06 to $0.10 (`.crew/work/hook-guards/decisions.md` and `crew-board`).
 - `plan-shows-flow-for-runtime-change`: $0.51 to $0.60 (`.crew/work/organizer-rules/decisions.md`).
 - `medium-fix-end-to-end`: $0.80 to $1.46 (`.crew/work/issue-30-criteria-check/decisions.md`,
-  `follow-ups-25-28`, `retro-skill`, `review-24-fixes`, `effort-ladder`, `hook-guards` and
-  `organizer-rules`).
+  `follow-ups-25-28`, `retro-skill`, `review-24-fixes`, `effort-ladder`, `hook-guards`,
+  `organizer-rules` and `crew-board`).
 - `verify-staffs-verifier`: $0.67 to $1.43 (`.crew/work/employees-v2/findings.md`, `fix-open-issues`).
 - `test-engineer-keeps-failing-test`: $0.96 to $1.19 (`.crew/work/agent-teams-mode/decisions.md`,
   `fix-open-issues`).
@@ -779,6 +879,7 @@ the model change, so the date matters.
 .
 ├── .claude-plugin/marketplace.json     marketplace "triple-a-crew" listing both plugins
 ├── docs/DESIGN.md                      design, decisions and verified Claude Code mechanics
+├── tools/crew-board/                   the board, a local page (prototype, not in the plugin)
 ├── plugins/
 │   ├── file-issue/
 │   │   ├── .claude-plugin/plugin.json
@@ -792,7 +893,7 @@ the model change, so the date matters.
 │       ├── .claude-plugin/plugin.json
 │       ├── README.md
 │       ├── agents/                     researcher, engineer, test-engineer, verifier, reviewer
-│       ├── hooks/hooks.json            SessionStart, PreToolUse, SubagentStart, SubagentStop
+│       ├── hooks/hooks.json            SessionStart, PreToolUse (Bash, Agent, every tool), SubagentStart, SubagentStop
 │       ├── scripts/                    the hook scripts (POSIX sh) and their tests (test-hooks.sh runs all)
 │       ├── skills/
 │       │   ├── work/                   the organizer: SKILL.md, formats, staffing, protocol
@@ -815,6 +916,7 @@ the model change, so the date matters.
 | **Next** (planned) | The Cursor check (`cursor-check`, paused), with a live test you run, and the open crew issues. Each plan is in `.crew/work/<id>/plan.md` |
 | **Publish** (done) | v1.0.0 on 2026-10-27 (`publish-v1`, PR #41): Apache-2.0, versions and tags, an exposure audit, the repository public, the `file-issue` zip tested in Claude chat |
 | **1.1.0** (done) | `triple-a-crew` v1.1.0 on 2026-11-13, from three work items. `hook-guards` (PR #52): the stop hook checks the status file's `updated` time, a command guard refuses an employee's chained shell command, and a note tells the organizer when an agent file changed after the session loaded it. `eval-tooling` (PR #53): grader tests with no model call, and the table of which eval cases to rerun and what they cost. `organizer-rules` (PR #54): flowcharts in plans, the lessons ledger, a ship step, one handoff, a tool-call budget for reviewers, and researcher reports kept on disk |
+| **1.2.0** (in review) | `triple-a-crew` v1.2.0, from `crew-board`: an activity hook that logs each tool call of a crew employee (time, tool, short target) to `.crew/work/<id>/live/` when that folder exists, and a prune of logs more than 7 days old at session start. In this repository, not in the plugin: the board, a prototype page that shows the open work items and each employee's todo list, state and latest calls (`tools/crew-board/`) |
 
 The organizer's model choice is a rule table: `mechanical` work goes to haiku, `standard` to sonnet,
 `critical` to opus, each with a default effort. A task that misses its check climbs a ladder (sent back
@@ -849,6 +951,10 @@ runs work in parallel only on disjoint file sets. Details are in [docs/DESIGN.md
 - **Probe what the docs leave open.** When a skill depends on a Claude Code mechanic the docs don't settle,
   run a throwaway plugin on haiku in a scratch folder (it costs cents) and record the result with its date in
   DESIGN's Verified mechanics. `crew-hooks` (hook payloads) and `employees-v2` (`skills:` names) both did.
+  Give the probe session only the tools it needs, with the prompt before the flag because the flag takes a
+  list (`claude -p "<prompt>" --model haiku --allowedTools "Agent,Read,Write,Edit,Bash(date:*),Bash(ls:*)"`),
+  not `--permission-mode bypassPermissions`: a session's own safety check can refuse a run with all checks
+  off (`crew-board` T6).
 - **Ask before publishing.** Anything that writes to a shared system (issues, comments, messages) confirms
   first unless the profile says otherwise. Local files need no confirmation.
 - **Spell out the exceptions to location rules.** "Use the git root" sent drafts to the home directory
@@ -894,6 +1000,7 @@ runs work in parallel only on disjoint file sets. Details are in [docs/DESIGN.md
 | Eval stops after about a second with `partialReason: auth_failed` and $0 cost | The standalone `claude` CLI is not logged in (`claude auth status` shows `loggedIn: false`). A Claude desktop-app session authenticates through the app, not the CLI, so evals started from it fail. Run them from a terminal after `claude auth login` |
 | An employee keeps being told to fix its status file | The `SubagentStop` hook found the status file named in its brief, and the file is missing, not final, has an `updated` time that is missing, malformed or in the future, or the reply lacks a report section. The reason it gives says what to fix. The hook gives up after 3 tries for the same employee |
 | An employee reports that a command was refused | The command guard refuses a command that chains with `&&`, `\|\|`, `;` or a lone `&`, pipes, redirects, spans lines, uses `cd`, starts with `time`, or is `echo $?`. The employee should run one plain command per call, with absolute paths or the tool's folder flag. If it needs exactly that command, sending it again unchanged runs it, even after other calls in between. A command the brief lists as written is never refused |
+| The board shows no live lines for an employee | Check, in order: the plugin is older than 1.2.0 (the activity hook is new in 1.2.0); the session started before the plugin was updated (hooks load when a session starts, so start a new one); there is no `live/` folder in `.crew/work/<id>/` (the board is not running, or runs with `--no-live`); the employee's brief has no `**Status file:**` line, so the hook cannot tell where to write; `.crew`, `.crew/work`, the work item folder or its `live` folder is a symbolic link, which the hook never writes through |
 | No open-items summary at session start | The `SessionStart` hook reads `.crew/work/index.md` at the git root (or the session's folder outside a repository, or when the git root is your home folder) and prints only the `## Open` list. Check that the file exists and has items under `## Open`, then run `sh plugins/triple-a-crew/scripts/test-hooks.sh` |
 | Eval: `a plugins entry names the case directory ... or a directory covering them` | Do not list the plugin under test in a case's `plugins:`. Fixture plugins must sit inside the case directory |
 | Eval: `outside the containment root` | A case can only load plugins inside the plugin under test, so a sibling plugin cannot be loaded |

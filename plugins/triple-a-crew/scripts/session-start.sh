@@ -67,6 +67,16 @@ done
 if [ -z "$root" ] || [ "$root" = "${HOME:-}" ]; then
   root=$cwd
 fi
+
+# Silent housekeeping: the activity logs of crew employees (activity-log.sh) older than a week are finished work.
+# Nothing is deleted through a symbolic link (.crew, .crew/work, the work item folder, live).
+if [ ! -L "$root/.crew" ] && [ ! -L "$root/.crew/work" ]; then
+  for live in "$root"/.crew/work/*/live; do
+    [ -d "$live" ] && [ ! -L "$live" ] && [ ! -L "${live%/live}" ] || continue
+    find "$live" -maxdepth 1 -type f -name '*.log' -mtime +7 -exec rm -f {} + 2>/dev/null || true
+  done
+fi
+
 index=
 [ -f "$root/.crew/work/index.md" ] && index="$root/.crew/work/index.md"
 [ -n "$index" ] || exit 0
